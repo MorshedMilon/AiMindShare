@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AiMindShare — M20 · Funnels</title>
+  <meta name="description" content="Multi-step conversion funnels on the AiMindShare page engine — step builder, per-step conversion map, A/B split testing with winner detection, and order forms wired to payments.">
+
+  <!-- Fonts (D-014: Cormorant Garamond / Baskerville / Shippori Mincho) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Shippori+Mincho:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- tokens → base library → shared shell/components → module layer (ORDER MATTERS) -->
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/app.css">
+  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="styles/m20-funnels.css">
+
+  <!-- Theme boot before first paint (light default, D-007) -->
+  <script>
+    (function(){try{var t=localStorage.getItem("aimindshare-theme");
+      document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light");}catch(e){}})();
+  </script>
+</head>
+<body>
+  <!-- Atmosphere (soft gradients + orbs; NO stars/dots in dark — app.css hides them) -->
+  <div class="bg-canvas" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div id="starField"></div>
+  </div>
+
+  <!-- App shell (rail + topbar + content) rendered by the hash router -->
+  <div class="shell" id="app"></div>
+
+  <!-- Modal + toast + drawer roots -->
+  <div id="modalRoot"></div>
+  <div class="toast-wrap" id="toasts"></div>
+
+  <!-- Connect-a-project drawer (same contract as every authed module) -->
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" id="drawer" aria-label="Connect a Supabase project">
+    <h3>Connect a project</h3>
+    <p class="muted">Enter your Supabase project URL and public <b>anon</b> key to run M20 live
+      (reads workspace-scoped funnels, steps, splits and conversion stats under RLS). Nothing secret
+      touches the browser — only the anon key is stored here (Law 3), in <span class="mono">localStorage</span> on this device.</p>
+    <div class="field">
+      <label class="label" for="inpUrl">Project URL</label>
+      <input id="inpUrl" placeholder="https://YOUR-PROJECT.supabase.co" spellcheck="false" autocomplete="off">
+    </div>
+    <div class="field">
+      <label class="label" for="inpAnon">Anon key</label>
+      <input id="inpAnon" placeholder="eyJhbGciOi…" spellcheck="false" autocomplete="off">
+      <span class="help">Public anon key only — never the service-role key.</span>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" id="saveCfg">Save &amp; connect</button>
+      <button class="btn btn-ghost" id="clearCfg">Clear</button>
+    </div>
+    <button class="btn btn-ghost btn-sm" id="closeDrawer" style="margin-top:18px">Close</button>
+  </aside>
+
+  <!-- Vendored libs (no CDN, no build step) -->
+  <script src="vendor/supabase-js.min.js"></script>
+  <!-- Optional project config (copy config.example.js → config.js); fails soft if absent -->
+  <script src="config.js" onerror="void 0"></script>
+  <!-- Module app -->
+  <script src="js/m20-funnels.js"></script>
+</body>
+</html>

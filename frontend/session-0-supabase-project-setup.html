@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AiMindShare — Session 0 · Supabase Foundation Console</title>
+  <meta name="description" content="Session 0 setup & verification console: tenancy RLS, jobs queue, Edge Function envelope, and DoD Gate-8.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Shippori+Mincho:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/app.css">
+</head>
+<body>
+  <div class="bg-canvas" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div>
+    <div id="starField"></div>
+  </div>
+
+  <header class="topbar">
+    <div class="brand"><span class="mark">▲</span><span><b>AiMind</b><em>Share</em></span></div>
+    <span class="session-tag">Session 0 · Foundation</span>
+    <div class="spacer"></div>
+    <span class="pill plain" id="connPill">not connected</span>
+    <button class="btn btn-ghost btn-sm" id="openConnect">Connect</button>
+    <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme"><span id="themeIco">☾</span></button>
+  </header>
+
+  <main class="wrap">
+    <div class="page-head">
+      <h1>The <em>foundation</em> every module stands on.</h1>
+      <p>Supabase project setup for AiMindShare — extensions, tenancy, the jobs control-plane,
+         storage, cron and Vault, all under database-enforced Row-Level Security. This console is the
+         living Definition-of-Done board for Session 0: it shows what the migrations create and the
+         real result of each acceptance probe.</p>
+    </div>
+
+    <div class="banner">
+      <span class="b-ico">✦</span>
+      <span>Three probes run on Node alone (real Postgres via PGlite + Gate-8 greps). The live Edge
+        Function test needs a connected Supabase project. Run <span class="mono">bash scripts/verify.sh</span> to refresh status.</span>
+      <span class="spacer"></span>
+      <button class="btn btn-gold btn-sm" id="openConnect2" onclick="document.getElementById('openConnect').click()">Connect a project</button>
+    </div>
+
+    <div class="section-h"><h2>Foundation <em>at a glance</em></h2><span class="hint">from migrations 0000–0005</span></div>
+    <div class="kpi-strip" id="kpis"></div>
+
+    <div class="section-h"><h2>Accept-when <em>probes</em></h2><span class="hint">BUILD-SEQUENCE · Session 0</span></div>
+    <div class="probe-grid">
+      <div class="probe panel reveal" id="probe-leak">
+        <div class="p-top"><div class="p-ico">⛨</div>
+          <div><h3>Cross-tenant leak probe</h3><div class="p-sub">Tenancy tables · workspace_id isolation</div></div></div>
+        <div class="p-content"><div class="skeleton" style="height:120px"></div></div>
+        <div class="p-foot"><span class="mono" style="font-size:11px;color:var(--ink-400)">real Postgres · PGlite</span><span class="pill p-status">loading</span></div>
+      </div>
+
+      <div class="probe panel reveal" id="probe-job">
+        <div class="p-top"><div class="p-ico">⚙</div>
+          <div><h3>Job queued → claimed → done</h3><div class="p-sub">Atomic claim · service-role worker</div></div></div>
+        <div class="p-content"><div class="skeleton" style="height:120px"></div></div>
+        <div class="p-foot"><span class="mono" style="font-size:11px;color:var(--ink-400)">real Postgres · PGlite</span><span class="pill p-status">loading</span></div>
+      </div>
+
+      <div class="probe panel reveal" id="probe-gate8">
+        <div class="p-top"><div class="p-ico">▤</div>
+          <div><h3>DoD Gate-8 greps</h3><div class="p-sub">Laws 1 · 2 · 3 · 6 — zero hits</div></div></div>
+        <div class="p-content"><div class="skeleton" style="height:120px"></div></div>
+        <div class="p-foot"><span class="mono" style="font-size:11px;color:var(--ink-400)">bash · scripts/gate8.sh</span><span class="pill p-status">loading</span></div>
+      </div>
+
+      <div class="probe panel reveal" id="probe-health">
+        <div class="p-top"><div class="p-ico">✦</div>
+          <div><h3>Edge Function envelope</h3><div class="p-sub">Vault read → standard envelope</div></div></div>
+        <div class="p-content"><div class="p-body">Connect a Supabase project to call the <span class="mono">health</span> function live.</div></div>
+        <div class="p-foot"><button class="btn btn-primary btn-sm" id="runHealth" disabled>Run</button><span class="pill p-status">idle</span></div>
+      </div>
+    </div>
+
+    <div class="section-h"><h2>Migration &amp; RLS <em>ledger</em></h2><span class="hint">every tenant table: RLS + 4 policies</span></div>
+    <div class="panel"><div class="ledger" id="ledger"></div></div>
+
+    <div class="foot">
+      <span>AiMindShare · aimindshare.com</span>
+      <span>Stack: vanilla + Supabase</span>
+      <span>Status generated: <span id="genAt">—</span></span>
+    </div>
+  </main>
+
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" id="drawer" aria-label="Connect Supabase">
+    <h3>Connect a project</h3>
+    <p class="muted">Enter your Supabase URL and the <b>public anon key</b> only. The privileged
+      service-role key must never be entered here — it stays on the server (Constitution Law 3).</p>
+    <div class="field"><span class="label">Supabase URL</span>
+      <input id="inpUrl" type="text" placeholder="https://your-project.supabase.co" spellcheck="false"></div>
+    <div class="field"><span class="label">Anon key (public)</span>
+      <input id="inpAnon" type="text" placeholder="eyJhbGci…" spellcheck="false">
+      <span class="help">Stored in this browser's localStorage only.</span></div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" id="saveCfg">Save &amp; connect</button>
+      <button class="btn btn-ghost" id="clearCfg">Clear</button>
+      <div class="spacer" style="flex:1"></div>
+      <button class="btn btn-ghost btn-sm" id="closeDrawer">Close</button>
+    </div>
+  </aside>
+
+  <script src="config.js" onerror="void 0"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

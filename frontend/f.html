@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Form — AiMindShare</title>
+  <meta name="description" content="A public form powered by AiMindShare M15. Answer a few questions and submit — fast, calm, and private.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Shippori+Mincho:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/components.css">
+
+  <script>
+    (function(){try{var t=localStorage.getItem("aimindshare-theme");
+      document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light");}catch(e){}})();
+  </script>
+  <style>
+    /* Public form page: calm + fast — radial washes only, NO grid/orbs/stars (DESIGN §6). */
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%}
+    body{font-family:var(--font-sans);color:var(--ink-900);background:var(--bg);
+      background-image:radial-gradient(60% 50% at 15% 0%,rgba(0,105,110,.10),transparent 60%),
+        radial-gradient(50% 45% at 95% 10%,rgba(197,160,89,.08),transparent 60%);
+      background-attachment:fixed;-webkit-font-smoothing:antialiased}
+    /* Embed = minimal chrome: transparent bg for iframe, no fixed wash, no outer frame. */
+    body.embed{background:transparent;background-image:none}
+
+    .f-wrap{max-width:600px;margin:0 auto;padding:40px 20px 64px}
+    body.embed .f-wrap{max-width:none;padding:16px}
+    body.embed .f-brandbar,body.embed .f-foot{display:none}
+
+    .f-brandbar{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+    .f-brandbar .mk{width:30px;height:30px;border-radius:9px;background:var(--grad-brand);display:grid;place-items:center;color:#fff;font-size:15px}
+    .f-brandbar b{font-family:var(--font-serif);font-size:17px;font-weight:600}
+
+    /* The card frame — dropped in embed mode so the iframe sits flush on the host page. */
+    .f-card{background:var(--glass-bg);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);
+      border:.5px solid var(--glass-border);border-radius:var(--r-2xl);box-shadow:var(--shadow-lg);padding:32px}
+    body.embed .f-card{background:transparent;border:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:4px}
+
+    .f-eyebrow{font-size:10px;font-weight:700;letter-spacing:var(--label-track);text-transform:uppercase;color:var(--teal-700)}
+    :root[data-theme="dark"] .f-eyebrow{color:var(--teal-300)}
+    .f-title{font-family:var(--font-serif);font-size:26px;font-weight:600;margin:8px 0 6px;line-height:1.12}
+    .f-desc{font-size:13.5px;color:var(--ink-400);margin:0 0 22px;line-height:1.55}
+
+    /* Multi-step progress */
+    .f-steps{display:flex;gap:8px;margin-bottom:22px}
+    .f-dot{height:4px;flex:1;border-radius:2px;background:var(--line-strong)}
+    .f-dot.on{background:var(--grad-brand,linear-gradient(135deg,var(--_accent),var(--_accent)))}
+    .f-stepno{font-family:var(--font-mono);font-size:11px;color:var(--ink-400);margin-bottom:10px;letter-spacing:.04em}
+
+    /* Field block */
+    .ff{margin-bottom:16px}
+    .ff > label.ff-label{display:block;font-size:10px;font-weight:600;letter-spacing:var(--label-track);text-transform:uppercase;color:var(--ink-400);margin-bottom:6px}
+    .ff .req{color:var(--status-danger)}
+    .ff input[type=text],.ff input[type=email],.ff input[type=tel],.ff input[type=number],.ff input[type=date],
+    .ff textarea,.ff select{width:100%;height:44px;padding:0 12px;background:var(--bg-card);border:.5px solid var(--line-strong);
+      border-radius:var(--r-sm);font-family:var(--font-sans);font-size:14px;color:var(--ink-900);outline:none;transition:border-color .18s,box-shadow .18s}
+    .ff input[type=number]{font-family:var(--font-mono)}
+    .ff textarea{height:auto;min-height:96px;padding:11px 12px;line-height:1.5;resize:vertical}
+    .ff input:focus,.ff textarea:focus,.ff select:focus{border-color:var(--_accent);box-shadow:0 0 0 3px var(--_accent-glow)}
+    .ff.bad input,.ff.bad textarea,.ff.bad select{border-color:var(--status-danger)}
+    .ff-err{margin-top:6px;font-size:11.5px;color:var(--status-danger)}
+    .ff-help{margin-top:6px;font-size:11.5px;color:var(--ink-400)}
+
+    /* Choice groups (radio / checkbox / multiselect) */
+    .ff-opts{display:flex;flex-direction:column;gap:8px}
+    .opt{display:flex;align-items:center;gap:10px;padding:11px 13px;border:.5px solid var(--line-strong);border-radius:var(--r-sm);
+      background:var(--bg-card);font-size:13.5px;color:var(--ink-900);cursor:pointer;transition:border-color .15s,background .15s}
+    .opt:hover{border-color:var(--_accent)}
+    .opt.sel{border-color:var(--_accent);background:var(--_accent-tint)}
+    .opt input{accent-color:var(--_accent);width:16px;height:16px;flex:none;margin:0}
+
+    /* Consent */
+    .ff-consent{display:flex;align-items:flex-start;gap:11px;padding:13px 15px;border:.5px solid var(--line);border-radius:var(--r-md);
+      background:rgba(0,105,110,.04)}
+    :root[data-theme="dark"] .ff-consent{background:rgba(0,150,160,.06)}
+    .ff-consent input{accent-color:var(--_accent);width:17px;height:17px;flex:none;margin-top:1px;cursor:pointer}
+    .ff-consent .ct{font-size:13px;color:var(--ink-700);line-height:1.5}
+
+    /* Rating */
+    .ff-rating{display:flex;gap:7px;flex-wrap:wrap}
+    .rate-btn{width:40px;height:40px;border:.5px solid var(--line-strong);border-radius:var(--r-sm);background:var(--bg-card);
+      font-family:var(--font-mono);font-size:14px;color:var(--ink-700);cursor:pointer;transition:.15s}
+    .rate-btn:hover{border-color:var(--_accent)}
+    .rate-btn.sel{background:var(--_accent);color:#fff;border-color:transparent}
+
+    /* File (scaffolded off) */
+    .ff-file{display:flex;align-items:center;gap:12px;padding:16px;border:.5px dashed var(--line-strong);border-radius:var(--r-md);
+      background:var(--bg-card);color:var(--ink-300);font-size:13px}
+    .ff-file .badge{font-family:var(--font-mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--gold-700);
+      background:var(--gold-50);border:.5px solid var(--gold-300);border-radius:var(--r-pill);padding:3px 9px;flex:none}
+    :root[data-theme="dark"] .ff-file .badge{background:rgba(197,160,89,.12)}
+
+    /* Content blocks */
+    .ff-heading{font-family:var(--font-serif);font-size:19px;font-weight:600;color:var(--ink-900);margin:6px 0 2px}
+    .ff-paragraph{font-size:13.5px;color:var(--ink-400);line-height:1.6;margin:0}
+
+    /* Honeypot — visually hidden, off-screen, no a11y/tab exposure. */
+    .hp{position:absolute!important;left:-9999px!important;top:auto;width:1px;height:1px;overflow:hidden;opacity:0}
+
+    /* Actions */
+    .f-actions{display:flex;justify-content:space-between;gap:10px;margin-top:24px}
+    .f-actions.solo{justify-content:flex-end}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 22px;border-radius:var(--r-md);
+      border:.5px solid transparent;font-family:var(--font-sans);font-size:13.5px;font-weight:600;cursor:pointer;
+      transition:transform .2s var(--ease-premium),box-shadow .2s,background .2s}
+    .btn-primary{background:var(--_accent);color:#fff;box-shadow:var(--shadow-glow)}
+    .btn-primary:hover{transform:translateY(-2px)}
+    .btn-ghost{background:transparent;border-color:var(--_accent);color:var(--_accent)}
+    .btn-ghost:hover{background:var(--_accent-tint)}
+    .btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}
+
+    /* Result / thank-you / quiz tier */
+    .f-result{text-align:center;padding:14px 0}
+    .f-result .rk{width:56px;height:56px;border-radius:50%;background:rgba(46,158,123,.14);color:var(--status-success);
+      display:grid;place-items:center;margin:0 auto 16px;font-size:26px}
+    .f-result.pending .rk{background:rgba(199,154,58,.14);color:var(--status-warning)}
+    .f-result h2{font-family:var(--font-serif);font-size:24px;margin:0 0 8px}
+    .f-result p{font-size:14px;color:var(--ink-400);line-height:1.6;margin:0}
+    .f-tier{display:inline-block;margin-bottom:12px;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+      color:var(--teal-700);background:var(--teal-50);border:.5px solid var(--glass-border);border-radius:var(--r-pill);padding:5px 13px}
+    :root[data-theme="dark"] .f-tier{background:rgba(0,150,160,.12);color:var(--teal-300)}
+
+    /* States */
+    .f-note{margin-top:16px;font-size:12px;color:var(--ink-400);text-align:center}
+    .f-empty{text-align:center;padding:34px 0;color:var(--ink-400);font-size:14px}
+    .f-alert{padding:12px 14px;background:rgba(196,97,78,.10);border:.5px solid rgba(196,97,78,.3);border-radius:var(--r-md);
+      font-size:13px;color:var(--ink-700);margin-bottom:16px}
+    .skel{height:44px;border-radius:var(--r-md);background:var(--bg-card);animation:fpulse 1.6s ease-in-out infinite;margin-bottom:14px}
+    @keyframes fpulse{0%,100%{opacity:.5}50%{opacity:.9}}
+    .mock-flag{display:inline-block;margin-bottom:18px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+      color:var(--gold-700);background:var(--gold-50);border:.5px solid var(--gold-300);border-radius:var(--r-pill);padding:4px 12px}
+    :root[data-theme="dark"] .mock-flag{background:rgba(197,160,89,.12)}
+
+    .f-foot{text-align:center;margin-top:22px;font-size:12px;color:var(--ink-400)}
+    .f-foot a{color:var(--teal-700);text-decoration:none}
+    :root[data-theme="dark"] .f-foot a{color:var(--teal-300)}
+
+    @media (max-width:520px){.f-card{padding:22px 18px}.f-title{font-size:22px}}
+    @media (prefers-reduced-motion:reduce){.btn,.opt,.rate-btn,.ff input,.ff textarea,.ff select{transition:none}.skel{animation:none}}
+  </style>
+</head>
+<body>
+  <div class="f-wrap">
+    <div class="f-brandbar"><span class="mk">&#10022;</span><b>AiMindShare</b></div>
+    <div id="form-root"></div>
+    <div class="f-foot">Powered by <a href="#">AiMindShare</a></div>
+  </div>
+
+  <script src="vendor/supabase-js.min.js" onerror="void 0"></script>
+  <script src="config.js" onerror="void 0"></script>
+  <script src="js/m15-form-render.js"></script>
+</body>
+</html>

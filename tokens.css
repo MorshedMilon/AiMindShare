@@ -1,0 +1,73 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   tokens.css — AiMindShare.com canonical design tokens · v1.0 · 2026-07-02
+   ─────────────────────────────────────────────────────────────────────────
+   SOURCE OF TRUTH: extracted VERBATIM from publishlyai-command-center.html
+   (the canonical reference implementation, per DECISIONS D-004 / D-006).
+   Underlying law: QURANLYAI_DESIGN.md. Deviations from that law are recorded
+   in DECISIONS (D-007 light default, D-014 Baskerville body + Shippori Mincho numerals — supersedes D-008)
+   and in AIMINDSHARE-DESIGN §2.3 (token mapping table).
+
+   RULES (never bend):
+   · Never invent new colors — extend scales only via a DECISIONS entry.
+   · No raw hex inline in any page CSS/HTML except inside SVG <defs>.
+   · Theme blocks stay SIBLINGS of :root — never merged into it.
+   · data-theme="light" is the DEFAULT (D-007).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root{
+  /* ── Teal scale ── */
+  --teal-950:#062628;--teal-900:#0F2A2C;--teal-800:#003F44;--teal-700:#00696E;
+  --teal-600:#0297A1;--teal-500:#2CA4AB;--teal-400:#3FBFC7;--teal-300:#6AD7DE;
+  --teal-200:#8DD8DE;--teal-100:#C8EEF1;--teal-50:#EAF5F5;
+
+  /* ── Gold scale ── */
+  --gold-700:#9A7C3F;--gold-500:#C5A059;--gold-400:#D9B358;--gold-300:#E2C896;--gold-200:#EFD48A;--gold-50:#FBF6EA;
+
+  /* ── Status (semantic — use these, never the raw scales, for state) ── */
+  --status-success:#2E9E7B;--status-warning:#C79A3A;--status-danger:#C4614E;--status-info:#2CA4AB;--status-idle:#6D797A;
+
+  /* ── Gradients ── */
+  --grad-brand:linear-gradient(135deg,var(--teal-700),var(--teal-500));
+  --grad-gold:linear-gradient(135deg,var(--gold-500),var(--gold-700));
+  --grad-ai:linear-gradient(135deg,var(--teal-700),var(--teal-500),var(--gold-500));
+  --grad-spine:linear-gradient(180deg,var(--teal-500),var(--gold-500));
+
+  /* ── Typography (D-014: Baskerville body + Shippori Mincho numerals; supersedes D-008) ── */
+  --font-serif:'Cormorant Garamond',Georgia,serif;                                    /* display / headings */
+  --font-sans:'Baskerville','Baskerville Old Face','Libre Baskerville',Georgia,serif; /* body, labels, UI   */
+  --font-mono:'Shippori Mincho','Cormorant Garamond',Georgia,serif;                   /* numbers / data     */
+  --label-track:.16em;
+
+  /* ── Radii ── */
+  --r-sm:10px;--r-md:14px;--r-lg:18px;--r-xl:24px;--r-2xl:32px;--r-pill:999px;
+
+  /* ── Easing ── */
+  --ease-reverent:cubic-bezier(.22,1,.36,1);      /* card hover, entrances */
+  --ease-premium:cubic-bezier(.25,.46,.45,.94);   /* nav, buttons, chrome  */
+
+  /* ── Shadows ── */
+  --shadow-sm:0 1px 2px rgba(0,42,44,.04),0 1px 3px rgba(0,42,44,.04);
+  --shadow-md:0 4px 16px rgba(0,42,44,.06),0 1px 3px rgba(0,42,44,.04);
+  --shadow-lg:0 12px 40px rgba(0,42,44,.08),0 4px 12px rgba(0,42,44,.05);
+  --shadow-glow:0 8px 32px rgba(0,105,110,.18);
+}
+
+/* ── LIGHT (DEFAULT, D-007) — sibling block, never merged ── */
+:root[data-theme="light"]{
+  --bg:#EBF4F4;--bg-elev:#FFF;--bg-card:#FAFBFB;--card-solid:#FFF;
+  --line:rgba(0,42,44,.08);--line-strong:rgba(0,105,110,.18);
+  /* body ink near-black; muted lifted for hierarchy (D-014; headings --ink-900 unchanged) */
+  --ink-900:#0F2A2C;--ink-700:#0A0F0E;--ink-500:#0A0F0E;--ink-400:#2E3B3A;--ink-300:#556260;
+  --glass-bg:rgba(230,243,243,.68);--glass-border:rgba(0,105,110,.15);--glass-hi:rgba(255,255,255,.75);--row-hover:var(--teal-50);
+}
+
+/* ── DARK — sibling block, never merged ── */
+:root[data-theme="dark"]{
+  --bg:#04090A;--bg-elev:#0A1618;--bg-card:#0C1A1C;--card-solid:#0C1A1C;
+  --line:rgba(0,150,160,.16);--line-strong:rgba(0,150,160,.28);
+  --ink-900:#EDF6F6;--ink-700:#B8D0D0;--ink-500:#7A9E9F;--ink-400:#6D8080;--ink-300:#3D6062;
+  --glass-bg:rgba(8,22,24,.82);--glass-border:rgba(0,150,160,.22);--glass-hi:rgba(255,255,255,.06);--row-hover:rgba(0,150,160,.06);
+  --teal-700:#1A9AA1;--teal-500:#5BC1C7;--teal-300:#88E0E5;--gold-400:#D9B358;--gold-300:#E5C570;
+  --shadow-md:0 4px 16px rgba(0,0,0,.30),0 1px 3px rgba(0,0,0,.30);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.40),0 4px 12px rgba(0,0,0,.30);
+}

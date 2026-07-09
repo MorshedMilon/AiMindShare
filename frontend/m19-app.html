@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AiMindShare — M19 · Sites (GrapeJS)</title>
+  <meta name="description" content="AiMindShare Module M19 — Sites: AI text-to-website generation into page_json, a full GrapeJS drag-and-drop editor (blocks, layers, templates, device breakpoints, 50-step undo), multi-page sites with a nav builder, publish + version history, a public Edge-Function renderer with per-page SEO + JSON-LD schema + cookie banner + tracking pixel, custom domains with DNS verification and auto-SSL flow, and CRM widget embeds (form, calendar, chat). All tables are workspace-scoped by RLS.">
+
+  <!-- Fonts (D-014: Cormorant Garamond · Baskerville → Libre Baskerville · Shippori Mincho) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Shippori+Mincho:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Design tokens → base library → shared shell/components → GrapeJS → module layer (order matters) -->
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/app.css">
+  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="vendor/grapes.min.css">
+  <link rel="stylesheet" href="styles/m19-sites.css">
+  <link rel="stylesheet" href="styles/m19-studio.css">
+
+  <!-- Theme boot before first paint (light default per D-007) -->
+  <script>
+    (function(){try{var t=localStorage.getItem("aimindshare-theme");
+      document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light");}catch(e){}})();
+  </script>
+</head>
+<body>
+  <!-- Atmosphere (grid + orbs; stars are hidden in dark by app.css) -->
+  <div class="bg-canvas" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div id="starField"></div>
+  </div>
+
+  <!-- App shell (rail + topbar + content) is rendered here by the hash router -->
+  <div class="shell" id="app"></div>
+
+  <!-- Editor / page / domain sheets, modal + toast roots -->
+  <div id="sheetRoot"></div>
+  <div id="modalRoot"></div>
+  <div class="toast-wrap" id="toasts"></div>
+
+  <!-- System-wide AI Copilot (floating launcher + drawer, mounted once) -->
+  <div id="copilotRoot"></div>
+
+  <!-- Connect-a-project drawer (same contract as M00 / M01 / M09 / M11 / M12 / M14) -->
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" id="drawer" aria-label="Connect a Supabase project">
+    <h3>Connect a project</h3>
+    <p class="muted">Enter your Supabase project URL and public <b>anon</b> key to run M19 live
+      (read your sites and pages, publish, connect domains). Nothing secret touches the browser — only
+      the anon key is stored here (Law 3), in <span class="mono">localStorage</span> on this device.</p>
+    <div class="field">
+      <label class="label" for="inpUrl">Project URL</label>
+      <input id="inpUrl" placeholder="https://YOUR-PROJECT.supabase.co" spellcheck="false" autocomplete="off">
+    </div>
+    <div class="field">
+      <label class="label" for="inpAnon">Anon key</label>
+      <input id="inpAnon" placeholder="eyJhbGciOi…" spellcheck="false" autocomplete="off">
+      <span class="help">Public anon key only — never the service-role key.</span>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" id="saveCfg">Save &amp; connect</button>
+      <button class="btn btn-ghost" id="clearCfg">Clear</button>
+    </div>
+    <button class="btn btn-ghost btn-sm" id="closeDrawer" style="margin-top:18px">Close</button>
+  </aside>
+
+  <!-- Vendored libraries (no CDN, no build step): Supabase UMD · SortableJS · GrapeJS -->
+  <script src="vendor/supabase-js.min.js"></script>
+  <script src="vendor/sortable.min.js"></script>
+  <script src="vendor/grapes.min.js"></script>
+  <!-- Optional project config (copy config.example.js → config.js); fails soft if absent -->
+  <script src="config.js" onerror="void 0"></script>
+  <!-- GrapeJS editor init + custom blocks, then the module app -->
+  <script src="js/m19-editor.js"></script>
+  <script src="js/m19-sites.js"></script>
+</body>
+</html>

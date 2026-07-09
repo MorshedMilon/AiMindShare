@@ -1,0 +1,237 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   m00-auth.css — AiMindShare Module M00 · Auth & Identity component layer.
+   Depends on tokens.css + app.css. No raw hex (var() only); .5px hairlines;
+   radii from the token scale; numbers in --font-mono; glow/pulse not sweep anims;
+   three fonts only. Dark mode inherits app.css (no stars/dots).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Auth shell: vertically-centered card stage ──────────────────────────── */
+.auth-stage{
+  min-height:calc(100vh - 66px);display:flex;align-items:center;justify-content:center;
+  padding:40px 20px 64px;
+}
+.auth-card{
+  width:100%;max-width:452px;position:relative;
+  background:var(--glass-bg);backdrop-filter:blur(24px) saturate(1.5);
+  -webkit-backdrop-filter:blur(24px) saturate(1.5);
+  border:.5px solid var(--glass-border);border-radius:var(--r-2xl);
+  box-shadow:inset 0 1px 0 var(--glass-hi),0 18px 56px rgba(0,105,110,.12);
+  padding:38px 38px 32px;
+}
+:root[data-theme="dark"] .auth-card{box-shadow:inset 0 1px 0 var(--glass-hi),0 18px 56px rgba(0,0,0,.42)}
+.auth-card.wide{max-width:720px}
+
+/* Crest — the Islamic-inspired identity mark (eight-point seal via CSS) ───── */
+.auth-crest{
+  width:56px;height:56px;margin:0 auto 20px;border-radius:var(--r-lg);
+  background:var(--grad-ai);display:grid;place-items:center;color:#fff;font-size:24px;
+  box-shadow:var(--shadow-glow);position:relative;
+}
+.auth-crest::before{
+  content:'';position:absolute;inset:6px;border:1.2px solid rgba(255,255,255,.55);
+  border-radius:var(--r-md);transform:rotate(45deg);
+}
+.auth-crest span{position:relative;z-index:1;font-family:var(--font-serif);font-weight:600}
+
+.auth-head{text-align:center;margin-bottom:26px}
+.auth-head h1{font-size:clamp(25px,3.4vw,31px);letter-spacing:-.02em;line-height:1.08}
+.auth-head h1 em{
+  font-style:italic;font-weight:500;
+  background:linear-gradient(125deg,var(--teal-700) 0%,var(--teal-500) 42%,var(--gold-700) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+}
+:root[data-theme="dark"] .auth-head h1 em{
+  background:linear-gradient(125deg,var(--teal-300) 0%,var(--teal-500) 42%,var(--gold-400) 100%);
+  -webkit-background-clip:text;background-clip:text;
+}
+.auth-head p{margin-top:9px;font-size:14.5px;line-height:1.55;color:var(--ink-400);max-width:38ch;margin-inline:auto}
+
+/* ── Segmented tabs (Sign in / Create account) ───────────────────────────── */
+.seg{display:flex;gap:4px;padding:4px;border-radius:var(--r-md);background:rgba(0,105,110,.06);
+  border:.5px solid var(--line);margin-bottom:24px}
+.seg button{flex:1;height:38px;border:none;background:transparent;cursor:pointer;border-radius:var(--r-sm);
+  font-family:var(--font-sans);font-size:13.5px;font-weight:600;color:var(--ink-400);
+  transition:background .25s var(--ease-premium),color .25s var(--ease-premium),box-shadow .25s}
+.seg button[aria-selected="true"]{background:var(--card-solid);color:var(--teal-700);box-shadow:var(--shadow-sm)}
+:root[data-theme="dark"] .seg button[aria-selected="true"]{color:var(--teal-300)}
+
+/* ── OAuth + divider ─────────────────────────────────────────────────────── */
+.oauth-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:46px;
+  border-radius:var(--r-md);border:.5px solid var(--line-strong);background:var(--card-solid);
+  cursor:pointer;font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--ink-900);
+  transition:border-color .2s,transform .25s var(--ease-premium),box-shadow .25s}
+.oauth-btn:hover{border-color:var(--teal-500);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.oauth-btn svg{width:18px;height:18px;flex:none}
+.divider{display:flex;align-items:center;gap:14px;margin:22px 0;color:var(--ink-300);
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-family:var(--font-sans);font-weight:600}
+.divider::before,.divider::after{content:'';flex:1;height:.5px;background:var(--line)}
+
+/* ── Fields (auth-scoped — larger than the config drawer inputs) ──────────── */
+.auth-card .field{gap:7px;margin-bottom:15px}
+.auth-card .field label{font-size:11.5px;font-weight:600;text-transform:uppercase;
+  letter-spacing:var(--label-track);color:var(--ink-400)}
+.auth-card .field input{height:46px;padding:0 14px;background:var(--bg-card);
+  border:.5px solid var(--line-strong);border-radius:var(--r-md);
+  font-family:var(--font-sans);font-size:15px;color:var(--ink-900);width:100%;
+  transition:border-color .2s,box-shadow .2s}
+.auth-card .field input::placeholder{color:var(--ink-300)}
+.auth-card .field input:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px rgba(44,164,171,.15)}
+.auth-card .field input[aria-invalid="true"]{border-color:var(--status-danger);box-shadow:0 0 0 3px rgba(196,97,78,.13)}
+.auth-card .field.locked input{color:var(--ink-400);background:rgba(0,105,110,.04);cursor:not-allowed}
+.field-hint{font-size:11.5px;color:var(--ink-400);line-height:1.5}
+
+.input-wrap{position:relative}
+.input-wrap .peek{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;
+  border:none;background:transparent;cursor:pointer;color:var(--ink-300);display:grid;place-items:center;
+  font-size:14px;border-radius:var(--r-sm)}
+.input-wrap .peek:hover{color:var(--teal-700)}
+
+/* ── Password strength meter (segments, calm color fill only) ────────────── */
+.pw-meter{display:flex;gap:5px;margin-top:9px}
+.pw-meter i{flex:1;height:4px;border-radius:var(--r-pill);background:var(--line-strong);
+  transition:background .3s var(--ease-premium)}
+.pw-meter[data-score="1"] i:nth-child(-n+1),
+.pw-meter[data-score="2"] i:nth-child(-n+2),
+.pw-meter[data-score="3"] i:nth-child(-n+3),
+.pw-meter[data-score="4"] i:nth-child(-n+4){background:var(--status-danger)}
+.pw-meter[data-score="2"] i:nth-child(-n+2){background:var(--status-warning)}
+.pw-meter[data-score="3"] i:nth-child(-n+3){background:var(--gold-500)}
+.pw-meter[data-score="4"] i{background:var(--status-success)}
+.pw-note{margin-top:7px;font-size:11.5px;color:var(--ink-400)}
+.pw-note b{font-family:var(--font-mono);font-weight:500}
+
+/* ── Rows: remember / terms ──────────────────────────────────────────────── */
+.check-row{display:flex;align-items:flex-start;gap:10px;margin:6px 0 4px;font-size:13px;color:var(--ink-500);line-height:1.5}
+.check-row input{width:17px;height:17px;margin-top:1px;accent-color:var(--teal-600);flex:none;cursor:pointer}
+.check-row a{color:var(--teal-700);border-bottom:.5px solid transparent}
+:root[data-theme="dark"] .check-row a{color:var(--teal-300)}
+.check-row a:hover{border-bottom-color:currentColor}
+.row-between{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.link{color:var(--teal-700);font-size:13px;font-weight:600;cursor:pointer;background:none;border:none;
+  font-family:var(--font-sans);padding:0}
+:root[data-theme="dark"] .link{color:var(--teal-300)}
+.link:hover{text-decoration:underline}
+
+/* ── Buttons: full-width submit ──────────────────────────────────────────── */
+.btn-block{width:100%;height:48px;font-size:14.5px;border-radius:var(--r-md);margin-top:6px}
+.btn .spin{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.4);
+  border-top-color:#fff;animation:aiSpin .7s linear infinite}
+@keyframes aiSpin{to{transform:rotate(360deg)}}
+.btn[data-busy="true"]{pointer-events:none;opacity:.85}
+
+/* ── Inline messages (error / success / info states) ─────────────────────── */
+.inline-msg{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:var(--r-md);
+  font-size:13px;line-height:1.5;margin-bottom:16px;border:.5px solid transparent}
+.inline-msg .im-ico{font-size:15px;line-height:1.3;flex:none}
+.inline-msg.error{color:var(--status-danger);background:rgba(196,97,78,.10);border-color:rgba(196,97,78,.28)}
+.inline-msg.success{color:var(--status-success);background:rgba(46,158,123,.10);border-color:rgba(46,158,123,.28)}
+.inline-msg.info{color:var(--ink-700);background:rgba(44,164,171,.08);border-color:rgba(44,164,171,.24)}
+.inline-msg.gold{color:var(--ink-700);background:linear-gradient(145deg,rgba(197,160,89,.12),rgba(0,105,110,.04));
+  border-color:rgba(197,160,89,.32)}
+
+.auth-foot{text-align:center;margin-top:22px;font-size:13px;color:var(--ink-400)}
+.auth-foot .link{font-size:13px}
+
+/* ── OTP / 2FA code input ─────────────────────────────────────────────────── */
+.otp-group{display:flex;gap:9px;justify-content:center;margin:6px 0 4px}
+.otp-group input{width:48px;height:58px;text-align:center;font-family:var(--font-mono);font-size:24px;
+  font-weight:500;color:var(--ink-900);background:var(--bg-card);border:.5px solid var(--line-strong);
+  border-radius:var(--r-md);transition:border-color .2s,box-shadow .2s}
+.otp-group input:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px rgba(44,164,171,.15)}
+@media(max-width:420px){.otp-group input{width:40px;height:50px;font-size:20px}}
+
+/* ── 2FA QR enrolment panel ──────────────────────────────────────────────── */
+.qr-panel{display:flex;gap:20px;align-items:center;padding:18px;border-radius:var(--r-lg);
+  background:rgba(0,105,110,.05);border:.5px solid var(--line);margin-bottom:18px}
+.qr-box{width:132px;height:132px;flex:none;border-radius:var(--r-md);background:var(--card-solid);
+  border:.5px solid var(--line-strong);display:grid;place-items:center;padding:8px}
+.qr-box img,.qr-box svg{width:100%;height:100%}
+.qr-side .field-hint{margin-bottom:8px}
+.qr-secret{font-family:var(--font-mono);font-size:12.5px;letter-spacing:.06em;color:var(--ink-700);
+  background:var(--bg-card);border:.5px solid var(--line);border-radius:var(--r-sm);padding:8px 10px;
+  word-break:break-all;user-select:all}
+@media(max-width:480px){.qr-panel{flex-direction:column;text-align:center}}
+
+/* ── Backup codes grid ───────────────────────────────────────────────────── */
+.backup-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}
+.backup-grid code{font-family:var(--font-mono);font-size:14px;letter-spacing:.08em;color:var(--ink-900);
+  background:var(--bg-card);border:.5px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;text-align:center}
+
+/* ── Settings layout (security / profile) ────────────────────────────────── */
+.settings-wrap{max-width:820px;margin:0 auto}
+.settings-grid{display:flex;flex-direction:column;gap:18px}
+.set-card{padding:24px 26px}
+.set-card .sc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.set-card h3{font-size:17px;margin-bottom:4px}
+.set-card .sc-sub{font-size:13px;color:var(--ink-400);line-height:1.5;max-width:52ch}
+.set-card .sc-body{margin-top:6px}
+
+/* Avatar */
+.avatar{width:64px;height:64px;border-radius:50%;flex:none;display:grid;place-items:center;overflow:hidden;
+  background:var(--grad-brand);color:#fff;font-family:var(--font-serif);font-size:24px;font-weight:600;
+  box-shadow:var(--shadow-glow)}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.avatar-row{display:flex;align-items:center;gap:18px;margin-bottom:20px}
+
+/* Sessions list */
+.sess-list{display:flex;flex-direction:column}
+.sess-row{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:14px;
+  padding:15px 4px;border-top:.5px solid var(--line)}
+.sess-row:first-child{border-top:none}
+.sess-ico{width:38px;height:38px;border-radius:var(--r-sm);background:rgba(0,105,110,.08);
+  display:grid;place-items:center;color:var(--teal-700);font-size:17px}
+.sess-meta b{font-family:var(--font-serif);font-size:15px;font-weight:600;color:var(--ink-900)}
+.sess-meta small{display:block;font-family:var(--font-mono);font-size:11.5px;color:var(--ink-400);margin-top:2px}
+
+/* Empty state (calm, token-based) */
+.empty-state{text-align:center;padding:34px 20px;color:var(--ink-400)}
+.empty-state .es-ico{font-size:26px;opacity:.6;margin-bottom:10px}
+.empty-state p{font-size:13.5px;line-height:1.6;max-width:40ch;margin-inline:auto}
+
+/* Loading skeleton block (pulse only) */
+.load-block{height:58px;border-radius:var(--r-md);background:var(--bg-card);
+  animation:pulse 1.6s ease-in-out infinite;margin-bottom:10px}
+
+/* ── Screen gallery (mockup overview / route #/) ─────────────────────────── */
+.gallery-head{max-width:640px}
+.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px}
+.g-card{display:flex;flex-direction:column;gap:12px;padding:20px;cursor:pointer;text-align:left;
+  transition:transform .35s var(--ease-reverent),box-shadow .35s var(--ease-reverent),border-color .35s var(--ease-reverent)}
+.g-card:hover{transform:translateY(-4px);border-color:rgba(26,154,161,.42);box-shadow:0 16px 40px rgba(0,105,110,.16)}
+.g-top{display:flex;align-items:center;gap:11px}
+.g-ico{width:36px;height:36px;border-radius:var(--r-sm);background:rgba(0,105,110,.10);display:grid;
+  place-items:center;color:var(--teal-700);font-size:16px}
+.g-card h3{font-size:15.5px}
+.g-card p{font-size:12.5px;color:var(--ink-400);line-height:1.5}
+.g-route{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.05em;color:var(--ink-300);margin-top:auto}
+.g-states{display:flex;gap:5px;flex-wrap:wrap}
+@media(max-width:820px){.gallery{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.gallery{grid-template-columns:1fr}}
+
+/* Back link on flow pages */
+.flow-back{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:11.5px;
+  letter-spacing:.04em;color:var(--ink-400);cursor:pointer;background:none;border:none;margin-bottom:18px}
+.flow-back:hover{color:var(--teal-700)}
+
+/* Connection notice (mockup mode banner) */
+.mock-note{max-width:452px;margin:0 auto 18px}
+
+/* ── Typographic balance (D-018) — auth-specific bits ────────────────────────
+   The global refinement (uppercase labels 10px, KPI numbers 22px) now lives in
+   app.css / tokens per D-018 (adopted standard). These rules only tune the
+   M00-specific components not present in the base library. */
+.auth-card .field label{font-size:10px;letter-spacing:.1em}     /* eased from 11.5px/.16em */
+.divider{font-size:10px;letter-spacing:.12em}                   /* eased from 11px/.14em */
+.otp-group input{height:52px;font-size:20px}                    /* eased from 58px/24px */
+@media(max-width:420px){.otp-group input{height:46px;font-size:18px}}
+
+/* ── Responsive: keep the topbar row inside narrow viewports ─────────────── */
+@media(max-width:560px){
+  .topbar{padding:12px 16px;gap:10px}
+  #connPill{display:none}          /* Connect button + drawer already convey status */
+  .gallery-head p{font-size:14.5px}
+}
+@media(max-width:420px){
+  .auth-card{padding:30px 22px 26px}
+  .backup-grid{grid-template-columns:1fr}
+}

@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AiMindShare — AI Business Operating System</title>
+  <meta name="description" content="AiMindShare is an all-in-one AI Business Operating System — CRM, website & funnel builder, SEO, email, content, automation, payments and AI agents in one connected platform. Replace a dozen SaaS tools with one.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Shippori+Mincho:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/app.css">
+  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="styles/platform.css">
+
+  <script>(function(){try{var t=localStorage.getItem("aimindshare-theme");
+    document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light");}catch(e){}})();</script>
+</head>
+<body>
+  <div class="bg-canvas" aria-hidden="true">
+    <div class="bg-grid"></div><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div><div id="starField"></div>
+  </div>
+
+  <div class="shell">
+    <!-- ══ Global sidebar — master navigation for the whole ecosystem ══ -->
+    <aside class="rail" id="rail">
+      <div class="brand"><span class="mark">✦</span><span><b>AiMind</b><em>Share</em></span></div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Overview</div>
+        <a class="nav-item active" href="#overview"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z"/></svg></span><span>Dashboard</span></a>
+        <a class="nav-item" href="#ai"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg></span><span>AI Command Center</span></a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">CRM &amp; Sales</div>
+        <a class="nav-item" href="m09-crm.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 1 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg></span><span>CRM</span></a>
+        <a class="nav-item" href="m11-pipeline.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h4v16H3zM10 4h4v10h-4zM17 4h4v13h-4z"/></svg></span><span>Sales Pipeline</span></a>
+        <a class="nav-item" href="m09-crm.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9"/></svg></span><span>Contacts</span></a>
+        <a class="nav-item" href="m15-forms-and-surveys.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20M12 2v20M2 12h10"/></svg></span><span>Lead Generation</span></a>
+        <a class="nav-item" href="m14-calendar-and-booking.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v18H3zM3 9h18M8 2v4M16 2v4"/></svg></span><span>Booking &amp; Appointments</span></a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Marketing</div>
+        <a class="nav-item" href="m13-automations.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM18 16a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM6 8v4a2 2 0 0 0 2 2h8"/></svg></span><span>Marketing Automation</span></a>
+        <a class="nav-item" href="m20-funnels.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg></span><span>Funnels</span></a>
+        <a class="nav-item" href="m16-campaigns.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 7l8 6 8-6"/></svg></span><span>Email Marketing</span></a>
+        <a class="nav-item" href="#modules"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></span><span>Social Media</span></a>
+        <a class="nav-item" href="m15-forms-and-surveys.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM9 8h6M9 12h6M9 16h4"/></svg></span><span>Forms &amp; Surveys</span></a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Sites &amp; Content</div>
+        <a class="nav-item" href="m19-app.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg></span><span>AI Website Builder</span></a>
+        <a class="nav-item" href="m19-app.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v6H3zM3 14h18v6H3z"/></svg></span><span>Landing Pages</span></a>
+        <a class="nav-item" href="m22-manual-content-cms.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h5"/></svg></span><span>AutoBlog Builder</span></a>
+        <a class="nav-item" href="m22-manual-content-cms.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H4zM8 20h8M12 16v4"/></svg></span><span>Content Studio</span></a>
+        <a class="nav-item" href="#ai"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span><span>AI Writer</span></a>
+        <a class="nav-item" href="m21-seo-engine.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"/></svg></span><span>SEO Suite &amp; Ranker</span></a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Commerce &amp; Finance</div>
+        <a class="nav-item" href="#modules"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12zM6 6L5 3H2M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM18 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg></span><span>E-Commerce</span></a>
+        <a class="nav-item" href="m28-payments-and-invoicing.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h20v10H2zM2 11h20M6 15h3"/></svg></span><span>Finance &amp; Invoicing</span></a>
+        <a class="nav-item" href="#modules"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM19 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 8v3M12 11l-5 5M12 11l5 5"/></svg></span><span>Affiliate Hub</span><span class="ni-new"></span></a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">AI &amp; Automation</div>
+        <a class="nav-item" href="#agents"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v3M7 8h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2zM9 13h.01M15 13h.01"/></svg></span><span>AI Agents</span></a>
+        <a class="nav-item" href="#modules"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.18 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.9.36 1.78.7 2.61a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.83.34 1.71.57 2.61.7A2 2 0 0 1 22 16.92z"/></svg></span><span>AI Voice Calls</span><span class="ni-new"></span></a>
+        <a class="nav-item" href="m13-automations.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM18 16a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM6 8v4a2 2 0 0 0 2 2h8"/></svg></span><span>Workflow Automation</span></a>
+        <a class="nav-item" href="#integrations"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/></svg></span><span>Integrations</span></a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Support &amp; Team</div>
+        <a class="nav-item" href="m12-inbox.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span>Customer Support</span></a>
+        <a class="nav-item" href="m12-inbox.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10h8M8 14h5M4 4h16v12H8l-4 4z"/></svg></span><span>Live Chat</span></a>
+        <a class="nav-item" href="m02-roles-and-permissions.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9"/></svg></span><span>Team Collaboration</span></a>
+        <a class="nav-item" href="#modules"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2zM8 4v14"/></svg></span><span>Knowledge Base</span></a>
+        <a class="nav-item" href="m06-media-library.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h6l2 2h10v10H3z"/></svg></span><span>File Manager</span></a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Insights &amp; Admin</div>
+        <a class="nav-item" href="m08-dashboard.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M8 14v4M13 10v8M18 6v12"/></svg></span><span>Analytics</span></a>
+        <a class="nav-item" href="#modules"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16l-1 5H5zM5 9v11h14V9M9 13h6"/></svg></span><span>Marketplace</span></a>
+        <a class="nav-item" href="m44-admin-platform-ops.html"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg></span><span>Admin</span></a>
+        <a class="nav-item" href="#modules"><span class="ni-ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span><span>Settings</span></a>
+      </div>
+
+      <div class="rail-foot">AiMindShare · v1.0</div>
+    </aside>
+
+    <!-- ══ Topbar ══ -->
+    <header class="tbar">
+      <button class="icon-btn rail-burger" id="railBurger" aria-label="Menu">☰</button>
+      <div class="ws-trigger">
+        <span class="ws-badge">AM</span>
+        <span class="ws-meta" style="display:flex;flex-direction:column;line-height:1.15">
+          <span class="ws-name">AiMindShare</span><span class="ws-kind">Platform</span></span>
+      </div>
+      <div class="tb-search"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"/></svg><span class="tbs-label">Search the platform…</span><span class="kbd">⌘K</span></div>
+      <div class="spacer"></div>
+      <span class="pill info tb-credits" title="Shared AI credits across every module"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>2,450 credits</span>
+      <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme"><span id="themeIco">☾</span></button>
+      <a class="btn btn-primary btn-sm tb-cta" href="m19-app.html">Launch app</a>
+      <span class="avatar" title="AiMindShare">AM</span>
+    </header>
+
+    <!-- ══ Main content ══ -->
+    <main class="content">
+      <div class="content-inner">
+        <div class="hub">
+
+          <!-- Hero -->
+          <section class="hub-section hub-hero r in" id="overview">
+            <div class="hub-hero-l">
+              <span class="hero-eyebrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg> AI Business Operating System</span>
+              <h1>Run your <em>entire business</em> from one AI platform</h1>
+              <p>CRM, websites, funnels, SEO, content, email, automation, payments and AI agents — AiMindShare replaces a dozen disconnected SaaS tools with one connected, AI-native operating system.</p>
+              <div class="hero-actions">
+                <a class="btn btn-primary" href="m08-dashboard.html"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z"/></svg> Launch dashboard</a>
+                <a class="btn btn-ghost" href="#modules">Explore all modules</a>
+              </div>
+              <div class="hero-trust"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> Replaces GoHighLevel, HubSpot, ClickFunnels, Notion &amp; Zapier — in one</div>
+            </div>
+            <div class="hero-launch">
+              <div class="hl-label">Jump back in</div>
+              <a class="hl-item" href="m19-app.html"><span class="hl-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg></span><span class="hl-t"><b>AI Website Builder</b><span>Generate &amp; publish sites</span></span><span class="hl-go"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></a>
+              <a class="hl-item" href="m09-crm.html"><span class="hl-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 1 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg></span><span class="hl-t"><b>CRM &amp; Pipeline</b><span>Contacts, deals &amp; tasks</span></span><span class="hl-go"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></a>
+              <a class="hl-item" href="#ai"><span class="hl-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg></span><span class="hl-t"><b>AI Command Center</b><span>Generate &amp; automate anything</span></span><span class="hl-go"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></a>
+              <a class="hl-item" href="m13-automations.html"><span class="hl-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM18 16a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM6 8v4a2 2 0 0 0 2 2h8"/></svg></span><span class="hl-t"><b>Automation</b><span>Workflows on autopilot</span></span><span class="hl-go"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></a>
+            </div>
+          </section>
+
+          <!-- Stat ribbon -->
+          <section class="hub-stats r">
+            <div class="hub-stat"><div class="hs-val">34</div><div class="hs-lab">Modules, one platform</div></div>
+            <div class="hub-stat"><div class="hs-val">12<span class="u">+</span></div><div class="hs-lab">SaaS tools replaced</div></div>
+            <div class="hub-stat"><div class="hs-val">100<span class="u">%</span></div><div class="hs-lab">AI-native</div></div>
+            <div class="hub-stat"><div class="hs-val">99.9<span class="u">%</span></div><div class="hs-lab">Uptime</div></div>
+          </section>
+
+          <!-- Everything you can build -->
+          <section class="hub-section" id="build">
+            <div class="hub-sec-head"><div class="hsh-l"><span class="hsh-eyebrow">Everything you can build</span><h2>One platform to <em>build, automate &amp; grow</em></h2>
+              <p>Whatever your business needs to run and scale — it already lives inside AiMindShare.</p></div></div>
+            <div class="build-grid">
+              <div class="build-item r r-1"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20"/></svg></span><span><b>Websites &amp; funnels</b><span>Sites, landing pages, funnels</span></span></div>
+              <div class="build-item r r-2"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 1 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg></span><span><b>A full CRM</b><span>Contacts, deals, pipeline</span></span></div>
+              <div class="build-item r r-3"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 7l8 6 8-6"/></svg></span><span><b>Email &amp; SMS</b><span>Campaigns &amp; broadcasts</span></span></div>
+              <div class="build-item r r-4"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM18 16a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM6 8v4a2 2 0 0 0 2 2h8"/></svg></span><span><b>Automations</b><span>Trigger-based workflows</span></span></div>
+              <div class="build-item r r-1"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v18H3zM3 9h18M8 2v4M16 2v4"/></svg></span><span><b>Online booking</b><span>Appointments &amp; reminders</span></span></div>
+              <div class="build-item r r-2"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h20v10H2zM2 11h20"/></svg></span><span><b>Payments</b><span>Checkout &amp; invoices</span></span></div>
+              <div class="build-item r r-3"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"/></svg></span><span><b>SEO &amp; content</b><span>Rank &amp; publish faster</span></span></div>
+              <div class="build-item r r-4"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v3M7 8h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z"/></svg></span><span><b>AI agents</b><span>Sell, support &amp; create</span></span></div>
+            </div>
+          </section>
+
+          <div class="hub-divider"></div>
+
+          <!-- Core modules showcase -->
+          <section class="hub-section" id="modules">
+            <div class="hub-sec-head">
+              <div class="hsh-l"><span class="hsh-eyebrow">Core platform modules</span><h2>Every tool your business needs, <em>connected</em></h2>
+                <p>Each module is a full product area — launch it instantly, and it shares one login, design system and data layer with the rest.</p></div>
+              <span class="hsh-count">34 modules</span>
+            </div>
+            <div class="msc-grid">
+
+              <article class="msc neo a-ai r r-1"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.18 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.9.36 1.78.7 2.61a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.83.34 1.71.57 2.61.7A2 2 0 0 1 22 16.92z"/></svg></span><span class="msc-top-r"><span class="msc-code">M50</span><span class="mod-status neo">New</span></span></div><h3>AI Voice Calls</h3><p class="msc-desc">Human-like AI voice agents that call, qualify and book your leads in a natural conversation.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Natural, human-like AI voice</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Inbound &amp; outbound calling</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Live transcripts synced to CRM</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="#cta">Get early access</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc neo a-mix r r-2"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM19 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 8v3M12 11l-5 5M12 11l5 5"/></svg></span><span class="msc-top-r"><span class="msc-code">M51</span><span class="mod-status neo">New</span></span></div><h3>Affiliate Hub</h3><p class="msc-desc">Launch a partner &amp; affiliate program with referral links, real-time tracking and automated payouts.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Referral links &amp; codes</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Real-time commission tracking</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Automated partner payouts</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="#cta">Get early access</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc a-ai r r-1"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg></span><span class="msc-top-r"><span class="msc-code">M19</span><span class="mod-status live">Live</span></span></div><h3>AI Website Builder</h3><p class="msc-desc">Generate, visually edit and publish SEO-ready sites and landing pages.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> AI generation from a prompt</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Drag-and-drop visual editor</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Custom domains + auto-SSL</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="m19-app.html">Launch</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc r r-2"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 1 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg></span><span class="msc-top-r"><span class="msc-code">M09</span><span class="mod-status live">Live</span></span></div><h3>CRM</h3><p class="msc-desc">Contacts, companies and a unified activity timeline for every relationship.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 360° contact profiles</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Smart lists &amp; segments</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Full activity timeline</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="m09-crm.html">Launch</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc r r-3"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h4v16H3zM10 4h4v10h-4zM17 4h4v13h-4z"/></svg></span><span class="msc-top-r"><span class="msc-code">M11</span><span class="mod-status live">Live</span></span></div><h3>Sales Pipeline</h3><p class="msc-desc">Track deals across drag-and-drop stages with forecasting.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Kanban deal stages</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Win/loss forecasting</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Task reminders</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="m11-pipeline.html">Launch</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc r r-1"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg></span><span class="msc-top-r"><span class="msc-code">M20</span><span class="mod-status live">Live</span></span></div><h3>Funnels</h3><p class="msc-desc">Multi-step funnels with A/B testing and per-step conversion analytics.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Visual funnel map</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> A/B split tests</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Conversion analytics</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="m20-funnels.html">Launch</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc r r-2"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 7l8 6 8-6"/></svg></span><span class="msc-top-r"><span class="msc-code">M16</span><span class="mod-status live">Live</span></span></div><h3>Email &amp; SMS Marketing</h3><p class="msc-desc">Campaigns with AI copy, segments and delivery tracking.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> AI campaign writer</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Email + SMS in one</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Open &amp; click tracking</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="m16-campaigns.html">Launch</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc r r-3"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM18 16a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM6 8v4a2 2 0 0 0 2 2h8"/></svg></span><span class="msc-top-r"><span class="msc-code">M13</span><span class="mod-status live">Live</span></span></div><h3>Marketing Automation</h3><p class="msc-desc">Visual, trigger-based workflows that run your marketing on autopilot.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Drag-and-drop builder</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 40+ triggers &amp; actions</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Multi-branch logic</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="m13-automations.html">Launch</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc r r-1"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"/></svg></span><span class="msc-top-r"><span class="msc-code">M21</span><span class="mod-status live">Live</span></span></div><h3>SEO Suite &amp; Ranker</h3><p class="msc-desc">Keyword research, SERP tracking and content gap analysis.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Keyword explorer</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> SERP rank tracking</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Content gap finder</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="m21-seo-engine.html">Launch</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc r r-2"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h5"/></svg></span><span class="msc-top-r"><span class="msc-code">M22</span><span class="mod-status live">Live</span></span></div><h3>Content &amp; Blog</h3><p class="msc-desc">A structured CMS and blog with AI drafting and scheduling.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Structured content model</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> AI drafting</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> RSS + scheduling</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="m22-manual-content-cms.html">Launch</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc r r-3"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v18H3zM3 9h18M8 2v4M16 2v4"/></svg></span><span class="msc-top-r"><span class="msc-code">M14</span><span class="mod-status live">Live</span></span></div><h3>Booking &amp; Appointments</h3><p class="msc-desc">Online scheduling, reminders and calendar sync.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Public booking pages</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Automatic reminders</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Google Calendar sync</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="m14-calendar-and-booking.html">Launch</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc r r-1"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM9 8h6M9 12h6M9 16h4"/></svg></span><span class="msc-top-r"><span class="msc-code">M15</span><span class="mod-status live">Live</span></span></div><h3>Forms &amp; Surveys</h3><p class="msc-desc">Build forms and surveys that feed straight into your CRM.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Drag-and-drop forms</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Conditional logic</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Direct CRM lead capture</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="m15-forms-and-surveys.html">Launch</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc a-mix r r-2"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="msc-top-r"><span class="msc-code">M12</span><span class="mod-status beta">Beta</span></span></div><h3>Customer Support</h3><p class="msc-desc">A unified inbox for email, SMS and live chat conversations.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Omnichannel inbox</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Assignment &amp; SLAs</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Canned &amp; AI replies</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="m12-inbox.html">Launch</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc r r-3"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h20v10H2zM2 11h20M6 15h3"/></svg></span><span class="msc-top-r"><span class="msc-code">M28</span><span class="mod-status live">Live</span></span></div><h3>Finance &amp; Invoicing</h3><p class="msc-desc">Checkout, invoices and receipts with payment tracking.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Hosted checkout</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Invoices &amp; receipts</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Payment tracking</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="m28-payments-and-invoicing.html">Launch</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc r r-1"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h6l2 2h10v10H3z"/></svg></span><span class="msc-top-r"><span class="msc-code">M06</span><span class="mod-status live">Live</span></span></div><h3>File Manager</h3><p class="msc-desc">A shared media and asset library across every module.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Centralized assets</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Image optimization</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> AI auto-tagging</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="m06-media-library.html">Launch</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc a-mix r r-2"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M8 14v4M13 10v8M18 6v12"/></svg></span><span class="msc-top-r"><span class="msc-code">M08</span><span class="mod-status live">Live</span></span></div><h3>Analytics</h3><p class="msc-desc">KPIs, reports and dashboards across your whole workspace.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Cross-module KPIs</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Custom dashboards</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Scheduled reports</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="m08-dashboard.html">Launch</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc a-ai r r-3"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v3M7 8h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2zM9 13h.01M15 13h.01"/></svg></span><span class="msc-top-r"><span class="msc-code">AI</span><span class="mod-status soon">Soon</span></span></div><h3>AI Agents</h3><p class="msc-desc">Autonomous AI agents that sell, support and create for you.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Sales &amp; support agents</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Tool + data access</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Human handoff</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="#agents">Preview</a><a class="btn btn-ghost btn-sm" href="#cta">Get notified</a></div></article>
+
+              <article class="msc a-ai r r-1"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span><span class="msc-top-r"><span class="msc-code">AI</span><span class="mod-status beta">Beta</span></span></div><h3>AI Writer</h3><p class="msc-desc">On-brand long-form and short-form content in seconds.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Brand voice profiles</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 50+ content templates</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Multi-language output</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="#ai">Open</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+              <article class="msc r r-2"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/></svg></span><span class="msc-top-r"><span class="msc-code">M41</span><span class="mod-status live">Live</span></span></div><h3>Integrations</h3><p class="msc-desc">Connect the tools you already use with a secure credential vault.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Encrypted vault</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> OAuth connectors</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Webhooks &amp; API</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="#integrations">Explore</a><a class="btn btn-ghost btn-sm" href="m41-credential-vault.html">Manage</a></div></article>
+
+              <article class="msc a-gold r r-3"><div class="msc-top"><span class="msc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span><span class="msc-top-r"><span class="msc-code">M44</span><span class="mod-status live">Live</span></span></div><h3>Admin &amp; Ops</h3><p class="msc-desc">Platform operations, roles and workspace controls.</p><ul class="msc-feats"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Roles &amp; permissions</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Audit logs</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Usage &amp; billing</li></ul><div class="msc-actions"><a class="btn btn-primary btn-sm" href="m44-admin-platform-ops.html">Launch</a><a class="btn btn-ghost btn-sm" href="m19-landing.html">Learn more</a></div></article>
+
+            </div>
+          </section>
+
+          <div class="hub-divider"></div>
+
+          <!-- AI Command Center -->
+          <section class="hub-section" id="ai">
+            <div class="hub-sec-head"><div class="hsh-l"><span class="hsh-eyebrow">AI Command Center</span><h2>AI woven through <em>every</em> module</h2>
+              <p>One shared AI layer and one credit pool power generation, insight and automation across the whole platform — not a bolt-on chatbot.</p></div></div>
+            <div class="cap-grid">
+              <article class="cap r r-1"><div class="cap-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg></div><h3>Generate anything</h3><p>Sites, emails, posts, funnels and workflows — from a single natural-language prompt.</p></article>
+              <article class="cap r r-2"><div class="cap-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"/></svg></div><h3>AI SEO &amp; schema</h3><p>Automatic titles, meta, JSON-LD and internal links on every page you publish.</p></article>
+              <article class="cap r r-3"><div class="cap-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></div><h3>AI Writer &amp; brand voice</h3><p>On-brand copy that stays consistent across content, campaigns and pages.</p></article>
+              <article class="cap r r-4"><div class="cap-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M8 14v4M13 10v8M18 6v12"/></svg></div><h3>AI insights &amp; forecasts</h3><p>Surface what's working and predict what's next across your whole business.</p></article>
+            </div>
+          </section>
+
+          <!-- AI Agents -->
+          <section class="hub-section" id="agents">
+            <div class="hub-sec-head"><div class="hsh-l"><span class="hsh-eyebrow">Featured AI agents</span><h2>A team of AI <em>agents</em> that never sleeps</h2>
+              <p>Autonomous agents that plug into your data and tools to sell, support and create — with human handoff whenever you want it.</p></div><span class="hsh-count">Preview</span></div>
+            <div class="agent-grid">
+              <article class="agent r r-1"><div class="agent-ava">A</div><h3>Aria</h3><div class="role">Sales SDR</div><p>Qualifies leads, books meetings and follows up 24/7 — straight into your pipeline.</p></article>
+              <article class="agent r r-2"><div class="agent-ava" style="background:linear-gradient(135deg,var(--teal-500),var(--gold-500))">M</div><h3>Max</h3><div class="role">Support Agent</div><p>Answers customers instantly from your knowledge base and escalates to your team.</p></article>
+              <article class="agent r r-3"><div class="agent-ava" style="background:var(--grad-gold);color:var(--teal-950)">N</div><h3>Nova</h3><div class="role">Content Writer</div><p>Drafts blogs, emails and social posts in your brand voice, ready to schedule.</p></article>
+              <article class="agent r r-4"><div class="agent-ava" style="background:var(--grad-brand)">L</div><h3>Leo</h3><div class="role">SEO Analyst</div><p>Finds keywords, tracks rankings and suggests the fixes that move the needle.</p></article>
+            </div>
+          </section>
+
+          <div class="hub-divider"></div>
+
+          <!-- Automation -->
+          <section class="hub-section" id="automation">
+            <div class="hub-sec-head"><div class="hsh-l"><span class="hsh-eyebrow">Automation</span><h2>Connect every module into <em>one workflow</em></h2>
+              <p>Because everything shares one data layer, a trigger in any module can drive actions in any other — no brittle third-party glue.</p></div></div>
+            <div class="flow-grid">
+              <div class="flow r r-1"><h3>New lead → nurtured</h3><div class="flow-steps">
+                <div class="flow-step trigger"><span class="fs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg></span><span class="fs-t"><span>Trigger</span>Form submitted</span></div>
+                <div class="flow-conn"></div>
+                <div class="flow-step"><span class="fs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="fs-t"><span>Action</span>Add contact to CRM</span></div>
+                <div class="flow-conn"></div>
+                <div class="flow-step"><span class="fs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 7l8 6 8-6"/></svg></span><span class="fs-t"><span>Action</span>Send welcome email</span></div>
+                <div class="flow-conn"></div>
+                <div class="flow-step"><span class="fs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/></svg></span><span class="fs-t"><span>Action</span>Notify sales rep</span></div>
+              </div></div>
+              <div class="flow r r-2"><h3>Booking → follow-up</h3><div class="flow-steps">
+                <div class="flow-step trigger"><span class="fs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v18H3zM8 2v4M16 2v4M3 9h18"/></svg></span><span class="fs-t"><span>Trigger</span>Appointment booked</span></div>
+                <div class="flow-conn"></div>
+                <div class="flow-step"><span class="fs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9"/></svg></span><span class="fs-t"><span>Action</span>Send SMS reminder</span></div>
+                <div class="flow-conn"></div>
+                <div class="flow-step"><span class="fs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h20v10H2zM2 11h20"/></svg></span><span class="fs-t"><span>Action</span>Create invoice</span></div>
+                <div class="flow-conn"></div>
+                <div class="flow-step"><span class="fs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="fs-t"><span>Action</span>Log to timeline</span></div>
+              </div></div>
+              <div class="flow r r-3"><h3>Abandoned cart → recovered</h3><div class="flow-steps">
+                <div class="flow-step trigger"><span class="fs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12zM6 6L5 3H2"/></svg></span><span class="fs-t"><span>Trigger</span>Checkout abandoned</span></div>
+                <div class="flow-conn"></div>
+                <div class="flow-step"><span class="fs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9"/></svg></span><span class="fs-t"><span>Delay</span>Wait 1 hour</span></div>
+                <div class="flow-conn"></div>
+                <div class="flow-step"><span class="fs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 7l8 6 8-6"/></svg></span><span class="fs-t"><span>Action</span>Send SMS + email</span></div>
+                <div class="flow-conn"></div>
+                <div class="flow-step"><span class="fs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg></span><span class="fs-t"><span>AI</span>Personalize offer</span></div>
+              </div></div>
+            </div>
+          </section>
+
+          <!-- Integrations -->
+          <section class="hub-section" id="integrations">
+            <div class="hub-sec-head"><div class="hsh-l"><span class="hsh-eyebrow">Integrations</span><h2>Plays well with your <em>existing stack</em></h2>
+              <p>Connect payments, calendars, messaging and more — or build your own with webhooks and our API.</p></div></div>
+            <div class="integ-grid">
+              <div class="integ r"><span class="ig-mono">S</span><span>Stripe</span></div>
+              <div class="integ r"><span class="ig-mono">G</span><span>Google</span></div>
+              <div class="integ r"><span class="ig-mono">M</span><span>Meta</span></div>
+              <div class="integ r"><span class="ig-mono">T</span><span>Twilio</span></div>
+              <div class="integ r"><span class="ig-mono">Sl</span><span>Slack</span></div>
+              <div class="integ r"><span class="ig-mono">Z</span><span>Zapier</span></div>
+              <div class="integ r"><span class="ig-mono">Sh</span><span>Shopify</span></div>
+              <div class="integ r"><span class="ig-mono">W</span><span>WhatsApp</span></div>
+              <div class="integ r"><span class="ig-mono">SG</span><span>SendGrid</span></div>
+              <div class="integ r"><span class="ig-mono">GC</span><span>Calendar</span></div>
+              <div class="integ r"><span class="ig-mono">AI</span><span>OpenAI</span></div>
+              <div class="integ r"><span class="ig-mono">&lt;/&gt;</span><span>Webhooks</span></div>
+            </div>
+          </section>
+
+          <div class="hub-divider"></div>
+
+          <!-- Comparison -->
+          <section class="hub-section" id="compare">
+            <div class="hub-sec-head"><div class="hsh-l"><span class="hsh-eyebrow">How we compare</span><h2>One platform vs. <em>a dozen subscriptions</em></h2>
+              <p>Match AiMindShare against the tools it replaces — and stop paying for and stitching together five different products.</p></div></div>
+            <div class="cmp-wrap r">
+              <table class="cmp">
+                <thead><tr><th>Capability</th><th class="col-us">AiMindShare</th><th>GoHighLevel</th><th>HubSpot</th><th>ClickFunnels</th><th>Notion</th><th>Zapier</th></tr></thead>
+                <tbody>
+                  <tr><th>AI website &amp; funnel builder</th><td class="col-us yes">✓</td><td class="yes">✓</td><td class="part">Partial</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
+                  <tr><th>CRM &amp; sales pipeline</th><td class="col-us yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="part">Partial</td><td class="part">Partial</td><td class="no">—</td></tr>
+                  <tr><th>Email &amp; SMS marketing</th><td class="col-us yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="part">Partial</td><td class="no">—</td><td class="no">—</td></tr>
+                  <tr><th>SEO suite</th><td class="col-us yes">✓</td><td class="part">Partial</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+                  <tr><th>Workflow automation</th><td class="col-us yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td><td class="part">Partial</td><td class="yes">✓</td></tr>
+                  <tr><th>AI agents &amp; writer</th><td class="col-us yes">✓</td><td class="part">Partial</td><td class="part">Partial</td><td class="no">—</td><td class="part">Partial</td><td class="no">—</td></tr>
+                  <tr><th>Booking &amp; payments</th><td class="col-us yes">✓</td><td class="yes">✓</td><td class="part">Partial</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
+                  <tr><th>One all-in-one price</th><td class="col-us yes">✓</td><td class="yes">✓</td><td class="no">—</td><td class="part">Partial</td><td class="part">Partial</td><td class="no">—</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Success metrics -->
+          <section class="hub-stats r">
+            <div class="hub-stat"><div class="hs-val">10K<span class="u">+</span></div><div class="hs-lab">Businesses</div></div>
+            <div class="hub-stat"><div class="hs-val">4.9<span class="u">★</span></div><div class="hs-lab">Average rating</div></div>
+            <div class="hub-stat"><div class="hs-val">60<span class="u">+</span></div><div class="hs-lab">Countries</div></div>
+            <div class="hub-stat"><div class="hs-val">$40M<span class="u">+</span></div><div class="hs-lab">Processed</div></div>
+          </section>
+
+          <!-- Pricing -->
+          <section class="hub-section" id="pricing">
+            <div class="hub-sec-head"><div class="hsh-l"><span class="hsh-eyebrow">Pricing</span><h2>One simple price for <em>everything</em></h2>
+              <p>No per-tool add-ons. Every plan includes the whole platform — you only scale seats, credits and workspaces.</p></div></div>
+            <div class="pr-grid">
+              <div class="pr r r-1">
+                <div class="pr-name">Starter</div><p class="pr-desc">For solopreneurs getting started.</p>
+                <div class="pr-amt">$0<small>/mo</small></div>
+                <ul>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Core modules included</li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 1 workspace</li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 500 AI credits / month</li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Community support</li>
+                </ul>
+                <a class="btn btn-ghost" href="m08-dashboard.html">Start free</a>
+              </div>
+              <div class="pr feat r r-2">
+                <span class="pr-flag">Most popular</span>
+                <div class="pr-name">Growth</div><p class="pr-desc">For businesses running on AiMindShare.</p>
+                <div class="pr-amt">$49<small>/mo</small></div>
+                <ul>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> All 34 modules</li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 5 team seats</li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 10,000 AI credits / month</li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Custom domains + SSL</li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Priority support</li>
+                </ul>
+                <a class="btn btn-primary" href="m19-app.html">Start free trial</a>
+              </div>
+              <div class="pr r r-3">
+                <div class="pr-name">Agency</div><p class="pr-desc">For agencies managing many client brands.</p>
+                <div class="pr-amt">$199<small>/mo</small></div>
+                <ul>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Everything in Growth</li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Unlimited workspaces</li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 50,000 AI credits / month</li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> White-label options</li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Roles, permissions &amp; audit logs</li>
+                </ul>
+                <a class="btn btn-ghost" href="#cta">Contact sales</a>
+              </div>
+            </div>
+          </section>
+
+          <div class="hub-divider"></div>
+
+          <!-- Testimonials -->
+          <section class="hub-section" id="testimonials">
+            <div class="hub-sec-head"><div class="hsh-l"><span class="hsh-eyebrow">Loved by operators</span><h2>Teams that run <em>everything</em> here</h2></div></div>
+            <div class="tst-grid">
+              <article class="tst r r-1"><div class="stars">★★★★★</div><p class="quote">“AiMindShare replaced five separate subscriptions — and our team finally has one source of truth.”</p><div class="who"><span class="ava">AR</span><span><b>Aisha Rahman</b><span>Founder, Northstar Agency</span></span></div></article>
+              <article class="tst r r-2"><div class="stars">★★★★★</div><p class="quote">“We build client sites, run their CRM and automate follow-ups without ever leaving the platform.”</p><div class="who"><span class="ava">DC</span><span><b>Daniel Cole</b><span>Director, Cole Digital</span></span></div></article>
+              <article class="tst r r-3"><div class="stars">★★★★★</div><p class="quote">“The AI is genuinely useful — it drafts our content and books our meetings while we sleep.”</p><div class="who"><span class="ava">PN</span><span><b>Priya Nair</b><span>Coach &amp; Creator</span></span></div></article>
+            </div>
+          </section>
+
+          <!-- FAQ -->
+          <section class="hub-section" id="faq">
+            <div class="hub-sec-head"><div class="hsh-l"><span class="hsh-eyebrow">FAQ</span><h2>Questions, <em>answered</em></h2></div></div>
+            <div class="faq-list">
+              <details class="faq-item r r-1"><summary>Is AiMindShare really all-in-one?<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></summary><p>Yes. CRM, sites, funnels, SEO, content, email, booking, payments, automation and AI agents all live in one platform, sharing one login, design system and data layer — so you can replace a whole stack of disconnected tools.</p></details>
+              <details class="faq-item r r-2"><summary>Can I use just one module?<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></summary><p>Absolutely. Every module works standalone and opens as its own focused app with its own navigation — start with the AI Website Builder or CRM and add the rest whenever you're ready.</p></details>
+              <details class="faq-item r r-3"><summary>How do AI credits work?<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></summary><p>One shared credit pool powers AI across every module — generating a site, writing a campaign or running an agent all draw from the same balance, so you never juggle separate AI subscriptions.</p></details>
+              <details class="faq-item r r-4"><summary>Can agencies manage multiple client workspaces?<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></summary><p>Yes — the Agency plan includes unlimited multi-tenant workspaces, each fully isolated by row-level security, with brand kits, roles, permissions and audit logs per client.</p></details>
+              <details class="faq-item r r-1"><summary>Do I own my data?<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></summary><p>Always. Your content and customer data are yours, isolated per workspace and exportable at any time.</p></details>
+            </div>
+          </section>
+
+          <!-- CTA -->
+          <section class="hub-section hub-cta r" id="cta">
+            <h2>Run your whole business on AiMindShare</h2>
+            <p>Start free — no credit card required. Launch your first module in minutes and grow into the full operating system.</p>
+            <div class="cta-actions">
+              <a class="btn btn-on-brand" href="m08-dashboard.html">Launch dashboard</a>
+              <a class="btn btn-on-brand-ghost" href="#modules">Explore all modules</a>
+            </div>
+          </section>
+
+          <!-- Footer -->
+          <footer class="hub-foot">
+            <div class="hub-foot-grid">
+              <div class="hf-brand">
+                <div class="brand" style="font-size:18px"><span class="mark">✦</span><span><b>AiMind</b><em>Share</em></span></div>
+                <p>The all-in-one AI Business Operating System — run your CRM, sites, marketing, automation, AI agents and operations from one connected platform.</p>
+              </div>
+              <div class="hf-col"><h4>Platform</h4><a href="#overview">Overview</a><a href="#modules">Modules</a><a href="#ai">AI Command Center</a><a href="#pricing">Pricing</a></div>
+              <div class="hf-col"><h4>Modules</h4><a href="m19-app.html">AI Website Builder</a><a href="m09-crm.html">CRM</a><a href="m21-seo-engine.html">SEO Suite &amp; Ranker</a><a href="m13-automations.html">Automation</a></div>
+              <div class="hf-col"><h4>Company</h4><a href="m19-landing.html">Marketing site</a><a href="#">Security</a><a href="#">Privacy</a><a href="#">Contact</a></div>
+            </div>
+            <div class="hub-foot-bar">
+              <span>© 2026 AiMindShare. All rights reserved.</span>
+              <span class="fbb"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Status</a></span>
+            </div>
+          </footer>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="scrim" id="railScrim"></div>
+
+  <script>
+    var root = document.documentElement, KEY = "aimindshare-theme";
+    function setTheme(t){ root.setAttribute("data-theme", t); try{ localStorage.setItem(KEY,t);}catch(e){}
+      var i=document.getElementById("themeIco"); if(i) i.textContent = t==="dark" ? "☀" : "☾"; }
+    setTheme((function(){try{return localStorage.getItem(KEY)||"light";}catch(e){return "light";}})());
+    document.getElementById("themeToggle").addEventListener("click", function(){
+      setTheme(root.getAttribute("data-theme")==="dark" ? "light" : "dark"); });
+
+    var rail = document.getElementById("rail"), scrim = document.getElementById("railScrim");
+    function openRail(){ rail.classList.add("open"); scrim.classList.add("open"); }
+    function closeRail(){ rail.classList.remove("open"); scrim.classList.remove("open"); }
+    document.getElementById("railBurger").addEventListener("click", openRail);
+    scrim.addEventListener("click", closeRail);
+
+    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var navItems = Array.prototype.slice.call(document.querySelectorAll('.rail .nav-item'));
+    navItems.forEach(function(a){
+      var href = a.getAttribute("href") || "";
+      if(href.charAt(0) === "#"){
+        a.addEventListener("click", function(e){
+          e.preventDefault();
+          var t = document.querySelector(href);
+          if(t) t.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+          closeRail();
+        });
+      } else { a.addEventListener("click", closeRail); }
+    });
+
+    var spy = {};
+    navItems.forEach(function(a){ var h=a.getAttribute("href"); if(h && h.charAt(0)==="#") spy[h.slice(1)] = a; });
+    var sections = Array.prototype.slice.call(document.querySelectorAll(".hub-section[id]"));
+    if("IntersectionObserver" in window){
+      var spyObs = new IntersectionObserver(function(entries){
+        entries.forEach(function(en){
+          if(en.isIntersecting && spy[en.target.id]){
+            navItems.forEach(function(n){ n.classList.remove("active"); });
+            spy[en.target.id].classList.add("active");
+          }
+        });
+      }, { rootMargin: "-45% 0px -50% 0px", threshold: 0 });
+      sections.forEach(function(s){ spyObs.observe(s); });
+    }
+
+    var io = ("IntersectionObserver" in window) && !reduce
+      ? new IntersectionObserver(function(entries){ entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); } }); }, { threshold:.08, rootMargin:"0px 0px -5% 0px" })
+      : null;
+    document.querySelectorAll(".r").forEach(function(n){ if(io) io.observe(n); else n.classList.add("in"); });
+
+    (function(){ var field=document.getElementById("starField"); if(!field||reduce) return;
+      for(var i=0;i<36;i++){ var s=document.createElement("div"); s.className="star";
+        s.style.left=Math.random()*100+"%"; s.style.top=Math.random()*100+"%";
+        s.style.setProperty("--tw",(3+Math.random()*7).toFixed(1)+"s");
+        s.style.setProperty("--td",(Math.random()*10).toFixed(1)+"s"); field.appendChild(s); } })();
+  </script>
+</body>
+</html>

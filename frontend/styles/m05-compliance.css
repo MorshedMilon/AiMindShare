@@ -1,0 +1,146 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   m05-compliance.css — AiMindShare Module M05 · Compliance & Consent.
+   Layers on tokens.css + app.css + components.css (which own the reset, shell,
+   .panel/.kpi/.btn/.pill/.table/.data-row/.empty-state/.form-field/.modal/.toast).
+   Module-only classes here: A2P wizard stepper, consent status pills, the
+   data-request SLA countdown, and the cookie-banner live preview.
+   var() tokens only; .5px hairlines; numbers in --font-mono; glow/pulse motion
+   only (no sweep anims). Dark mode via the inherited sibling token block (no stars).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Intro / lead paragraph under the page head ───────────────────────────── */
+.lead-note{display:flex;align-items:flex-start;gap:12px;padding:14px 18px;margin-bottom:22px;
+  border-radius:var(--r-lg);background:linear-gradient(145deg,rgba(0,105,110,.06),rgba(197,160,89,.04));
+  border:.5px solid var(--glass-border);font-size:13.5px;color:var(--ink-400);line-height:1.55}
+.lead-note .ln-ico{color:var(--teal-700);flex:none;margin-top:1px}
+:root[data-theme="dark"] .lead-note .ln-ico{color:var(--teal-300)}
+
+/* ── A2P status tiles (brand + campaign) ──────────────────────────────────── */
+.status-tiles{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:8px}
+.status-tile{position:relative;display:flex;flex-direction:column;gap:10px;padding:20px 22px;
+  border-radius:var(--r-xl);border:.5px solid var(--glass-border);background:var(--glass-bg);
+  backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);
+  box-shadow:inset 0 1px 0 var(--glass-hi),0 8px 28px rgba(0,105,110,.07)}
+:root[data-theme="dark"] .status-tile{box-shadow:inset 0 1px 0 var(--glass-hi),0 8px 28px rgba(0,0,0,.26)}
+.status-tile .st-head{display:flex;align-items:center;gap:10px}
+.status-tile .st-ico{width:30px;height:30px;flex:none;border-radius:var(--r-sm);display:grid;place-items:center;
+  background:rgba(0,105,110,.10);color:var(--teal-700)}
+.status-tile .st-name{font-family:var(--font-serif);font-size:16px;color:var(--ink-900);font-weight:600}
+.status-tile .st-sub{font-size:12.5px;color:var(--ink-400);line-height:1.5}
+.status-tile .st-state{margin-top:auto}
+/* left accent by state */
+.status-tile::before{content:'';position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:2px;background:var(--status-idle)}
+.status-tile.is-approved::before{background:var(--status-success)}
+.status-tile.is-pending::before{background:var(--status-warning)}
+.status-tile.is-rejected::before{background:var(--status-danger)}
+
+/* ── A2P wizard stepper ───────────────────────────────────────────────────── */
+.stepper{display:flex;align-items:flex-start;gap:0;margin:6px 0 26px;padding:20px 8px 4px}
+.step{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;text-align:center}
+.step .s-dot{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none;
+  font-family:var(--font-mono);font-size:14px;font-weight:600;background:var(--bg-card);
+  border:.5px solid var(--line-strong);color:var(--ink-400);transition:all .35s var(--ease-reverent);z-index:1}
+.step .s-label{font-size:12px;color:var(--ink-400);max-width:130px;line-height:1.35}
+.step .s-connector{position:absolute;top:17px;left:calc(-50% + 17px);right:calc(50% + 17px);height:.5px;
+  background:var(--line-strong)}
+.step:first-child .s-connector{display:none}
+.step.done .s-dot{background:var(--grad-brand);border-color:transparent;color:#fff;box-shadow:var(--shadow-glow)}
+.step.done .s-connector{background:var(--teal-500)}
+.step.active .s-dot{border-color:var(--teal-500);color:var(--teal-700);box-shadow:0 0 0 4px rgba(44,164,171,.15)}
+:root[data-theme="dark"] .step.active .s-dot{color:var(--teal-300)}
+.step.active .s-label{color:var(--ink-900);font-weight:600}
+
+.wizard-panel{padding:26px}
+.wizard-head{margin-bottom:18px}
+.wizard-head h3{font-size:18px}
+.wizard-head p{font-size:13.5px;color:var(--ink-400);margin-top:5px;line-height:1.55;max-width:62ch}
+.wizard-actions{display:flex;justify-content:space-between;gap:12px;margin-top:24px;padding-top:18px;border-top:.5px solid var(--line)}
+.wizard-actions .spacer{flex:1}
+
+/* ── Fix checklist (rejection screen) ─────────────────────────────────────── */
+.checklist{list-style:none;display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.checklist li{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;color:var(--ink-700);line-height:1.5}
+.checklist li .cl-ico{width:20px;height:20px;flex:none;border-radius:6px;display:grid;place-items:center;margin-top:1px;
+  background:rgba(196,97,78,.14);color:var(--status-danger)}
+
+/* ── Consent stats + ledger ───────────────────────────────────────────────── */
+.channel-cell{display:flex;align-items:center;gap:9px}
+.channel-cell .ch-ico{width:28px;height:28px;flex:none;border-radius:var(--r-sm);display:grid;place-items:center;
+  background:rgba(0,105,110,.09);color:var(--teal-700)}
+.channel-cell .ch-name{font-family:var(--font-serif);font-size:14px;color:var(--ink-900);text-transform:capitalize}
+.consent-source{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-400)}
+.mini-bars{display:flex;flex-direction:column;gap:14px}
+.mini-bar-row{display:grid;grid-template-columns:120px 1fr auto;align-items:center;gap:14px}
+.mini-bar-row .mbr-label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-700);text-transform:capitalize}
+.mbr-track{height:8px;border-radius:var(--r-pill);background:var(--bg-card);border:.5px solid var(--line);overflow:hidden}
+.mbr-fill{height:100%;border-radius:var(--r-pill);background:var(--grad-brand);transition:width .6s var(--ease-reverent)}
+.mbr-val{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-500);min-width:78px;text-align:right}
+
+/* ── Data-subject requests: SLA countdown ─────────────────────────────────── */
+.sla-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:var(--r-pill);
+  font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:.03em;
+  background:rgba(46,158,123,.12);color:var(--status-success)}
+.sla-badge.warn{background:rgba(199,154,58,.14);color:var(--status-warning)}
+.sla-badge.danger{background:rgba(196,97,78,.14);color:var(--status-danger)}
+.sla-badge.done{background:rgba(109,121,122,.14);color:var(--status-idle)}
+.sla-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.req-type{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px;
+  text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:var(--r-pill);border:.5px solid var(--line-strong);color:var(--ink-500)}
+.req-type.access{border-color:rgba(44,164,171,.4);color:var(--status-info)}
+.req-type.delete{border-color:rgba(196,97,78,.4);color:var(--status-danger)}
+.req-type.rectify{border-color:rgba(197,160,89,.45);color:var(--gold-500)}
+
+/* ── Cookie-banner customizer + live preview ──────────────────────────────── */
+.cookie-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:22px;align-items:start}
+.cookie-stage{border-radius:var(--r-xl);border:.5px solid var(--line);overflow:hidden;
+  background:
+    repeating-linear-gradient(45deg,transparent,transparent 11px,rgba(0,105,110,.03) 11px,rgba(0,105,110,.03) 22px),
+    var(--bg-card);
+  min-height:280px;position:relative;display:flex;align-items:flex-end;padding:16px}
+.cookie-stage .stage-tag{position:absolute;top:12px;left:14px;font-family:var(--font-mono);font-size:10px;
+  text-transform:uppercase;letter-spacing:.1em;color:var(--ink-400)}
+/* the banner itself (also the exact markup the injected script renders) */
+.ck-banner{width:100%;border-radius:var(--r-lg);padding:18px 20px;box-shadow:var(--shadow-lg);
+  display:flex;flex-direction:column;gap:14px;border:.5px solid rgba(255,255,255,.14)}
+.ck-banner.pos-left{max-width:340px;margin-right:auto}
+.ck-banner.pos-right{max-width:340px;margin-left:auto}
+.ck-banner.pos-bar{max-width:none}
+.ck-banner .ck-text{font-size:13px;line-height:1.55}
+.ck-banner .ck-title{font-family:var(--font-serif);font-size:15px;font-weight:600;margin-bottom:4px}
+.ck-banner .ck-actions{display:flex;gap:9px;flex-wrap:wrap}
+.ck-btn{height:34px;padding:0 15px;border-radius:var(--r-sm);font-size:12.5px;font-weight:600;cursor:pointer;
+  border:.5px solid transparent;font-family:var(--font-sans)}
+.ck-btn.ghost{background:transparent;border-color:currentColor}
+.swatch-row{display:flex;gap:10px;flex-wrap:wrap}
+.swatch{width:34px;height:34px;border-radius:var(--r-sm);border:.5px solid var(--line-strong);cursor:pointer;
+  transition:transform .2s var(--ease-reverent),box-shadow .2s}
+.swatch.on{box-shadow:0 0 0 2px var(--bg-elev),0 0 0 4px var(--teal-500);transform:translateY(-2px)}
+.seg-choice{display:inline-flex;border:.5px solid var(--line-strong);border-radius:var(--r-pill);overflow:hidden}
+.seg-choice button{height:34px;padding:0 16px;background:transparent;border:none;cursor:pointer;font:inherit;
+  font-size:12.5px;color:var(--ink-500);transition:background .2s,color .2s}
+.seg-choice button.on{background:var(--teal-700);color:#fff}
+:root[data-theme="dark"] .seg-choice button.on{background:var(--teal-500);color:#04090A}
+
+/* ── Deferral note (unbuilt-dependency honesty) ───────────────────────────── */
+.defer-note{display:flex;align-items:center;gap:10px;padding:11px 15px;margin-top:14px;border-radius:var(--r-md);
+  border:.5px dashed var(--line-strong);background:rgba(0,105,110,.03);font-size:12.5px;color:var(--ink-400)}
+.defer-note .dn-ico{color:var(--gold-500);flex:none}
+
+/* ── Success banner (post-action) ─────────────────────────────────────────── */
+.ok-banner{display:flex;align-items:center;gap:12px;padding:13px 18px;margin-bottom:18px;border-radius:var(--r-lg);
+  background:rgba(46,158,123,.10);border:.5px solid rgba(46,158,123,.34);font-size:13.5px;color:var(--ink-700)}
+.ok-banner .okb-ico{color:var(--status-success);flex:none}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media(max-width:900px){
+  .status-tiles{grid-template-columns:1fr}
+  .cookie-grid{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .stepper{overflow-x:auto;padding-bottom:10px}
+  .step .s-label{font-size:11px}
+  .mini-bar-row{grid-template-columns:90px 1fr;gap:10px}
+  .mini-bar-row .mbr-val{grid-column:2;text-align:left}
+  .wizard-actions{flex-direction:column-reverse}
+  .wizard-actions .btn{width:100%}
+}

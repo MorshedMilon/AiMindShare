@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Book a time — AiMindShare</title>
+  <meta name="description" content="Public booking page — pick a day, choose a time in your timezone, answer a couple of questions, and confirm. Reschedule or cancel any time from your confirmation. Powered by AiMindShare M14.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Shippori+Mincho:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/components.css">
+
+  <script>
+    (function(){try{var t=localStorage.getItem("aimindshare-theme");
+      document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light");}catch(e){}})();
+  </script>
+  <style>
+    /* Public page: calm + fast — radial washes only, NO grid/orbs/stars (design §6). */
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%}
+    body{font-family:var(--font-sans);color:var(--ink-900);background:var(--bg);
+      background-image:radial-gradient(60% 50% at 15% 0%,rgba(0,105,110,.10),transparent 60%),
+        radial-gradient(50% 45% at 95% 10%,rgba(197,160,89,.08),transparent 60%);
+      background-attachment:fixed;-webkit-font-smoothing:antialiased}
+    .book-wrap{max-width:860px;margin:0 auto;padding:40px 20px 64px}
+    body.embed .book-wrap{padding:16px}
+    body.embed .bk-brandbar,body.embed .bk-foot{display:none}
+    .bk-brandbar{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+    .bk-brandbar .mk{width:30px;height:30px;border-radius:9px;background:var(--grad-brand);display:grid;place-items:center;color:#fff;font-size:15px}
+    .bk-brandbar b{font-family:var(--font-serif);font-size:17px;font-weight:600}
+    .bk-card{background:var(--glass-bg);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);
+      border:.5px solid var(--glass-border);border-radius:var(--r-2xl);box-shadow:var(--shadow-lg);overflow:hidden}
+    .bk-grid{display:grid;grid-template-columns:300px 1fr}
+    .bk-side{padding:28px;border-right:.5px solid var(--line);background:rgba(0,105,110,.03)}
+    .bk-eyebrow{font-size:10px;font-weight:700;letter-spacing:var(--label-track);text-transform:uppercase;color:var(--teal-700)}
+    :root[data-theme="dark"] .bk-eyebrow{color:var(--teal-300)}
+    .bk-side h1{font-family:var(--font-serif);font-size:26px;font-weight:600;margin:10px 0 8px;line-height:1.1}
+    .bk-side h1 em{font-style:italic;background:var(--grad-ai);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+    .bk-facts{margin-top:18px;display:flex;flex-direction:column;gap:10px}
+    .bk-fact{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink-700)}
+    .bk-fact svg{color:var(--teal-700);flex:none}
+    :root[data-theme="dark"] .bk-fact svg{color:var(--teal-300)}
+    .bk-main{padding:28px}
+    .bk-steps{display:flex;gap:8px;margin-bottom:20px}
+    .bk-dot{height:4px;flex:1;border-radius:2px;background:var(--line-strong)}
+    .bk-dot.on{background:var(--grad-brand)}
+    .bk-h{font-family:var(--font-serif);font-size:19px;font-weight:600;margin:0 0 4px}
+    .bk-sub{font-size:13px;color:var(--ink-400);margin:0 0 18px}
+    /* month picker */
+    .mp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .mp-title{font-family:var(--font-serif);font-size:16px}
+    .mp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+    .mp-dow{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-400);text-align:center;padding-bottom:4px}
+    .mp-day{aspect-ratio:1;border:none;background:none;border-radius:var(--r-sm);font-family:var(--font-mono);font-size:14px;color:var(--ink-900);cursor:pointer;transition:background .15s}
+    .mp-day:hover:not(:disabled){background:var(--row-hover)}
+    .mp-day.avail{color:var(--teal-700);font-weight:600;box-shadow:inset 0 0 0 .5px var(--line-strong)}
+    .mp-day.sel{background:var(--grad-brand);color:#fff}
+    .mp-day:disabled{color:var(--ink-300);opacity:.4;cursor:default}
+    /* slots */
+    .slot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;margin-top:4px}
+    .slot{padding:11px;border:.5px solid var(--line-strong);border-radius:var(--r-md);background:var(--bg-card);font-family:var(--font-mono);font-size:13.5px;color:var(--ink-900);cursor:pointer;transition:all .18s var(--ease-premium)}
+    .slot:hover{border-color:var(--teal-500);transform:translateY(-1px)}
+    .slot.sel{background:var(--grad-brand);color:#fff;border-color:transparent}
+    .tzsel{margin-top:16px;font-size:12.5px;color:var(--ink-400)}
+    .bk-field{margin-bottom:14px}
+    .bk-field label{display:block;font-size:10px;font-weight:600;letter-spacing:var(--label-track);text-transform:uppercase;color:var(--ink-400);margin-bottom:6px}
+    .bk-field input,.bk-field textarea,.bk-field select{width:100%;height:44px;padding:0 12px;background:var(--bg-card);border:.5px solid var(--line-strong);border-radius:var(--r-sm);font-family:var(--font-sans);font-size:14px;color:var(--ink-900)}
+    .bk-field textarea{height:auto;padding:10px 12px;min-height:80px}
+    .bk-field input:focus,.bk-field textarea:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px rgba(44,164,171,.15)}
+    .bk-actions{display:flex;justify-content:space-between;gap:10px;margin-top:20px}
+    .bk-summary{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(0,105,110,.05);border:.5px solid var(--line);border-radius:var(--r-md);font-size:13.5px;margin-bottom:18px}
+    .bk-success{text-align:center;padding:20px 0}
+    .bk-success .ok-mark{width:56px;height:56px;border-radius:50%;background:rgba(46,158,123,.14);color:var(--status-success);display:grid;place-items:center;margin:0 auto 16px;font-size:26px}
+    .bk-success h2{font-family:var(--font-serif);font-size:24px;margin:0 0 6px}
+    .bk-links{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+    .bk-note{margin-top:14px;font-size:12px;color:var(--ink-400)}
+    .bk-empty{text-align:center;padding:28px 0;color:var(--ink-400);font-size:13.5px}
+    .bk-foot{text-align:center;margin-top:20px;font-size:12px;color:var(--ink-400)}
+    .bk-foot a{color:var(--teal-700);text-decoration:none}
+    .skeleton-line{height:44px;border-radius:var(--r-md);background:var(--bg-card);animation:pulse 1.6s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:.5}50%{opacity:.9}}
+    .mock-flag{display:inline-block;margin-bottom:16px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-700);background:var(--gold-50);border:.5px solid var(--gold-300);border-radius:var(--r-pill);padding:4px 12px}
+    :root[data-theme="dark"] .mock-flag{background:rgba(197,160,89,.12)}
+    @media (max-width:680px){.bk-grid{grid-template-columns:1fr}.bk-side{border-right:none;border-bottom:.5px solid var(--line)}}
+    @media (prefers-reduced-motion:reduce){.slot,.mp-day{transition:none}.skeleton-line{animation:none}}
+  </style>
+</head>
+<body>
+  <div class="book-wrap">
+    <div class="bk-brandbar"><span class="mk">✦</span><b>AiMindShare</b></div>
+    <div id="book"></div>
+    <div class="bk-foot">Powered by <a href="#">AiMindShare</a></div>
+  </div>
+
+  <script src="vendor/supabase-js.min.js"></script>
+  <script src="config.js" onerror="void 0"></script>
+  <script src="js/m14-book.js"></script>
+</body>
+</html>

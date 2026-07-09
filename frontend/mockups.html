@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AiMindShare — M00 · Auth &amp; Identity · Mockups</title>
+  <meta name="description" content="High-fidelity mockups of every AiMindShare M00 (Auth & Identity) screen and state — sign-up, sign-in, magic link, two-factor, password reset, verification, and account security.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Shippori+Mincho:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/app.css">
+  <link rel="stylesheet" href="styles/m00-auth.css">
+
+  <script>
+    (function(){try{var t=localStorage.getItem("aimindshare-theme");
+      document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light");}catch(e){}})();
+  </script>
+
+  <!-- Mockup-sheet chrome only (frames + grid). Components come from m00-auth.css. -->
+  <style>
+    .mock-legend{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 6px}
+    .mock-section{margin-top:40px}
+    .mock-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:26px;margin-top:16px}
+    .mock-grid.wide{grid-template-columns:1fr}
+    .mock-frame{display:flex;flex-direction:column;border:.5px solid var(--line);border-radius:var(--r-lg);
+      background:var(--bg-card);box-shadow:var(--shadow-md);overflow:hidden}
+    .mock-cap{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;
+      border-bottom:.5px solid var(--line);background:var(--glass-bg);
+      backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4)}
+    .mock-cap b{font-family:var(--font-serif);font-size:14.5px;font-weight:600;color:var(--ink-900)}
+    .mock-cap .mc-route{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.04em;color:var(--ink-300)}
+    .mock-body{padding:26px 22px;display:flex;justify-content:center;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(44,164,171,.05) 0%, transparent 55%),
+        radial-gradient(circle at 80% 80%, rgba(197,160,89,.045) 0%, transparent 55%)}
+    /* Inside a frame the card is un-stretched and self-contained */
+    .mock-body .auth-card{max-width:388px;width:100%;box-shadow:var(--shadow-lg)}
+    .mock-body .settings-wrap{margin:0;width:100%}
+    .mock-body .page-head{margin:0 0 18px}
+    .sheet-toolbar{display:flex;align-items:center;gap:12px}
+    @media(max-width:520px){.mock-grid{grid-template-columns:1fr}.mock-body{padding:18px 12px}}
+  </style>
+</head>
+<body>
+  <div class="bg-canvas" aria-hidden="true">
+    <div class="bg-grid"></div><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div><div id="starField"></div>
+  </div>
+
+  <header class="topbar">
+    <div class="brand"><span class="mark">✦</span><span><b>AiMind</b><em>Share</em></span></div>
+    <span class="session-tag">M00 · Mockups</span>
+    <div class="spacer"></div>
+    <a class="btn btn-ghost btn-sm" href="m00-auth-and-identity.html">Open live app →</a>
+    <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme"><span id="themeIco">☾</span></button>
+  </header>
+
+  <main class="wrap">
+    <div class="page-head">
+      <h1>Auth &amp; Identity — <em>mockups</em></h1>
+      <p>Every M00 screen and its key states, rendered from the production component library
+        (<span class="mono">tokens.css · app.css · m00-auth.css</span>). Toggle the theme to review light
+        and dark. The interactive, Supabase-wired build is <a href="m00-auth-and-identity.html" style="color:var(--teal-700);border-bottom:.5px solid currentColor">m00-auth-and-identity.html</a>.</p>
+    </div>
+    <div class="mock-legend">
+      <span class="pill success">success</span><span class="pill danger">error</span>
+      <span class="pill info">loading</span><span class="pill plain">empty</span><span class="pill attention">default</span>
+    </div>
+    <div id="sheet"></div>
+    <div class="foot">
+      <span>AiMindShare · aimindshare.com</span><span>Module M00 · Auth &amp; Identity</span><span>High-fidelity mockups</span>
+    </div>
+  </main>
+
+  <script>
+  (() => {
+    "use strict";
+    const root = document.documentElement, THEME_KEY = "aimindshare-theme";
+    const setTheme = (t) => { root.setAttribute("data-theme", t); try { localStorage.setItem(THEME_KEY, t); } catch (e) {} document.getElementById("themeIco").textContent = t === "dark" ? "☀" : "☾"; };
+    setTheme((() => { try { return localStorage.getItem(THEME_KEY) || "light"; } catch (e) { return "light"; } })());
+    document.getElementById("themeToggle").addEventListener("click", () => setTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark"));
+
+    // Starfield (light only; hidden in dark by app.css)
+    const field = document.getElementById("starField");
+    if (field && !window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+      for (let i = 0; i < 40; i++) { const s = document.createElement("div"); s.className = "star";
+        s.style.left = Math.random()*100+"%"; s.style.top = Math.random()*100+"%";
+        s.style.setProperty("--tw",(3+Math.random()*7).toFixed(1)+"s"); s.style.setProperty("--td",(Math.random()*10).toFixed(1)+"s"); field.appendChild(s); }
+
+    /* ── Shared fragments (mirror m00-auth.js markup) ─────────────────────── */
+    const G = '<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z"/></svg>';
+    const crest = '<div class="auth-crest"><span>✦</span></div>';
+    const msg = (k, ico, html) => `<div class="inline-msg ${k}"><span class="im-ico">${ico}</span><div>${html}</div></div>`;
+    const head = (h1, p) => `<div class="auth-head"><h1>${h1}</h1>${p ? `<p>${p}</p>` : ""}</div>`;
+    const field_ = (id, label, val, ph, type) => `<div class="field"><label>${label}</label><input type="${type||"text"}" value="${val||""}" placeholder="${ph||""}"></div>`;
+    const pwField = (label, ph, score) => `<div class="field"><label>${label}</label><div class="input-wrap"><input type="password" value="${score?"••••••••••••":""}" placeholder="${ph}"><button class="peek" type="button">◉</button></div>${score!=null?`<div class="pw-meter" data-score="${score}"><i></i><i></i><i></i><i></i></div><div class="pw-note">Strength: <b>${["","weak","fair","good","strong"][score]}</b></div>`:""}</div>`;
+    const otp = (vals) => `<div class="otp-group">${[0,1,2,3,4,5].map(i=>`<input value="${(vals&&vals[i])||""}" maxlength="1">`).join("")}</div>`;
+    const seg = (sel) => `<div class="seg" role="tablist"><button role="tab" aria-selected="${sel==="in"}">Sign in</button><button role="tab" aria-selected="${sel==="up"}">Create account</button></div>`;
+    const btn = (cls, label, busy) => `<button class="btn ${cls}"${busy?' data-busy="true"':""}>${busy?`<span class="spin"></span> ${label}`:label}</button>`;
+    const card = (inner) => `<div class="auth-card">${inner}</div>`;
+
+    /* ── Screen builders (static) ─────────────────────────────────────────── */
+    const V = {};
+    V.loginDefault = card(`${crest}${seg("in")}${head("Welcome <em>back</em>.","Sign in to your AiMindShare workspace.")}
+      <form><button class="oauth-btn">${G}<span>Continue with Google</span></button><div class="divider">or with email</div>
+      ${field_("","Email address","aisha@northstar.agency","you@agency.com","email")}
+      <div class="field"><label>Password</label><div class="input-wrap"><input type="password" value="••••••••••" ><button class="peek" type="button">◉</button></div></div>
+      <div class="check-row row-between" style="margin-top:10px"><label style="display:flex;gap:8px;align-items:center;margin:0"><input type="checkbox" checked><span style="font-size:13px">Remember me for 30 days</span></label><button class="link">Forgot password?</button></div>
+      ${btn("btn-primary btn-block","Sign in")}${btn("btn-ghost btn-block","Email me a magic link")}</form>`);
+    V.loginError = card(`${crest}${seg("in")}${head("Welcome <em>back</em>.","Sign in to your AiMindShare workspace.")}
+      <form>${msg("error","⚠","Invalid email or password.")}<button class="oauth-btn">${G}<span>Continue with Google</span></button><div class="divider">or with email</div>
+      ${field_("","Email address","aisha@northstar.agency","","email")}
+      <div class="field"><label>Password</label><div class="input-wrap"><input type="password" value="••••" ><button class="peek" type="button">◉</button></div></div>
+      ${btn("btn-primary btn-block","Signing in…",true)}</form>`);
+    V.signupDefault = card(`${crest}${seg("up")}${head("Start with <em>clarity</em>.","Your workspace, your data, walled off by database-level security.")}
+      <form><button class="oauth-btn">${G}<span>Continue with Google</span></button><div class="divider">or with email</div>
+      ${field_("","Full name","Aisha Rahman","Aisha Rahman")}
+      ${field_("","Email address","aisha@northstar.agency","you@agency.com","email")}
+      ${pwField("Password","Create a password",4)}
+      <label class="check-row"><input type="checkbox" checked><span>I agree to the <a href="#" onclick="return false">Terms</a> and <a href="#" onclick="return false">Privacy Policy</a>.</span></label>
+      ${btn("btn-primary btn-block","Create account")}</form>`);
+    V.signupSuccess = card(`${crest}${head("Check your <em>email</em>","We sent a verification link to <b>aisha@northstar.agency</b>. Confirm it to activate your account.")}${msg("success","✉","Didn't get it? Check spam, or return to <button class='link'>sign in</button>.")}`);
+    V.magicDefault = card(`<button class="flow-back">← Back to sign in</button>${crest}${head("One-tap <em>sign in</em>","No password to remember — we email a secure link.")}
+      <form>${field_("","Email address","","you@agency.com","email")}${btn("btn-primary btn-block","Email me a link")}</form>`);
+    V.magicSuccess = card(`${crest}${head("Check your <em>email</em>","A one-time link is on its way to <b>aisha@northstar.agency</b>.")}${msg("success","✉","The link expires in 15 minutes and can be used once.")}`);
+    V.twofaDefault = card(`${crest}${head("Verify it's <em>you</em>","Enter the 6-digit code from your authenticator app.")}
+      <form>${otp()}${btn("btn-primary btn-block","Verify")}<div class="auth-foot"><button class="link">Use a backup code instead</button></div></form>`);
+    V.twofaError = card(`${crest}${head("Verify it's <em>you</em>","Enter the 6-digit code from your authenticator app.")}
+      <form>${msg("error","⚠","That code didn't match. Try again or use a backup code.")}${otp(["1","4","8","2","0"])}${btn("btn-primary btn-block","Verifying…",true)}</form>`);
+    V.forgotDefault = card(`<button class="flow-back">← Back to sign in</button>${crest}${head("Reset your <em>password</em>","We'll email you a secure link to set a new one.")}
+      <form>${field_("","Email address","","you@agency.com","email")}${btn("btn-primary btn-block","Send reset link")}</form>`);
+    V.forgotSuccess = card(`${crest}${head("Check your <em>email</em>")}${msg("success","✉","<b>If an account exists</b> for <b>aisha@northstar.agency</b>, a reset link is on its way (valid 1 hour).")}`);
+    V.resetDefault = card(`${crest}${head("Choose a new <em>password</em>","For your security, this signs out every other session.")}
+      <form>${pwField("New password","Create a new password",3)}${field_("","Confirm password","","Re-enter password","password")}${btn("btn-primary btn-block","Update password")}</form>`);
+    V.resetSuccess = card(`${crest}${head("Password <em>updated</em>")}${msg("success","✓","Your password was changed and all other sessions were signed out. <button class='link'>Sign in</button>.")}`);
+    V.verifySuccess = card(`${crest}${head("Email <em>verified</em>")}${msg("success","✓","Your email is confirmed. <button class='link'>Go to your account</button>.")}`);
+    V.verifyExpired = card(`${crest}${head("Link <em>expired</em>")}${msg("error","⚠","This verification link is no longer valid.")}${btn("btn-primary btn-block","Resend verification")}`);
+    V.inviteStub = card(`${crest}${head("You're <em>invited</em>","Set your name and password to join <b>Northstar Agency</b>.")}
+      <div class="field locked"><label>Email address</label><input value="invited@northstar.agency" disabled></div>
+      ${field_("","Full name","","Your name")}${pwField("Password","Create a password",2)}
+      ${btn("btn-primary btn-block disabled","Accept & join")}${msg("info","◈","Workspace membership attaches in <b>M01</b>. This screen ships ready; the join action activates once M01 is built.")}`);
+
+    // Wide (settings) screens
+    V.securityDefault = `<div class="settings-wrap settings-grid">
+      <div class="panel set-card"><div class="sc-head"><div><h3>Password</h3><div class="sc-sub">Change your password. Updating it signs out every other device.</div></div></div><div class="sc-body"><button class="btn btn-ghost">Change password</button></div></div>
+      <div class="panel set-card"><div class="sc-head"><div><h3>Two-factor authentication</h3><div class="sc-sub">Add a one-time code from an authenticator app on top of your password.</div></div><span class="pill success">enabled</span></div><div class="sc-body"><button class="btn btn-ghost">Disable 2FA</button></div></div>
+      <div class="panel set-card"><div class="sc-head"><div><h3>Active sessions</h3><div class="sc-sub">Devices signed in to your account.</div></div><button class="btn btn-ghost btn-sm">Sign out others</button></div>
+        <div class="sc-body"><div class="sess-list">
+          <div class="sess-row"><div class="sess-ico">🖥</div><div class="sess-meta"><b>This device — current</b><small>Chrome · Windows · signed in now</small></div><span class="pill success">current</span></div>
+          <div class="sess-row"><div class="sess-ico">📱</div><div class="sess-meta"><b>iPhone 15</b><small>Safari · Toronto, CA · 2 hours ago</small></div><button class="btn btn-ghost btn-sm">Revoke</button></div>
+        </div></div></div>
+      <div class="panel set-card"><div class="sc-head"><div><h3 style="color:var(--status-danger)">Delete account</h3><div class="sc-sub">Soft-delete with a 30-day grace period. Sole workspace owners must transfer ownership first (available after M01).</div></div></div><div class="sc-body"><button class="btn btn-danger" disabled title="Available after M01">Delete account</button></div></div></div>`;
+    V.securityEnroll = `<div class="settings-wrap settings-grid"><div class="panel set-card">
+      <div class="sc-head"><div><h3>Enable two-factor</h3><div class="sc-sub">Scan the QR with your authenticator, then confirm the 6-digit code.</div></div><span class="pill info">setup</span></div>
+      <div class="sc-body"><div class="qr-panel"><div class="qr-box"><div style="width:100%;height:100%;background:conic-gradient(from 0deg,var(--ink-900) 0 25%,transparent 0 50%,var(--ink-900) 0 75%,transparent 0);opacity:.85;border-radius:6px"></div></div>
+        <div class="qr-side"><div class="field-hint">Scan with Google Authenticator, 1Password, or Authy — then enter the 6-digit code.</div><div class="qr-secret">JBSWY3DPEHPK3PXP QORS UTIN</div></div></div>
+        <div class="field"><label>Verification code</label>${otp(["4","0","2"])}</div>
+        <div style="display:flex;gap:10px;margin-top:12px">${btn("btn-primary","Confirm & enable")}${btn("btn-ghost","Cancel")}</div></div></div></div>`;
+    V.securityEmpty = `<div class="settings-wrap settings-grid"><div class="panel set-card">
+      <div class="sc-head"><div><h3>Active sessions</h3><div class="sc-sub">Devices signed in to your account.</div></div><button class="btn btn-ghost btn-sm" disabled>Sign out others</button></div>
+      <div class="sc-body"><div class="empty-state"><div class="es-ico">🗝</div><p>No other devices are signed in. When you sign in elsewhere, those sessions appear here so you can revoke them.</p></div></div></div></div>`;
+    V.securityLoading = `<div class="settings-wrap settings-grid"><div class="panel set-card">
+      <div class="sc-head"><div><h3>Two-factor authentication</h3><div class="sc-sub">Add a one-time code on top of your password.</div></div><span class="pill idle">checking…</span></div>
+      <div class="sc-body"><div class="load-block"></div></div></div>
+      <div class="panel set-card"><div class="sc-head"><div><h3>Active sessions</h3><div class="sc-sub">Devices signed in to your account.</div></div></div>
+      <div class="sc-body"><div class="load-block"></div><div class="load-block" style="width:70%"></div></div></div></div>`;
+    V.profileDefault = `<div class="settings-wrap settings-grid"><div class="panel set-card">
+      <div class="avatar-row"><div class="avatar">AR</div><div><button class="btn btn-ghost btn-sm">Upload avatar</button><div class="field-hint" style="margin-top:6px">PNG or JPG, up to 2 MB. Stored in your Media Library (M06).</div></div></div>
+      ${field_("","Full name","Aisha Rahman","Your name")}${field_("","Email address","aisha@northstar.agency","you@agency.com","email")}
+      ${btn("btn-primary","Save changes")}</div></div>`;
+
+    /* ── Frame + section rendering ────────────────────────────────────────── */
+    const SECTIONS = [
+      { title: "Sign in &amp; <em>create account</em>", grid: "", frames: [
+        ["Sign in", "default", "#/login", V.loginDefault],
+        ["Sign in", "error · loading", "#/login", V.loginError],
+        ["Create account", "default", "#/signup", V.signupDefault],
+        ["Create account", "success", "#/signup", V.signupSuccess],
+      ]},
+      { title: "Passwordless &amp; <em>recovery</em>", grid: "", frames: [
+        ["Magic link", "default", "#/magic", V.magicDefault],
+        ["Magic link", "success", "#/magic", V.magicSuccess],
+        ["Forgot password", "default", "#/forgot", V.forgotDefault],
+        ["Forgot password", "success", "#/forgot", V.forgotSuccess],
+        ["Reset password", "default", "#/reset", V.resetDefault],
+        ["Reset password", "success", "#/reset", V.resetSuccess],
+        ["Verify email", "success", "#/verify", V.verifySuccess],
+        ["Verify email", "error", "#/verify", V.verifyExpired],
+      ]},
+      { title: "Two-<em>factor</em>", grid: "", frames: [
+        ["2FA step-up", "default", "#/2fa", V.twofaDefault],
+        ["2FA step-up", "error · loading", "#/2fa", V.twofaError],
+      ]},
+      { title: "Account <em>settings</em>", grid: "wide", frames: [
+        ["Account security", "default", "#/settings/security", V.securityDefault],
+        ["Two-factor enrolment", "setup", "#/settings/security", V.securityEnroll],
+        ["Active sessions", "empty", "#/settings/security", V.securityEmpty],
+        ["Account security", "loading", "#/settings/security", V.securityLoading],
+        ["Profile", "default", "#/settings/profile", V.profileDefault],
+      ]},
+      { title: "Onboarding <em>edge</em>", grid: "", frames: [
+        ["Accept invite", "stub · needs M01", "#/invite", V.inviteStub],
+      ]},
+    ];
+    const statePill = (s) => { const k = /success/.test(s)?"success":/error/.test(s)?"danger":/loading|setup|checking/.test(s)?"info":/empty|stub/.test(s)?"plain":"attention"; return `<span class="pill ${k}">${s}</span>`; };
+    const sheet = document.getElementById("sheet");
+    SECTIONS.forEach((sec) => {
+      const wrap = document.createElement("section"); wrap.className = "mock-section";
+      wrap.innerHTML = `<div class="section-h"><h2>${sec.title}</h2><span class="hint">${sec.frames.length} frames</span></div>
+        <div class="mock-grid ${sec.grid}">${sec.frames.map(([name, state, route, body]) =>
+          `<div class="mock-frame"><div class="mock-cap"><b>${name}</b><span class="mc-route">${route}</span></div>
+             <div class="mock-body">${body}</div>
+             <div class="mock-cap" style="border-top:.5px solid var(--line);border-bottom:none">${statePill(state)}</div></div>`).join("")}</div>`;
+      sheet.appendChild(wrap);
+    });
+    document.body.classList.add("js-ready");
+  })();
+  </script>
+</body>
+</html>

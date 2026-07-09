@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AiMindShare — M00 · Auth &amp; Identity · Mockups</title>
+  <meta name="description" content="High-fidelity mockups of every AiMindShare M00 (Auth & Identity) screen and state — sign-up, sign-in, magic link, two-factor, password reset, verification, and account security.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Shippori+Mincho:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Design system inlined for a standalone, downloadable file (open via file://) -->
+  <style data-inlined="styles/tokens.css">
+/* ═══════════════════════════════════════════════════════════════════════════
+   tokens.css — AiMindShare.com canonical design tokens · v1.0 · 2026-07-02
+   ─────────────────────────────────────────────────────────────────────────
+   SOURCE OF TRUTH: extracted VERBATIM from publishlyai-command-center.html
+   (the canonical reference implementation, per DECISIONS D-004 / D-006).
+   Underlying law: QURANLYAI_DESIGN.md. Deviations from that law are recorded
+   in DECISIONS (D-007 light default, D-014 Baskerville body + Shippori Mincho numerals — supersedes D-008)
+   and in AIMINDSHARE-DESIGN §2.3 (token mapping table).
+
+   RULES (never bend):
+   · Never invent new colors — extend scales only via a DECISIONS entry.
+   · No raw hex inline in any page CSS/HTML except inside SVG <defs>.
+   · Theme blocks stay SIBLINGS of :root — never merged into it.
+   · data-theme="light" is the DEFAULT (D-007).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root{
+  /* ── Teal scale ── */
+  --teal-950:#062628;--teal-900:#0F2A2C;--teal-800:#003F44;--teal-700:#00696E;
+  --teal-600:#0297A1;--teal-500:#2CA4AB;--teal-400:#3FBFC7;--teal-300:#6AD7DE;
+  --teal-200:#8DD8DE;--teal-100:#C8EEF1;--teal-50:#EAF5F5;
+
+  /* ── Gold scale ── */
+  --gold-700:#9A7C3F;--gold-500:#C5A059;--gold-400:#D9B358;--gold-300:#E2C896;--gold-200:#EFD48A;--gold-50:#FBF6EA;
+
+  /* ── Status (semantic — use these, never the raw scales, for state) ── */
+  --status-success:#2E9E7B;--status-warning:#C79A3A;--status-danger:#C4614E;--status-info:#2CA4AB;--status-idle:#6D797A;
+
+  /* ── Gradients ── */
+  --grad-brand:linear-gradient(135deg,var(--teal-700),var(--teal-500));
+  --grad-gold:linear-gradient(135deg,var(--gold-500),var(--gold-700));
+  --grad-ai:linear-gradient(135deg,var(--teal-700),var(--teal-500),var(--gold-500));
+  --grad-spine:linear-gradient(180deg,var(--teal-500),var(--gold-500));
+
+  /* ── Typography (D-014: Baskerville body + Shippori Mincho numerals; supersedes D-008) ── */
+  --font-serif:'Cormorant Garamond',Georgia,serif;                                    /* display / headings */
+  --font-sans:'Baskerville','Baskerville Old Face','Libre Baskerville',Georgia,serif; /* body, labels, UI   */
+  --font-mono:'Shippori Mincho','Cormorant Garamond',Georgia,serif;                   /* numbers / data     */
+  --label-track:.16em;
+
+  /* ── Radii ── */
+  --r-sm:10px;--r-md:14px;--r-lg:18px;--r-xl:24px;--r-2xl:32px;--r-pill:999px;
+
+  /* ── Easing ── */
+  --ease-reverent:cubic-bezier(.22,1,.36,1);      /* card hover, entrances */
+  --ease-premium:cubic-bezier(.25,.46,.45,.94);   /* nav, buttons, chrome  */
+
+  /* ── Shadows ── */
+  --shadow-sm:0 1px 2px rgba(0,42,44,.04),0 1px 3px rgba(0,42,44,.04);
+  --shadow-md:0 4px 16px rgba(0,42,44,.06),0 1px 3px rgba(0,42,44,.04);
+  --shadow-lg:0 12px 40px rgba(0,42,44,.08),0 4px 12px rgba(0,42,44,.05);
+  --shadow-glow:0 8px 32px rgba(0,105,110,.18);
+}
+
+/* ── LIGHT (DEFAULT, D-007) — sibling block, never merged ── */
+:root[data-theme="light"]{
+  --bg:#EBF4F4;--bg-elev:#FFF;--bg-card:#FAFBFB;--card-solid:#FFF;
+  --line:rgba(0,42,44,.08);--line-strong:rgba(0,105,110,.18);
+  /* body ink near-black; muted lifted for hierarchy (D-014; headings --ink-900 unchanged) */
+  --ink-900:#0F2A2C;--ink-700:#0A0F0E;--ink-500:#0A0F0E;--ink-400:#2E3B3A;--ink-300:#556260;
+  --glass-bg:rgba(230,243,243,.68);--glass-border:rgba(0,105,110,.15);--glass-hi:rgba(255,255,255,.75);--row-hover:var(--teal-50);
+}
+
+/* ── DARK — sibling block, never merged ── */
+:root[data-theme="dark"]{
+  --bg:#04090A;--bg-elev:#0A1618;--bg-card:#0C1A1C;--card-solid:#0C1A1C;
+  --line:rgba(0,150,160,.16);--line-strong:rgba(0,150,160,.28);
+  --ink-900:#EDF6F6;--ink-700:#B8D0D0;--ink-500:#7A9E9F;--ink-400:#6D8080;--ink-300:#3D6062;
+  --glass-bg:rgba(8,22,24,.82);--glass-border:rgba(0,150,160,.22);--glass-hi:rgba(255,255,255,.06);--row-hover:rgba(0,150,160,.06);
+  --teal-700:#1A9AA1;--teal-500:#5BC1C7;--teal-300:#88E0E5;--gold-400:#D9B358;--gold-300:#E5C570;
+  --shadow-md:0 4px 16px rgba(0,0,0,.30),0 1px 3px rgba(0,0,0,.30);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.40),0 4px 12px rgba(0,0,0,.30);
+}
+</style>
+  <style data-inlined="styles/app.css">
+/* ═══════════════════════════════════════════════════════════════════════════
+   app.css — AiMindShare component library for the Session 0 console.
+   Depends on tokens.css. No raw brand hex (uses var()); .5px hairlines; cards
+   ≥ --r-xl; glow + pulse only (no sweep anims); dark mode has NO stars/dots.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-sans);font-size:16.5px;line-height:1.6;
+  color:var(--ink-500);background:var(--bg);
+  min-height:100vh;overflow-x:hidden;position:relative;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+h1,h2,h3{font-family:var(--font-serif);color:var(--ink-900);font-weight:600;line-height:1.15}
+.mono{font-family:var(--font-mono)}
+.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+/* ── Atmosphere ──────────────────────────────────────────────────────────── */
+.bg-canvas{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.bg-canvas::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 20% 45%, rgba(44,164,171,.06) 0%, transparent 42%),
+    radial-gradient(circle at 82% 55%, rgba(197,160,89,.05) 0%, transparent 50%);
+}
+.bg-grid{
+  position:absolute;inset:-2px;
+  background-image:
+    linear-gradient(0deg, var(--line) .5px, transparent .5px),
+    linear-gradient(90deg, var(--line) .5px, transparent .5px);
+  background-size:48px 48px;animation:gridDrift 60s linear infinite;
+}
+@keyframes gridDrift{from{transform:translate(0,0)}to{transform:translate(48px,48px)}}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.15;animation:orbFloat 24s ease-in-out infinite}
+.orb-1{width:420px;height:420px;top:-80px;left:-60px;background:radial-gradient(circle,var(--teal-500) 0%,transparent 70%)}
+.orb-2{width:520px;height:520px;bottom:-140px;right:-120px;background:radial-gradient(circle,var(--gold-500) 0%,transparent 70%);animation-delay:-8s}
+.orb-3{width:360px;height:360px;top:40%;left:55%;background:radial-gradient(circle,var(--teal-400) 0%,transparent 70%);animation-delay:-14s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(90px,70px)}}
+#starField{position:absolute;inset:0}
+.star{position:absolute;width:1px;height:1px;background:rgba(0,105,110,.4);border-radius:50%;opacity:.04;animation:starTwinkle var(--tw,5s) ease-in-out infinite;animation-delay:var(--td,0s)}
+:root[data-theme="dark"] .star{display:none}          /* NO stars/dots in dark mode */
+@keyframes starTwinkle{0%,100%{opacity:.04}50%{opacity:.13;transform:scale(1.25)}}
+
+/* ── Shell / layout ──────────────────────────────────────────────────────── */
+.topbar{
+  position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;
+  padding:14px 32px;background:var(--glass-bg);
+  backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);
+  border-bottom:.5px solid var(--glass-border);
+}
+.brand{display:flex;align-items:center;gap:11px;font-family:var(--font-serif);font-size:19px;font-weight:600}
+.brand .mark{position:relative;width:30px;height:30px;border-radius:var(--r-sm);background:var(--grad-brand);
+  display:grid;place-items:center;color:#fff;font-size:15px;box-shadow:var(--shadow-glow)}
+.brand .mark::after{content:'';position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:50%;
+  background:var(--gold-500);box-shadow:0 0 0 2px var(--bg-elev)}
+.brand b{color:var(--ink-900);font-weight:600}
+.brand em{color:var(--gold-500);font-style:italic;font-weight:600}
+.topbar .spacer{flex:1}
+.session-tag{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;color:var(--ink-400);
+  padding:5px 11px;border:.5px solid var(--line-strong);border-radius:var(--r-pill);text-transform:uppercase}
+
+.wrap{max-width:1200px;margin:0 auto;padding:32px}
+.page-head{margin:12px 0 26px}
+.page-head h1{font-size:clamp(30px,4.2vw,46px);letter-spacing:-.025em;line-height:1.03}
+.page-head h1 em{
+  font-style:italic;font-weight:500;
+  background:linear-gradient(125deg,var(--teal-700) 0%,var(--teal-500) 40%,var(--gold-700) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+}
+:root[data-theme="dark"] .page-head h1 em{
+  background:linear-gradient(125deg,var(--teal-300) 0%,var(--teal-500) 40%,var(--gold-400) 100%);
+  -webkit-background-clip:text;background-clip:text;
+}
+.page-head p{margin-top:10px;font-size:16.5px;line-height:1.6;color:var(--ink-400);max-width:64ch}
+
+.section-h{display:flex;align-items:baseline;gap:12px;margin:34px 0 16px}
+.section-h h2{font-size:20px}
+.section-h h2 em{color:var(--gold-500);font-style:italic;font-weight:500}
+.section-h .hint{font-family:var(--font-mono);font-size:11px;color:var(--ink-400);letter-spacing:.04em}
+.label{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-400)} /* D-018: eased from 14.5px/.16em */
+
+/* ── Glass panel base ────────────────────────────────────────────────────── */
+.panel,.kpi{
+  background:var(--glass-bg);backdrop-filter:blur(24px) saturate(1.5);
+  -webkit-backdrop-filter:blur(24px) saturate(1.5);
+  border:.5px solid var(--glass-border);border-radius:var(--r-xl);
+  box-shadow:inset 0 1px 0 var(--glass-hi),0 8px 28px rgba(0,105,110,.09);
+}
+:root[data-theme="dark"] .panel,:root[data-theme="dark"] .kpi{box-shadow:inset 0 1px 0 var(--glass-hi),0 8px 28px rgba(0,0,0,.28)}
+.panel{padding:24px}
+
+/* ── KPI strip ───────────────────────────────────────────────────────────── */
+.kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.kpi{position:relative;padding:22px 24px;min-height:120px;overflow:hidden;
+  transition:transform .35s var(--ease-reverent),box-shadow .35s var(--ease-reverent),border-color .35s var(--ease-reverent)}
+.kpi::after{content:'';position:absolute;top:12px;right:12px;width:60px;height:60px;border-radius:50%;
+  background:radial-gradient(circle,rgba(44,164,171,.12) 0%,transparent 70%)}
+.kpi:hover{transform:translateY(-6px) scale(1.015);border-color:rgba(26,154,161,.38);
+  box-shadow:0 20px 52px rgba(0,105,110,.18),0 4px 14px rgba(0,105,110,.10)}
+.kpi .kpi-ico{width:34px;height:34px;border-radius:var(--r-sm);background:rgba(0,105,110,.10);
+  display:grid;place-items:center;color:var(--teal-700);font-size:16px;margin-bottom:12px}
+.kpi .kpi-val{font-family:var(--font-mono);font-size:22px;font-weight:500;letter-spacing:-.02em;color:var(--ink-900);line-height:1} /* D-018: eased from 29px */
+.kpi .kpi-label{margin-top:6px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-400)} /* D-018: eased from 14.5px/.14em */
+.kpi.kpi-featured{border-color:var(--gold-500)}
+.kpi.kpi-featured .kpi-ico{background:var(--grad-gold);color:#fff}
+.kpi.kpi-featured .kpi-label{color:var(--gold-500)}
+
+/* ── Probe cards ─────────────────────────────────────────────────────────── */
+.probe-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.probe{position:relative;padding:22px 22px 20px;display:flex;flex-direction:column;gap:14px;
+  transition:transform .35s var(--ease-reverent),box-shadow .35s var(--ease-reverent),border-color .35s var(--ease-reverent)}
+.probe:hover{transform:translateY(-4px);border-color:rgba(26,154,161,.38)}
+.probe .p-top{display:flex;align-items:flex-start;gap:12px}
+.probe .p-ico{width:38px;height:38px;flex:none;border-radius:var(--r-sm);display:grid;place-items:center;font-size:17px;
+  background:rgba(0,105,110,.08);color:var(--teal-700)}
+.probe h3{font-size:16px}
+.probe .p-sub{font-size:12px;color:var(--ink-400);margin-top:3px}
+.probe .p-body{font-size:15.5px;color:var(--ink-500)}
+.probe .p-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:12px;border-top:.5px solid var(--line)}
+.probe .assertions{list-style:none;display:flex;flex-direction:column;gap:7px;font-family:var(--font-mono);font-size:11.5px}
+.probe .assertions li{display:flex;align-items:center;gap:8px;color:var(--ink-500)}
+.probe .assertions li::before{content:'✓';color:var(--status-success);font-weight:700}
+.probe .assertions li.bad::before{content:'✕';color:var(--status-danger)}
+.probe.state-error{border-color:rgba(196,97,78,.4)}
+.probe .p-envelope{font-family:var(--font-mono);font-size:11.5px;line-height:1.55;background:rgba(0,105,110,.05);
+  border:.5px solid var(--line);border-radius:var(--r-sm);padding:12px 14px;white-space:pre-wrap;word-break:break-word;color:var(--ink-700)}
+
+/* ── Pills ───────────────────────────────────────────────────────────────── */
+.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:var(--r-pill);
+  font-family:var(--font-mono);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--status-idle);background:rgba(109,121,122,.14)}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.success{color:var(--status-success);background:rgba(46,158,123,.14)}
+.pill.warning{color:var(--status-warning);background:rgba(199,154,58,.14)}
+.pill.danger{color:var(--status-danger);background:rgba(196,97,78,.14)}
+.pill.info{color:var(--status-info);background:rgba(44,164,171,.14)}
+.pill.attention{color:var(--gold-500);background:rgba(197,160,89,.14)}
+.pill.plain{background:transparent;border:.5px solid var(--line-strong);color:var(--ink-400)}
+.pill.plain::before{display:none}
+
+/* ── Ledger (migration & RLS table) ──────────────────────────────────────── */
+.ledger{display:flex;flex-direction:column}
+.ledger .row{display:grid;grid-template-columns:1.6fr 1fr auto;align-items:center;gap:14px;
+  padding:14px 4px;border-top:.5px solid var(--line);transition:background .2s var(--ease-premium)}
+.ledger .row:first-child{border-top:none}
+.ledger .row:hover{background:var(--row-hover)}
+.ledger .t-name{font-family:var(--font-mono);font-size:13px;color:var(--ink-900)}
+.ledger .t-name small{display:block;font-family:var(--font-sans);font-size:11.5px;color:var(--ink-400);margin-top:2px}
+.ledger .t-scope{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-500)}
+.ledger .badges{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 22px;
+  border-radius:var(--r-md);font-size:13px;font-weight:500;cursor:pointer;border:.5px solid transparent;
+  transition:transform .3s var(--ease-premium),box-shadow .3s var(--ease-premium),border-color .2s}
+.btn:active{transform:translateY(0) scale(.99)}
+.btn-primary{background:var(--grad-brand);color:#fff;box-shadow:var(--shadow-glow)}
+.btn-primary:hover{transform:translateY(-2px) scale(1.02)}
+.btn-ghost{background:transparent;border-color:var(--teal-700);color:var(--teal-700)}
+:root[data-theme="dark"] .btn-ghost{border-color:var(--teal-300);color:var(--teal-300)}
+.btn-ghost:hover{background:rgba(0,105,110,.06)}
+.btn-gold{background:var(--grad-gold);color:#1A0E00}
+.btn-gold:hover{transform:translateY(-2px) scale(1.02)}
+.btn-sm{height:32px;padding:0 14px;font-size:12px;border-radius:var(--r-sm)}
+.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}
+.icon-btn{width:38px;height:38px;border-radius:var(--r-sm);border:.5px solid var(--line-strong);background:transparent;
+  color:var(--ink-500);cursor:pointer;display:grid;place-items:center;font-size:15px;transition:border-color .2s,color .2s}
+.icon-btn:hover{border-color:var(--teal-500);color:var(--teal-700)}
+
+/* ── Inputs / config drawer ──────────────────────────────────────────────── */
+.field{display:flex;flex-direction:column;gap:7px;margin-bottom:16px}
+.field input{height:40px;padding:0 12px;background:var(--bg-card);border:.5px solid var(--line-strong);
+  border-radius:var(--r-sm);font-family:var(--font-mono);font-size:12.5px;color:var(--ink-900);transition:border-color .2s,box-shadow .2s}
+.field input:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px rgba(44,164,171,.15)}
+.field .help{font-size:11px;color:var(--ink-400)}
+
+.scrim{position:fixed;inset:0;background:rgba(4,9,10,.32);backdrop-filter:blur(2px);z-index:40;opacity:0;pointer-events:none;transition:opacity .3s}
+.scrim.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(420px,92vw);z-index:50;transform:translateX(102%);
+  transition:transform .4s var(--ease-reverent);background:var(--glass-bg);
+  backdrop-filter:blur(36px) saturate(1.7);-webkit-backdrop-filter:blur(36px) saturate(1.7);
+  border-left:.5px solid var(--glass-border);border-top-left-radius:var(--r-2xl);border-bottom-left-radius:var(--r-2xl);
+  padding:26px;overflow-y:auto}
+.drawer.open{transform:translateX(0)}
+.drawer h3{font-size:19px;margin-bottom:6px}
+.drawer .muted{font-size:12.5px;color:var(--ink-400);margin-bottom:20px;line-height:1.6}
+
+/* ── Banner ──────────────────────────────────────────────────────────────── */
+.banner{display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:var(--r-lg);
+  background:linear-gradient(145deg,rgba(197,160,89,.10),rgba(0,105,110,.04));border:.5px solid rgba(197,160,89,.30);
+  font-size:13px;color:var(--ink-700);margin-bottom:20px}
+.banner .b-ico{font-size:18px}
+.banner .spacer{flex:1}
+
+/* ── Skeleton (pulse opacity only) ───────────────────────────────────────── */
+.skeleton{background:var(--bg-card);border-radius:var(--r-sm);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+.foot{margin:44px 0 12px;padding-top:18px;border-top:.5px solid var(--line);
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-400);display:flex;gap:16px;flex-wrap:wrap}
+
+/* ── Entrance ────────────────────────────────────────────────────────────── */
+.reveal{opacity:0;transform:translateY(10px)}
+.js-ready .reveal{animation:rise .6s var(--ease-reverent) forwards}
+.js-ready .reveal:nth-child(2){animation-delay:.05s}
+.js-ready .reveal:nth-child(3){animation-delay:.1s}
+.js-ready .reveal:nth-child(4){animation-delay:.15s}
+@keyframes rise{to{opacity:1;transform:none}}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media(max-width:900px){
+  .kpi-strip{grid-template-columns:repeat(2,1fr)}
+  .probe-grid{grid-template-columns:1fr}
+  .wrap{padding:24px 20px}
+  .topbar{padding:12px 20px}
+}
+@media(max-width:560px){
+  .kpi-strip{grid-template-columns:1fr}
+  .ledger .row{grid-template-columns:1fr;gap:8px}
+  .ledger .badges{justify-content:flex-start}
+  .session-tag{display:none}
+  .page-head h1{font-size:30px}
+}
+@media(prefers-reduced-motion:reduce){
+  .orb,.bg-grid,.star{animation:none!important}
+  .reveal{opacity:1!important;transform:none!important;animation:none!important}
+  *{transition:none!important}
+}
+</style>
+  <style data-inlined="styles/m00-auth.css">
+/* ═══════════════════════════════════════════════════════════════════════════
+   m00-auth.css — AiMindShare Module M00 · Auth & Identity component layer.
+   Depends on tokens.css + app.css. No raw hex (var() only); .5px hairlines;
+   radii from the token scale; numbers in --font-mono; glow/pulse not sweep anims;
+   three fonts only. Dark mode inherits app.css (no stars/dots).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Auth shell: vertically-centered card stage ──────────────────────────── */
+.auth-stage{
+  min-height:calc(100vh - 66px);display:flex;align-items:center;justify-content:center;
+  padding:40px 20px 64px;
+}
+.auth-card{
+  width:100%;max-width:452px;position:relative;
+  background:var(--glass-bg);backdrop-filter:blur(24px) saturate(1.5);
+  -webkit-backdrop-filter:blur(24px) saturate(1.5);
+  border:.5px solid var(--glass-border);border-radius:var(--r-2xl);
+  box-shadow:inset 0 1px 0 var(--glass-hi),0 18px 56px rgba(0,105,110,.12);
+  padding:38px 38px 32px;
+}
+:root[data-theme="dark"] .auth-card{box-shadow:inset 0 1px 0 var(--glass-hi),0 18px 56px rgba(0,0,0,.42)}
+.auth-card.wide{max-width:720px}
+
+/* Crest — the Islamic-inspired identity mark (eight-point seal via CSS) ───── */
+.auth-crest{
+  width:56px;height:56px;margin:0 auto 20px;border-radius:var(--r-lg);
+  background:var(--grad-ai);display:grid;place-items:center;color:#fff;font-size:24px;
+  box-shadow:var(--shadow-glow);position:relative;
+}
+.auth-crest::before{
+  content:'';position:absolute;inset:6px;border:1.2px solid rgba(255,255,255,.55);
+  border-radius:var(--r-md);transform:rotate(45deg);
+}
+.auth-crest span{position:relative;z-index:1;font-family:var(--font-serif);font-weight:600}
+
+.auth-head{text-align:center;margin-bottom:26px}
+.auth-head h1{font-size:clamp(25px,3.4vw,31px);letter-spacing:-.02em;line-height:1.08}
+.auth-head h1 em{
+  font-style:italic;font-weight:500;
+  background:linear-gradient(125deg,var(--teal-700) 0%,var(--teal-500) 42%,var(--gold-700) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+}
+:root[data-theme="dark"] .auth-head h1 em{
+  background:linear-gradient(125deg,var(--teal-300) 0%,var(--teal-500) 42%,var(--gold-400) 100%);
+  -webkit-background-clip:text;background-clip:text;
+}
+.auth-head p{margin-top:9px;font-size:14.5px;line-height:1.55;color:var(--ink-400);max-width:38ch;margin-inline:auto}
+
+/* ── Segmented tabs (Sign in / Create account) ───────────────────────────── */
+.seg{display:flex;gap:4px;padding:4px;border-radius:var(--r-md);background:rgba(0,105,110,.06);
+  border:.5px solid var(--line);margin-bottom:24px}
+.seg button{flex:1;height:38px;border:none;background:transparent;cursor:pointer;border-radius:var(--r-sm);
+  font-family:var(--font-sans);font-size:13.5px;font-weight:600;color:var(--ink-400);
+  transition:background .25s var(--ease-premium),color .25s var(--ease-premium),box-shadow .25s}
+.seg button[aria-selected="true"]{background:var(--card-solid);color:var(--teal-700);box-shadow:var(--shadow-sm)}
+:root[data-theme="dark"] .seg button[aria-selected="true"]{color:var(--teal-300)}
+
+/* ── OAuth + divider ─────────────────────────────────────────────────────── */
+.oauth-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:46px;
+  border-radius:var(--r-md);border:.5px solid var(--line-strong);background:var(--card-solid);
+  cursor:pointer;font-family:var(--font-sans);font-size:14px;font-weight:600;color:var(--ink-900);
+  transition:border-color .2s,transform .25s var(--ease-premium),box-shadow .25s}
+.oauth-btn:hover{border-color:var(--teal-500);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.oauth-btn svg{width:18px;height:18px;flex:none}
+.divider{display:flex;align-items:center;gap:14px;margin:22px 0;color:var(--ink-300);
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-family:var(--font-sans);font-weight:600}
+.divider::before,.divider::after{content:'';flex:1;height:.5px;background:var(--line)}
+
+/* ── Fields (auth-scoped — larger than the config drawer inputs) ──────────── */
+.auth-card .field{gap:7px;margin-bottom:15px}
+.auth-card .field label{font-size:11.5px;font-weight:600;text-transform:uppercase;
+  letter-spacing:var(--label-track);color:var(--ink-400)}
+.auth-card .field input{height:46px;padding:0 14px;background:var(--bg-card);
+  border:.5px solid var(--line-strong);border-radius:var(--r-md);
+  font-family:var(--font-sans);font-size:15px;color:var(--ink-900);width:100%;
+  transition:border-color .2s,box-shadow .2s}
+.auth-card .field input::placeholder{color:var(--ink-300)}
+.auth-card .field input:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px rgba(44,164,171,.15)}
+.auth-card .field input[aria-invalid="true"]{border-color:var(--status-danger);box-shadow:0 0 0 3px rgba(196,97,78,.13)}
+.auth-card .field.locked input{color:var(--ink-400);background:rgba(0,105,110,.04);cursor:not-allowed}
+.field-hint{font-size:11.5px;color:var(--ink-400);line-height:1.5}
+
+.input-wrap{position:relative}
+.input-wrap .peek{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;
+  border:none;background:transparent;cursor:pointer;color:var(--ink-300);display:grid;place-items:center;
+  font-size:14px;border-radius:var(--r-sm)}
+.input-wrap .peek:hover{color:var(--teal-700)}
+
+/* ── Password strength meter (segments, calm color fill only) ────────────── */
+.pw-meter{display:flex;gap:5px;margin-top:9px}
+.pw-meter i{flex:1;height:4px;border-radius:var(--r-pill);background:var(--line-strong);
+  transition:background .3s var(--ease-premium)}
+.pw-meter[data-score="1"] i:nth-child(-n+1),
+.pw-meter[data-score="2"] i:nth-child(-n+2),
+.pw-meter[data-score="3"] i:nth-child(-n+3),
+.pw-meter[data-score="4"] i:nth-child(-n+4){background:var(--status-danger)}
+.pw-meter[data-score="2"] i:nth-child(-n+2){background:var(--status-warning)}
+.pw-meter[data-score="3"] i:nth-child(-n+3){background:var(--gold-500)}
+.pw-meter[data-score="4"] i{background:var(--status-success)}
+.pw-note{margin-top:7px;font-size:11.5px;color:var(--ink-400)}
+.pw-note b{font-family:var(--font-mono);font-weight:500}
+
+/* ── Rows: remember / terms ──────────────────────────────────────────────── */
+.check-row{display:flex;align-items:flex-start;gap:10px;margin:6px 0 4px;font-size:13px;color:var(--ink-500);line-height:1.5}
+.check-row input{width:17px;height:17px;margin-top:1px;accent-color:var(--teal-600);flex:none;cursor:pointer}
+.check-row a{color:var(--teal-700);border-bottom:.5px solid transparent}
+:root[data-theme="dark"] .check-row a{color:var(--teal-300)}
+.check-row a:hover{border-bottom-color:currentColor}
+.row-between{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.link{color:var(--teal-700);font-size:13px;font-weight:600;cursor:pointer;background:none;border:none;
+  font-family:var(--font-sans);padding:0}
+:root[data-theme="dark"] .link{color:var(--teal-300)}
+.link:hover{text-decoration:underline}
+
+/* ── Buttons: full-width submit ──────────────────────────────────────────── */
+.btn-block{width:100%;height:48px;font-size:14.5px;border-radius:var(--r-md);margin-top:6px}
+.btn .spin{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.4);
+  border-top-color:#fff;animation:aiSpin .7s linear infinite}
+@keyframes aiSpin{to{transform:rotate(360deg)}}
+.btn[data-busy="true"]{pointer-events:none;opacity:.85}
+
+/* ── Inline messages (error / success / info states) ─────────────────────── */
+.inline-msg{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:var(--r-md);
+  font-size:13px;line-height:1.5;margin-bottom:16px;border:.5px solid transparent}
+.inline-msg .im-ico{font-size:15px;line-height:1.3;flex:none}
+.inline-msg.error{color:var(--status-danger);background:rgba(196,97,78,.10);border-color:rgba(196,97,78,.28)}
+.inline-msg.success{color:var(--status-success);background:rgba(46,158,123,.10);border-color:rgba(46,158,123,.28)}
+.inline-msg.info{color:var(--ink-700);background:rgba(44,164,171,.08);border-color:rgba(44,164,171,.24)}
+.inline-msg.gold{color:var(--ink-700);background:linear-gradient(145deg,rgba(197,160,89,.12),rgba(0,105,110,.04));
+  border-color:rgba(197,160,89,.32)}
+
+.auth-foot{text-align:center;margin-top:22px;font-size:13px;color:var(--ink-400)}
+.auth-foot .link{font-size:13px}
+
+/* ── OTP / 2FA code input ─────────────────────────────────────────────────── */
+.otp-group{display:flex;gap:9px;justify-content:center;margin:6px 0 4px}
+.otp-group input{width:48px;height:58px;text-align:center;font-family:var(--font-mono);font-size:24px;
+  font-weight:500;color:var(--ink-900);background:var(--bg-card);border:.5px solid var(--line-strong);
+  border-radius:var(--r-md);transition:border-color .2s,box-shadow .2s}
+.otp-group input:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px rgba(44,164,171,.15)}
+@media(max-width:420px){.otp-group input{width:40px;height:50px;font-size:20px}}
+
+/* ── 2FA QR enrolment panel ──────────────────────────────────────────────── */
+.qr-panel{display:flex;gap:20px;align-items:center;padding:18px;border-radius:var(--r-lg);
+  background:rgba(0,105,110,.05);border:.5px solid var(--line);margin-bottom:18px}
+.qr-box{width:132px;height:132px;flex:none;border-radius:var(--r-md);background:var(--card-solid);
+  border:.5px solid var(--line-strong);display:grid;place-items:center;padding:8px}
+.qr-box img,.qr-box svg{width:100%;height:100%}
+.qr-side .field-hint{margin-bottom:8px}
+.qr-secret{font-family:var(--font-mono);font-size:12.5px;letter-spacing:.06em;color:var(--ink-700);
+  background:var(--bg-card);border:.5px solid var(--line);border-radius:var(--r-sm);padding:8px 10px;
+  word-break:break-all;user-select:all}
+@media(max-width:480px){.qr-panel{flex-direction:column;text-align:center}}
+
+/* ── Backup codes grid ───────────────────────────────────────────────────── */
+.backup-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}
+.backup-grid code{font-family:var(--font-mono);font-size:14px;letter-spacing:.08em;color:var(--ink-900);
+  background:var(--bg-card);border:.5px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;text-align:center}
+
+/* ── Settings layout (security / profile) ────────────────────────────────── */
+.settings-wrap{max-width:820px;margin:0 auto}
+.settings-grid{display:flex;flex-direction:column;gap:18px}
+.set-card{padding:24px 26px}
+.set-card .sc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.set-card h3{font-size:17px;margin-bottom:4px}
+.set-card .sc-sub{font-size:13px;color:var(--ink-400);line-height:1.5;max-width:52ch}
+.set-card .sc-body{margin-top:6px}
+
+/* Avatar */
+.avatar{width:64px;height:64px;border-radius:50%;flex:none;display:grid;place-items:center;overflow:hidden;
+  background:var(--grad-brand);color:#fff;font-family:var(--font-serif);font-size:24px;font-weight:600;
+  box-shadow:var(--shadow-glow)}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.avatar-row{display:flex;align-items:center;gap:18px;margin-bottom:20px}
+
+/* Sessions list */
+.sess-list{display:flex;flex-direction:column}
+.sess-row{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:14px;
+  padding:15px 4px;border-top:.5px solid var(--line)}
+.sess-row:first-child{border-top:none}
+.sess-ico{width:38px;height:38px;border-radius:var(--r-sm);background:rgba(0,105,110,.08);
+  display:grid;place-items:center;color:var(--teal-700);font-size:17px}
+.sess-meta b{font-family:var(--font-serif);font-size:15px;font-weight:600;color:var(--ink-900)}
+.sess-meta small{display:block;font-family:var(--font-mono);font-size:11.5px;color:var(--ink-400);margin-top:2px}
+
+/* Empty state (calm, token-based) */
+.empty-state{text-align:center;padding:34px 20px;color:var(--ink-400)}
+.empty-state .es-ico{font-size:26px;opacity:.6;margin-bottom:10px}
+.empty-state p{font-size:13.5px;line-height:1.6;max-width:40ch;margin-inline:auto}
+
+/* Loading skeleton block (pulse only) */
+.load-block{height:58px;border-radius:var(--r-md);background:var(--bg-card);
+  animation:pulse 1.6s ease-in-out infinite;margin-bottom:10px}
+
+/* ── Screen gallery (mockup overview / route #/) ─────────────────────────── */
+.gallery-head{max-width:640px}
+.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px}
+.g-card{display:flex;flex-direction:column;gap:12px;padding:20px;cursor:pointer;text-align:left;
+  transition:transform .35s var(--ease-reverent),box-shadow .35s var(--ease-reverent),border-color .35s var(--ease-reverent)}
+.g-card:hover{transform:translateY(-4px);border-color:rgba(26,154,161,.42);box-shadow:0 16px 40px rgba(0,105,110,.16)}
+.g-top{display:flex;align-items:center;gap:11px}
+.g-ico{width:36px;height:36px;border-radius:var(--r-sm);background:rgba(0,105,110,.10);display:grid;
+  place-items:center;color:var(--teal-700);font-size:16px}
+.g-card h3{font-size:15.5px}
+.g-card p{font-size:12.5px;color:var(--ink-400);line-height:1.5}
+.g-route{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.05em;color:var(--ink-300);margin-top:auto}
+.g-states{display:flex;gap:5px;flex-wrap:wrap}
+@media(max-width:820px){.gallery{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.gallery{grid-template-columns:1fr}}
+
+/* Back link on flow pages */
+.flow-back{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:11.5px;
+  letter-spacing:.04em;color:var(--ink-400);cursor:pointer;background:none;border:none;margin-bottom:18px}
+.flow-back:hover{color:var(--teal-700)}
+
+/* Connection notice (mockup mode banner) */
+.mock-note{max-width:452px;margin:0 auto 18px}
+
+/* ── Typographic balance (D-018) — auth-specific bits ────────────────────────
+   The global refinement (uppercase labels 10px, KPI numbers 22px) now lives in
+   app.css / tokens per D-018 (adopted standard). These rules only tune the
+   M00-specific components not present in the base library. */
+.auth-card .field label{font-size:10px;letter-spacing:.1em}     /* eased from 11.5px/.16em */
+.divider{font-size:10px;letter-spacing:.12em}                   /* eased from 11px/.14em */
+.otp-group input{height:52px;font-size:20px}                    /* eased from 58px/24px */
+@media(max-width:420px){.otp-group input{height:46px;font-size:18px}}
+
+/* ── Responsive: keep the topbar row inside narrow viewports ─────────────── */
+@media(max-width:560px){
+  .topbar{padding:12px 16px;gap:10px}
+  #connPill{display:none}          /* Connect button + drawer already convey status */
+  .gallery-head p{font-size:14.5px}
+}
+@media(max-width:420px){
+  .auth-card{padding:30px 22px 26px}
+  .backup-grid{grid-template-columns:1fr}
+}
+</style>
+
+  <script>
+    (function(){try{var t=localStorage.getItem("aimindshare-theme");
+      document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light");}catch(e){}})();
+  </script>
+
+  <!-- Mockup-sheet chrome only (frames + grid). Components come from m00-auth.css. -->
+  <style>
+    .mock-legend{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 6px}
+    .mock-section{margin-top:40px}
+    .mock-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:26px;margin-top:16px}
+    .mock-grid.wide{grid-template-columns:1fr}
+    .mock-frame{display:flex;flex-direction:column;border:.5px solid var(--line);border-radius:var(--r-lg);
+      background:var(--bg-card);box-shadow:var(--shadow-md);overflow:hidden}
+    .mock-cap{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;
+      border-bottom:.5px solid var(--line);background:var(--glass-bg);
+      backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4)}
+    .mock-cap b{font-family:var(--font-serif);font-size:14.5px;font-weight:600;color:var(--ink-900)}
+    .mock-cap .mc-route{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.04em;color:var(--ink-300)}
+    .mock-body{padding:26px 22px;display:flex;justify-content:center;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(44,164,171,.05) 0%, transparent 55%),
+        radial-gradient(circle at 80% 80%, rgba(197,160,89,.045) 0%, transparent 55%)}
+    /* Inside a frame the card is un-stretched and self-contained */
+    .mock-body .auth-card{max-width:388px;width:100%;box-shadow:var(--shadow-lg)}
+    .mock-body .settings-wrap{margin:0;width:100%}
+    .mock-body .page-head{margin:0 0 18px}
+    .sheet-toolbar{display:flex;align-items:center;gap:12px}
+    @media(max-width:520px){.mock-grid{grid-template-columns:1fr}.mock-body{padding:18px 12px}}
+  </style>
+</head>
+<body>
+  <div class="bg-canvas" aria-hidden="true">
+    <div class="bg-grid"></div><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div><div id="starField"></div>
+  </div>
+
+  <header class="topbar">
+    <div class="brand"><span class="mark">✦</span><span><b>AiMind</b><em>Share</em></span></div>
+    <span class="session-tag">M00 · Mockups</span>
+    <div class="spacer"></div>
+    <a class="btn btn-ghost btn-sm" href="m00-auth-and-identity.html">Open live app →</a>
+    <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme"><span id="themeIco">☾</span></button>
+  </header>
+
+  <main class="wrap">
+    <div class="page-head">
+      <h1>Auth &amp; Identity — <em>mockups</em></h1>
+      <p>Every M00 screen and its key states, rendered from the production component library
+        (<span class="mono">tokens.css · app.css · m00-auth.css</span>). Toggle the theme to review light
+        and dark. The interactive, Supabase-wired build is <a href="m00-auth-and-identity.html" style="color:var(--teal-700);border-bottom:.5px solid currentColor">m00-auth-and-identity.html</a>.</p>
+    </div>
+    <div class="mock-legend">
+      <span class="pill success">success</span><span class="pill danger">error</span>
+      <span class="pill info">loading</span><span class="pill plain">empty</span><span class="pill attention">default</span>
+    </div>
+    <div id="sheet"></div>
+    <div class="foot">
+      <span>AiMindShare · aimindshare.com</span><span>Module M00 · Auth &amp; Identity</span><span>High-fidelity mockups</span>
+    </div>
+  </main>
+
+  <script>
+  (() => {
+    "use strict";
+    const root = document.documentElement, THEME_KEY = "aimindshare-theme";
+    const setTheme = (t) => { root.setAttribute("data-theme", t); try { localStorage.setItem(THEME_KEY, t); } catch (e) {} document.getElementById("themeIco").textContent = t === "dark" ? "☀" : "☾"; };
+    setTheme((() => { try { return localStorage.getItem(THEME_KEY) || "light"; } catch (e) { return "light"; } })());
+    document.getElementById("themeToggle").addEventListener("click", () => setTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark"));
+
+    // Starfield (light only; hidden in dark by app.css)
+    const field = document.getElementById("starField");
+    if (field && !window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+      for (let i = 0; i < 40; i++) { const s = document.createElement("div"); s.className = "star";
+        s.style.left = Math.random()*100+"%"; s.style.top = Math.random()*100+"%";
+        s.style.setProperty("--tw",(3+Math.random()*7).toFixed(1)+"s"); s.style.setProperty("--td",(Math.random()*10).toFixed(1)+"s"); field.appendChild(s); }
+
+    /* ── Shared fragments (mirror m00-auth.js markup) ─────────────────────── */
+    const G = '<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z"/></svg>';
+    const crest = '<div class="auth-crest"><span>✦</span></div>';
+    const msg = (k, ico, html) => `<div class="inline-msg ${k}"><span class="im-ico">${ico}</span><div>${html}</div></div>`;
+    const head = (h1, p) => `<div class="auth-head"><h1>${h1}</h1>${p ? `<p>${p}</p>` : ""}</div>`;
+    const field_ = (id, label, val, ph, type) => `<div class="field"><label>${label}</label><input type="${type||"text"}" value="${val||""}" placeholder="${ph||""}"></div>`;
+    const pwField = (label, ph, score) => `<div class="field"><label>${label}</label><div class="input-wrap"><input type="password" value="${score?"••••••••••••":""}" placeholder="${ph}"><button class="peek" type="button">◉</button></div>${score!=null?`<div class="pw-meter" data-score="${score}"><i></i><i></i><i></i><i></i></div><div class="pw-note">Strength: <b>${["","weak","fair","good","strong"][score]}</b></div>`:""}</div>`;
+    const otp = (vals) => `<div class="otp-group">${[0,1,2,3,4,5].map(i=>`<input value="${(vals&&vals[i])||""}" maxlength="1">`).join("")}</div>`;
+    const seg = (sel) => `<div class="seg" role="tablist"><button role="tab" aria-selected="${sel==="in"}">Sign in</button><button role="tab" aria-selected="${sel==="up"}">Create account</button></div>`;
+    const btn = (cls, label, busy) => `<button class="btn ${cls}"${busy?' data-busy="true"':""}>${busy?`<span class="spin"></span> ${label}`:label}</button>`;
+    const card = (inner) => `<div class="auth-card">${inner}</div>`;
+
+    /* ── Screen builders (static) ─────────────────────────────────────────── */
+    const V = {};
+    V.loginDefault = card(`${crest}${seg("in")}${head("Welcome <em>back</em>.","Sign in to your AiMindShare workspace.")}
+      <form><button class="oauth-btn">${G}<span>Continue with Google</span></button><div class="divider">or with email</div>
+      ${field_("","Email address","aisha@northstar.agency","you@agency.com","email")}
+      <div class="field"><label>Password</label><div class="input-wrap"><input type="password" value="••••••••••" ><button class="peek" type="button">◉</button></div></div>
+      <div class="check-row row-between" style="margin-top:10px"><label style="display:flex;gap:8px;align-items:center;margin:0"><input type="checkbox" checked><span style="font-size:13px">Remember me for 30 days</span></label><button class="link">Forgot password?</button></div>
+      ${btn("btn-primary btn-block","Sign in")}${btn("btn-ghost btn-block","Email me a magic link")}</form>`);
+    V.loginError = card(`${crest}${seg("in")}${head("Welcome <em>back</em>.","Sign in to your AiMindShare workspace.")}
+      <form>${msg("error","⚠","Invalid email or password.")}<button class="oauth-btn">${G}<span>Continue with Google</span></button><div class="divider">or with email</div>
+      ${field_("","Email address","aisha@northstar.agency","","email")}
+      <div class="field"><label>Password</label><div class="input-wrap"><input type="password" value="••••" ><button class="peek" type="button">◉</button></div></div>
+      ${btn("btn-primary btn-block","Signing in…",true)}</form>`);
+    V.signupDefault = card(`${crest}${seg("up")}${head("Start with <em>clarity</em>.","Your workspace, your data, walled off by database-level security.")}
+      <form><button class="oauth-btn">${G}<span>Continue with Google</span></button><div class="divider">or with email</div>
+      ${field_("","Full name","Aisha Rahman","Aisha Rahman")}
+      ${field_("","Email address","aisha@northstar.agency","you@agency.com","email")}
+      ${pwField("Password","Create a password",4)}
+      <label class="check-row"><input type="checkbox" checked><span>I agree to the <a href="#" onclick="return false">Terms</a> and <a href="#" onclick="return false">Privacy Policy</a>.</span></label>
+      ${btn("btn-primary btn-block","Create account")}</form>`);
+    V.signupSuccess = card(`${crest}${head("Check your <em>email</em>","We sent a verification link to <b>aisha@northstar.agency</b>. Confirm it to activate your account.")}${msg("success","✉","Didn't get it? Check spam, or return to <button class='link'>sign in</button>.")}`);
+    V.magicDefault = card(`<button class="flow-back">← Back to sign in</button>${crest}${head("One-tap <em>sign in</em>","No password to remember — we email a secure link.")}
+      <form>${field_("","Email address","","you@agency.com","email")}${btn("btn-primary btn-block","Email me a link")}</form>`);
+    V.magicSuccess = card(`${crest}${head("Check your <em>email</em>","A one-time link is on its way to <b>aisha@northstar.agency</b>.")}${msg("success","✉","The link expires in 15 minutes and can be used once.")}`);
+    V.twofaDefault = card(`${crest}${head("Verify it's <em>you</em>","Enter the 6-digit code from your authenticator app.")}
+      <form>${otp()}${btn("btn-primary btn-block","Verify")}<div class="auth-foot"><button class="link">Use a backup code instead</button></div></form>`);
+    V.twofaError = card(`${crest}${head("Verify it's <em>you</em>","Enter the 6-digit code from your authenticator app.")}
+      <form>${msg("error","⚠","That code didn't match. Try again or use a backup code.")}${otp(["1","4","8","2","0"])}${btn("btn-primary btn-block","Verifying…",true)}</form>`);
+    V.forgotDefault = card(`<button class="flow-back">← Back to sign in</button>${crest}${head("Reset your <em>password</em>","We'll email you a secure link to set a new one.")}
+      <form>${field_("","Email address","","you@agency.com","email")}${btn("btn-primary btn-block","Send reset link")}</form>`);
+    V.forgotSuccess = card(`${crest}${head("Check your <em>email</em>")}${msg("success","✉","<b>If an account exists</b> for <b>aisha@northstar.agency</b>, a reset link is on its way (valid 1 hour).")}`);
+    V.resetDefault = card(`${crest}${head("Choose a new <em>password</em>","For your security, this signs out every other session.")}
+      <form>${pwField("New password","Create a new password",3)}${field_("","Confirm password","","Re-enter password","password")}${btn("btn-primary btn-block","Update password")}</form>`);
+    V.resetSuccess = card(`${crest}${head("Password <em>updated</em>")}${msg("success","✓","Your password was changed and all other sessions were signed out. <button class='link'>Sign in</button>.")}`);
+    V.verifySuccess = card(`${crest}${head("Email <em>verified</em>")}${msg("success","✓","Your email is confirmed. <button class='link'>Go to your account</button>.")}`);
+    V.verifyExpired = card(`${crest}${head("Link <em>expired</em>")}${msg("error","⚠","This verification link is no longer valid.")}${btn("btn-primary btn-block","Resend verification")}`);
+    V.inviteStub = card(`${crest}${head("You're <em>invited</em>","Set your name and password to join <b>Northstar Agency</b>.")}
+      <div class="field locked"><label>Email address</label><input value="invited@northstar.agency" disabled></div>
+      ${field_("","Full name","","Your name")}${pwField("Password","Create a password",2)}
+      ${btn("btn-primary btn-block disabled","Accept & join")}${msg("info","◈","Workspace membership attaches in <b>M01</b>. This screen ships ready; the join action activates once M01 is built.")}`);
+
+    // Wide (settings) screens
+    V.securityDefault = `<div class="settings-wrap settings-grid">
+      <div class="panel set-card"><div class="sc-head"><div><h3>Password</h3><div class="sc-sub">Change your password. Updating it signs out every other device.</div></div></div><div class="sc-body"><button class="btn btn-ghost">Change password</button></div></div>
+      <div class="panel set-card"><div class="sc-head"><div><h3>Two-factor authentication</h3><div class="sc-sub">Add a one-time code from an authenticator app on top of your password.</div></div><span class="pill success">enabled</span></div><div class="sc-body"><button class="btn btn-ghost">Disable 2FA</button></div></div>
+      <div class="panel set-card"><div class="sc-head"><div><h3>Active sessions</h3><div class="sc-sub">Devices signed in to your account.</div></div><button class="btn btn-ghost btn-sm">Sign out others</button></div>
+        <div class="sc-body"><div class="sess-list">
+          <div class="sess-row"><div class="sess-ico">🖥</div><div class="sess-meta"><b>This device — current</b><small>Chrome · Windows · signed in now</small></div><span class="pill success">current</span></div>
+          <div class="sess-row"><div class="sess-ico">📱</div><div class="sess-meta"><b>iPhone 15</b><small>Safari · Toronto, CA · 2 hours ago</small></div><button class="btn btn-ghost btn-sm">Revoke</button></div>
+        </div></div></div>
+      <div class="panel set-card"><div class="sc-head"><div><h3 style="color:var(--status-danger)">Delete account</h3><div class="sc-sub">Soft-delete with a 30-day grace period. Sole workspace owners must transfer ownership first (available after M01).</div></div></div><div class="sc-body"><button class="btn btn-danger" disabled title="Available after M01">Delete account</button></div></div></div>`;
+    V.securityEnroll = `<div class="settings-wrap settings-grid"><div class="panel set-card">
+      <div class="sc-head"><div><h3>Enable two-factor</h3><div class="sc-sub">Scan the QR with your authenticator, then confirm the 6-digit code.</div></div><span class="pill info">setup</span></div>
+      <div class="sc-body"><div class="qr-panel"><div class="qr-box"><div style="width:100%;height:100%;background:conic-gradient(from 0deg,var(--ink-900) 0 25%,transparent 0 50%,var(--ink-900) 0 75%,transparent 0);opacity:.85;border-radius:6px"></div></div>
+        <div class="qr-side"><div class="field-hint">Scan with Google Authenticator, 1Password, or Authy — then enter the 6-digit code.</div><div class="qr-secret">JBSWY3DPEHPK3PXP QORS UTIN</div></div></div>
+        <div class="field"><label>Verification code</label>${otp(["4","0","2"])}</div>
+        <div style="display:flex;gap:10px;margin-top:12px">${btn("btn-primary","Confirm & enable")}${btn("btn-ghost","Cancel")}</div></div></div></div>`;
+    V.securityEmpty = `<div class="settings-wrap settings-grid"><div class="panel set-card">
+      <div class="sc-head"><div><h3>Active sessions</h3><div class="sc-sub">Devices signed in to your account.</div></div><button class="btn btn-ghost btn-sm" disabled>Sign out others</button></div>
+      <div class="sc-body"><div class="empty-state"><div class="es-ico">🗝</div><p>No other devices are signed in. When you sign in elsewhere, those sessions appear here so you can revoke them.</p></div></div></div></div>`;
+    V.securityLoading = `<div class="settings-wrap settings-grid"><div class="panel set-card">
+      <div class="sc-head"><div><h3>Two-factor authentication</h3><div class="sc-sub">Add a one-time code on top of your password.</div></div><span class="pill idle">checking…</span></div>
+      <div class="sc-body"><div class="load-block"></div></div></div>
+      <div class="panel set-card"><div class="sc-head"><div><h3>Active sessions</h3><div class="sc-sub">Devices signed in to your account.</div></div></div>
+      <div class="sc-body"><div class="load-block"></div><div class="load-block" style="width:70%"></div></div></div></div>`;
+    V.profileDefault = `<div class="settings-wrap settings-grid"><div class="panel set-card">
+      <div class="avatar-row"><div class="avatar">AR</div><div><button class="btn btn-ghost btn-sm">Upload avatar</button><div class="field-hint" style="margin-top:6px">PNG or JPG, up to 2 MB. Stored in your Media Library (M06).</div></div></div>
+      ${field_("","Full name","Aisha Rahman","Your name")}${field_("","Email address","aisha@northstar.agency","you@agency.com","email")}
+      ${btn("btn-primary","Save changes")}</div></div>`;
+
+    /* ── Frame + section rendering ────────────────────────────────────────── */
+    const SECTIONS = [
+      { title: "Sign in &amp; <em>create account</em>", grid: "", frames: [
+        ["Sign in", "default", "#/login", V.loginDefault],
+        ["Sign in", "error · loading", "#/login", V.loginError],
+        ["Create account", "default", "#/signup", V.signupDefault],
+        ["Create account", "success", "#/signup", V.signupSuccess],
+      ]},
+      { title: "Passwordless &amp; <em>recovery</em>", grid: "", frames: [
+        ["Magic link", "default", "#/magic", V.magicDefault],
+        ["Magic link", "success", "#/magic", V.magicSuccess],
+        ["Forgot password", "default", "#/forgot", V.forgotDefault],
+        ["Forgot password", "success", "#/forgot", V.forgotSuccess],
+        ["Reset password", "default", "#/reset", V.resetDefault],
+        ["Reset password", "success", "#/reset", V.resetSuccess],
+        ["Verify email", "success", "#/verify", V.verifySuccess],
+        ["Verify email", "error", "#/verify", V.verifyExpired],
+      ]},
+      { title: "Two-<em>factor</em>", grid: "", frames: [
+        ["2FA step-up", "default", "#/2fa", V.twofaDefault],
+        ["2FA step-up", "error · loading", "#/2fa", V.twofaError],
+      ]},
+      { title: "Account <em>settings</em>", grid: "wide", frames: [
+        ["Account security", "default", "#/settings/security", V.securityDefault],
+        ["Two-factor enrolment", "setup", "#/settings/security", V.securityEnroll],
+        ["Active sessions", "empty", "#/settings/security", V.securityEmpty],
+        ["Account security", "loading", "#/settings/security", V.securityLoading],
+        ["Profile", "default", "#/settings/profile", V.profileDefault],
+      ]},
+      { title: "Onboarding <em>edge</em>", grid: "", frames: [
+        ["Accept invite", "stub · needs M01", "#/invite", V.inviteStub],
+      ]},
+    ];
+    const statePill = (s) => { const k = /success/.test(s)?"success":/error/.test(s)?"danger":/loading|setup|checking/.test(s)?"info":/empty|stub/.test(s)?"plain":"attention"; return `<span class="pill ${k}">${s}</span>`; };
+    const sheet = document.getElementById("sheet");
+    SECTIONS.forEach((sec) => {
+      const wrap = document.createElement("section"); wrap.className = "mock-section";
+      wrap.innerHTML = `<div class="section-h"><h2>${sec.title}</h2><span class="hint">${sec.frames.length} frames</span></div>
+        <div class="mock-grid ${sec.grid}">${sec.frames.map(([name, state, route, body]) =>
+          `<div class="mock-frame"><div class="mock-cap"><b>${name}</b><span class="mc-route">${route}</span></div>
+             <div class="mock-body">${body}</div>
+             <div class="mock-cap" style="border-top:.5px solid var(--line);border-bottom:none">${statePill(state)}</div></div>`).join("")}</div>`;
+      sheet.appendChild(wrap);
+    });
+    document.body.classList.add("js-ready");
+  })();
+  </script>
+</body>
+</html>

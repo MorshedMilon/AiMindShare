@@ -1,0 +1,255 @@
+# AiMindShare — Supabase local config (Session 0)
+# `supabase start` reads this. project_id is a local label only.
+project_id = "aimindshare"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[realtime]
+enabled = true
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+
+# Google OAuth / magic links / 2FA (TOTP) are configured in the hosted project's
+# Auth settings — out of scope for local build (see docs/README.md). M00 uses the
+# built-in email flows for verify / magic link / password reset (DECISIONS D-016);
+# custom provider (D-011) stays deferred to M04.
+
+# Health function is a public read-proof (no user JWT required).
+[functions.health]
+verify_jwt = false
+
+# Account actions (M00 soft-delete) require a signed-in caller.
+[functions.account]
+verify_jwt = true
+
+# M02 fine-grained permission gate — the Gate-2 test Edge Fn + canonical
+# requirePermission() reference. Requires a signed-in caller.
+[functions.permission-check]
+verify_jwt = true
+
+# M41 Credential Vault (Session 5). Connect / test / disconnect are admin+ actions →
+# require a signed-in caller. The OAuth callback has NO user JWT (the provider
+# redirects the browser here) — it authorizes by the signed `state` instead (§5).
+[functions.integrations-connect]
+verify_jwt = true
+
+[functions.integrations-callback]
+verify_jwt = false
+
+[functions.integrations-test]
+verify_jwt = true
+
+[functions.integrations-disconnect]
+verify_jwt = true
+
+# M03 billing (Session 4). Checkout + portal require a signed-in caller (owner —
+# billing.manage re-checked inside the function). The webhook has NO JWT: Stripe
+# signs the body, verified against the Vault signing secret (EDGE-FUNCTIONS-SPEC §4).
+[functions.billing-checkout]
+verify_jwt = true
+
+[functions.billing-portal]
+verify_jwt = true
+
+[functions.billing-webhook]
+verify_jwt = false
+
+# M09 CRM (Session 8). Both require a signed-in caller. crm-export is the Gate-2
+# headline — crm.export is re-checked inside on a caller-scoped client (STAFF → 403).
+# contacts-import records a contact_imports row + enqueues the contact.import job
+# (the browser never processes rows — Law 5).
+[functions.crm-export]
+verify_jwt = true
+
+[functions.contacts-import]
+verify_jwt = true
+
+# M12 Inbox — outbound SMS send (caller JWT + staff+ gate inside).
+[functions.inbox-send]
+verify_jwt = true
+
+# M12 Inbox — inbound SMS webhook. NO caller JWT: Twilio authenticates by
+# X-Twilio-Signature (HMAC over the Vault auth_token), verified inside the function.
+[functions.twilio-inbound-sms]
+verify_jwt = false
+
+# M13 Automations — trigger-bus HTTP entry (caller JWT + staff+ gate inside).
+[functions.automations-trigger]
+verify_jwt = true
+
+# M13 Automations — "Test with contact" sandbox run (caller JWT + manager+ gate).
+[functions.automations-test]
+verify_jwt = true
+
+# M13 Automations — AI builder scaffold (caller JWT + manager+ gate; no provider yet).
+[functions.automations-ai-generate]
+verify_jwt = true
+
+# M28 Payments (Session 13). Checkout + send require a signed-in staff+ member
+# (re-checked inside on a caller-scoped client). The Stripe key lives in Vault; the
+# webhook has NO JWT (Stripe signs the body, verified vs the Vault signing secret —
+# idempotent on event.id via M03's stripe_events). public-invoice is the NO-AUTH
+# hosted pay page — a client opening a pay link has no session; the unguessable
+# public_token in the body is the authorization (returns one invoice's safe fields).
+[functions.payments-checkout]
+verify_jwt = true
+
+[functions.payments-webhook]
+verify_jwt = false
+
+[functions.public-invoice]
+verify_jwt = false
+
+[functions.invoice-send]
+verify_jwt = true
+
+# M14 Calendar & Booking (Session 12). public-booking is the NO-AUTH public page
+# path — a visitor booking a slot has no session; the calendar `slug` authorizes the
+# read/book, and the unguessable reschedule/cancel token authorizes self-service.
+# appointment-remind is worker-invoked (service role). google-calendar-sync connect
+# requires a signed-in caller; its OAuth callback has NO JWT (Google redirects the
+# browser here) and authorizes by the signed `state`, like integrations-callback.
+[functions.public-booking]
+verify_jwt = false
+
+[functions.appointment-remind]
+verify_jwt = false
+
+[functions.google-calendar-sync]
+verify_jwt = true
+
+[functions.google-calendar-callback]
+verify_jwt = false
+
+# M44 Admin Basics (Session 14). admin-impersonate requires a signed-in caller who
+# passes requirePlatformAdmin() (server-side wall); it opens an audited, 30-min
+# impersonation session (service role) and carries the GoTrue admin session-mint.
+# All other M44 admin operations are is_platform_admin()-gated SECURITY DEFINER RPCs
+# (no Edge Function needed) — see migration 0018_m44_admin.sql.
+[functions.admin-impersonate]
+verify_jwt = true
+
+# M19 Sites (Session 18). builder-ai-generate + domain-verify require a signed-in
+# caller (staff+/admin+ checked server-side via has_role). site-render + site-track
+# are PUBLIC surfaces (a website visitor has no session) → verify_jwt=false; both run
+# service-role and only ever expose/write published data (D-100/D-105/D-106).
+[functions.builder-ai-generate]
+verify_jwt = true
+
+[functions.domain-verify]
+verify_jwt = true
+
+[functions.site-render]
+verify_jwt = false
+
+[functions.site-track]
+verify_jwt = false
+
+# M16 Campaigns (Session 17). campaigns (test-send / spam-check / send-now) +
+# campaigns-ai-write require a signed-in staff+/manager+ member (re-checked inside on
+# a caller-scoped client). The SendGrid key lives in Vault; send-now only ENQUEUES the
+# campaign.send fan-out job (the browser never sends a broadcast — Law 5).
+[functions.campaigns]
+verify_jwt = true
+
+# M16 AI copywriter scaffold (caller JWT + manager+ gate; no LLM provider yet, D-091).
+[functions.campaigns-ai-write]
+verify_jwt = true
+
+# M16 SendGrid Signed Event Webhook. NO caller JWT: SendGrid signs the body with ECDSA
+# (verified inside vs the Vault verification key). An unverified payload is ack'd and
+# dropped — the signature IS the authorization.
+[functions.sendgrid-webhook]
+verify_jwt = false
+
+# M16 open-pixel + click-redirect. NO caller JWT: a recipient's mail client has no
+# session — the unguessable per-recipient send_events.token in the URL authorizes the
+# open/click write, then the pixel/redirect is returned.
+[functions.email-track]
+verify_jwt = false
+
+# M16 public one-click unsubscribe. NO caller JWT: a recipient has no session — the
+# unguessable send_events.token authorizes the opt-out (dual-writes suppression + M05
+# consent). Also serves the List-Unsubscribe-Post one-click POST.
+[functions.email-unsubscribe]
+verify_jwt = false
+
+# M15 Forms & Surveys (Session 16). public-form is the NO-AUTH public form/survey/quiz
+# surface — a visitor on a form link has no session; the unguessable forms.public_token
+# authorizes every path. Runs service-role and returns ONLY public-safe form config
+# (never routing_json / field map_to / raw settings_json). Views + submissions are
+# service-role writes (RLS: service-role-only, D-055) — the browser can't forge either;
+# submit_form() does the authoritative validation/spam-gate/scoring/routing in SQL.
+[functions.public-form]
+verify_jwt = false
+
+# forms-export — authed submissions CSV (permission-gated). Reads run on the caller's
+# JWT (userClient) so RLS scopes rows to the caller's workspace; the crm.export gate
+# (submissions are contact data — reuses M09's registry key) blocks STAFF server-side.
+[functions.forms-export]
+verify_jwt = true
+
+# M20 Funnels (Session 19). public-funnel is the NO-AUTH public funnel surface — a
+# visitor moving through a funnel has no session. The funnel_id authorizes (it resolves
+# to exactly one workspace, looked up server-side; a body workspace_id is never
+# trusted). Runs service-role: funnel_visits are service-role writes (RLS: service-
+# role-only, D-094) so the browser can't forge an event; the order action creates an
+# M28 invoice (source_type='order', total recomputed by M28's trigger) and hands
+# payment to the M28 hosted pay flow (public-invoice) — no Stripe code duplicated.
+[functions.public-funnel]
+verify_jwt = false
+
+# M22 Content/CMS — manual slice (Session 22). blog-render is a PUBLIC surface — a
+# blog reader has no session → verify_jwt=false. It runs service-role and ONLY ever
+# returns status='published' articles (a draft slug 404s), mirroring M19 site-render
+# (D-121). Serves /blog, /blog/[slug], /blog/category/[slug], and /blog/rss.xml.
+[functions.blog-render]
+verify_jwt = false
+
+# M06 Media Library (Session 20). media-autotag is a SERVICE-SIDE background function
+# invoked by the worker for a media.autotag job (never a browser path -> verify_jwt=false).
+# It writes ai_tags + an alt-text draft for an image. The GPT-4o vision PROVIDER is a
+# labelled scaffold until a provider is decided (D-117, same posture as the M13
+# AI builder D-063); meter_increment('ai_tokens') fires only on a real call (Gate 3).
+[functions.media-autotag]
+verify_jwt = false
+
+# M21 SEO Engine (Session 21). Three browser-invoked provider functions — keyword
+# research (DataForSEO, workspace-cached), SERP analysis (SerpApi), competitor gap
+# (DataForSEO Labs). All read creds from the Vault via resolveCredential and meter
+# 'seo_calls' in the success path only; all require a JWT (verify_jwt=true). Live
+# provider round-trips are ready-not-run (no cred connected here → 503 not_connected).
+[functions.seo-keyword-lookup]
+verify_jwt = true
+
+[functions.seo-serp]
+verify_jwt = true
+
+[functions.seo-gap]
+verify_jwt = true

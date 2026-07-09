@@ -1,0 +1,125 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   m03-billing.css — AiMindShare Module M03 · Billing & Usage Metering surfaces.
+   Layers on tokens.css + app.css + components.css. Module-only classes here
+   (plan cards, meter progress bars, credit wallets, trial banner). var() tokens
+   only; .5px hairlines; numbers render in --font-mono; glow/pulse motion only —
+   no sweep. Dark mode inherits the sibling token block (no stars/dots).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Trial / billing-state banner ─────────────────────────────────────────── */
+.state-banner{display:flex;align-items:center;gap:14px;padding:15px 20px;border-radius:var(--r-lg);
+  margin-bottom:22px;font-size:13.5px;color:var(--ink-700);
+  background:linear-gradient(145deg,rgba(197,160,89,.12),rgba(0,105,110,.04));
+  border:.5px solid rgba(197,160,89,.32)}
+.state-banner .sb-ico{width:34px;height:34px;flex:none;border-radius:var(--r-sm);display:grid;place-items:center;
+  font-size:16px;background:var(--grad-gold);color:#1A0E00}
+.state-banner .sb-body{min-width:0;flex:1}
+.state-banner .sb-title{font-family:var(--font-serif);font-size:16px;color:var(--ink-900)}
+.state-banner .sb-title em{color:var(--gold-500);font-style:italic;font-weight:500}
+.state-banner .sb-sub{font-size:12.5px;color:var(--ink-400);margin-top:2px}
+.state-banner .sb-count{font-family:var(--font-mono);font-size:22px;color:var(--gold-500);line-height:1;text-align:center}
+.state-banner .sb-count small{display:block;font-family:var(--font-sans);font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-400);margin-top:3px}
+.state-banner.danger{background:linear-gradient(145deg,rgba(196,97,78,.14),rgba(0,105,110,.03));border-color:rgba(196,97,78,.34)}
+.state-banner.danger .sb-ico{background:var(--status-danger);color:#fff}
+.state-banner.danger .sb-count{color:var(--status-danger)}
+.state-banner.warning{background:linear-gradient(145deg,rgba(199,154,58,.14),rgba(0,105,110,.03));border-color:rgba(199,154,58,.34)}
+
+/* Trial countdown chip in the topbar */
+.trial-chip{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 13px;border-radius:var(--r-pill);
+  border:.5px solid rgba(197,160,89,.45);background:rgba(197,160,89,.10);color:var(--gold-500);
+  font-family:var(--font-mono);font-size:11.5px;letter-spacing:.02em;cursor:pointer;transition:border-color .2s}
+.trial-chip:hover{border-color:var(--gold-500)}
+.trial-chip.danger{border-color:rgba(196,97,78,.5);background:rgba(196,97,78,.10);color:var(--status-danger)}
+.trial-chip .tc-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 2.4s ease-in-out infinite}
+
+/* ── Plan cards (comparison + current) ────────────────────────────────────── */
+.plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+.plan-card{position:relative;display:flex;flex-direction:column;gap:14px;padding:22px;border-radius:var(--r-xl);
+  background:var(--glass-bg);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);
+  border:.5px solid var(--glass-border);box-shadow:inset 0 1px 0 var(--glass-hi),0 8px 28px rgba(0,105,110,.08);
+  transition:transform .35s var(--ease-reverent),box-shadow .35s var(--ease-reverent),border-color .35s var(--ease-reverent)}
+:root[data-theme="dark"] .plan-card{box-shadow:inset 0 1px 0 var(--glass-hi),0 8px 28px rgba(0,0,0,.28)}
+.plan-card:hover{transform:translateY(-4px);border-color:rgba(26,154,161,.42);box-shadow:0 16px 40px rgba(0,105,110,.16)}
+.plan-card.is-current{border-color:var(--teal-500)}
+.plan-card.is-featured{border-color:rgba(197,160,89,.42)}
+.plan-card .pc-tier{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--ink-400)}
+.plan-card .pc-name{font-family:var(--font-serif);font-size:22px;color:var(--ink-900);line-height:1.05}
+.plan-card .pc-price{font-family:var(--font-mono);font-size:30px;font-weight:500;letter-spacing:-.02em;color:var(--ink-900);line-height:1}
+.plan-card .pc-price .cur{font-size:17px;color:var(--ink-400);vertical-align:top;margin-right:1px}
+.plan-card .pc-price .per{font-family:var(--font-sans);font-size:12.5px;color:var(--ink-400);letter-spacing:0}
+.plan-card .pc-feats{list-style:none;display:flex;flex-direction:column;gap:8px;margin-top:2px}
+.plan-card .pc-feats li{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ink-500)}
+.plan-card .pc-feats li .pf-ck{color:var(--status-success);flex:none;display:grid;place-items:center}
+.plan-card .pc-feats li.off{color:var(--ink-300)}
+.plan-card .pc-feats li.off .pf-ck{color:var(--ink-300)}
+.plan-card .pc-cta{margin-top:auto;padding-top:6px}
+.plan-card .pc-cta .btn{width:100%}
+.plan-card .pc-badge{position:absolute;top:14px;right:14px;font-family:var(--font-mono);font-size:9px;
+  text-transform:uppercase;letter-spacing:.1em;padding:3px 9px;border-radius:var(--r-pill);
+  background:var(--teal-50);color:var(--teal-700)}
+:root[data-theme="dark"] .plan-card .pc-badge{background:rgba(0,150,160,.14);color:var(--teal-300)}
+.plan-card.is-featured .pc-badge{background:rgba(197,160,89,.16);color:var(--gold-500)}
+
+/* ── Usage meter rows + progress bars ─────────────────────────────────────── */
+.meter-list{display:flex;flex-direction:column;gap:18px}
+.meter{display:flex;flex-direction:column;gap:9px}
+.meter .m-head{display:flex;align-items:center;gap:11px}
+.meter .m-ico{width:30px;height:30px;flex:none;border-radius:var(--r-sm);background:rgba(0,105,110,.10);
+  color:var(--teal-700);display:grid;place-items:center;font-size:15px}
+.meter .m-name{font-family:var(--font-serif);font-size:15px;color:var(--ink-900)}
+.meter .m-behavior{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--ink-400);border:.5px solid var(--line-strong);border-radius:var(--r-pill);padding:2px 8px}
+.meter .m-vals{margin-left:auto;font-family:var(--font-mono);font-size:13px;color:var(--ink-700);white-space:nowrap}
+.meter .m-vals .used{color:var(--ink-900)}
+.meter .m-vals .lim{color:var(--ink-400)}
+.mbar{height:8px;border-radius:var(--r-pill);background:rgba(0,105,110,.10);overflow:hidden}
+:root[data-theme="dark"] .mbar{background:rgba(0,150,160,.12)}
+.mbar-fill{height:100%;border-radius:var(--r-pill);background:var(--grad-brand);
+  transition:width .5s var(--ease-reverent)}
+.mbar-fill.warn{background:linear-gradient(135deg,var(--gold-500),var(--status-warning))}
+.mbar-fill.danger{background:linear-gradient(135deg,var(--status-danger),#9A4030)}
+.meter .m-foot{display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--ink-400)}
+.meter .m-foot .num{font-family:var(--font-mono)}
+.meter.is-unlimited .m-vals .lim{color:var(--teal-700)}
+
+/* ── Credit wallet cards ──────────────────────────────────────────────────── */
+.wallet-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.wallet-card{display:flex;flex-direction:column;gap:12px;padding:20px;border-radius:var(--r-xl);
+  background:var(--glass-bg);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);
+  border:.5px solid var(--glass-border);box-shadow:inset 0 1px 0 var(--glass-hi),0 8px 28px rgba(0,105,110,.08)}
+:root[data-theme="dark"] .wallet-card{box-shadow:inset 0 1px 0 var(--glass-hi),0 8px 28px rgba(0,0,0,.28)}
+.wallet-card .wc-top{display:flex;align-items:center;gap:10px}
+.wallet-card .wc-ico{width:32px;height:32px;flex:none;border-radius:var(--r-sm);background:var(--grad-gold);color:#1A0E00;
+  display:grid;place-items:center;font-size:15px}
+.wallet-card .wc-kind{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-400)}
+.wallet-card .wc-bal{font-family:var(--font-mono);font-size:24px;font-weight:500;letter-spacing:-.02em;color:var(--ink-900);line-height:1}
+.wallet-card .wc-unit{font-size:11.5px;color:var(--ink-400)}
+.wallet-card .wc-cta{margin-top:auto}
+
+/* ── Period segmented control ─────────────────────────────────────────────── */
+.seg{display:inline-flex;padding:3px;gap:2px;border-radius:var(--r-pill);border:.5px solid var(--line-strong);background:var(--bg-card)}
+.seg button{border:none;background:transparent;cursor:pointer;font:inherit;font-size:12px;color:var(--ink-400);
+  padding:6px 14px;border-radius:var(--r-pill);font-family:var(--font-mono);transition:background .2s,color .2s}
+.seg button.on{background:var(--teal-700);color:#fff}
+:root[data-theme="dark"] .seg button.on{background:var(--teal-500);color:#04090A}
+
+/* ── Gated / upgrade prompt (gold — never a bare 403) ─────────────────────── */
+.gate-prompt{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:var(--r-md);
+  background:linear-gradient(145deg,rgba(197,160,89,.12),rgba(0,105,110,.04));border:.5px solid rgba(197,160,89,.34);
+  font-size:12.5px;color:var(--ink-700)}
+.gate-prompt .gp-ico{color:var(--gold-500);font-size:15px;flex:none}
+.gate-prompt .btn{margin-left:auto;flex:none}
+
+/* ── Invoices ─────────────────────────────────────────────────────────────── */
+.inv-amt{font-family:var(--font-mono);font-size:14px;color:var(--ink-900)}
+
+/* Two-column billing layout on wide screens */
+.bill-cols{display:grid;grid-template-columns:1fr;gap:20px}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media(max-width:760px){
+  .state-banner{flex-wrap:wrap}
+  .meter .m-vals{margin-left:0;width:100%;order:3}
+  .meter .m-behavior{margin-left:auto}
+}

@@ -1,0 +1,167 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   m04-notifications.css — Module M04 · Notifications Center.
+   Layers on tokens.css + app.css + components.css (which own the reset, shell,
+   atmosphere, .btn/.pill/.panel/.data-row/.empty-state/.toast/.form-field/.pop).
+   Adds only what M04 needs: the topbar bell + dropdown, the feed surface, and the
+   preference matrix with a token-based toggle switch. No raw brand hex (var()
+   only); .5px hairlines; cards ≥ --r-lg; glow/pulse motion only (no sweep); dark
+   mode inherits the sibling token block — no stars/dots.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Topbar bell + unread badge ───────────────────────────────────────────── */
+.notif-bell{position:relative;width:38px;height:38px;flex:none;border-radius:var(--r-sm);
+  border:.5px solid var(--line-strong);background:transparent;color:var(--ink-500);cursor:pointer;
+  display:grid;place-items:center;transition:border-color .2s,color .2s}
+.notif-bell:hover{border-color:var(--teal-500);color:var(--teal-700)}
+:root[data-theme="dark"] .notif-bell:hover{color:var(--teal-300)}
+.notif-badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:var(--r-pill);
+  background:var(--status-danger);color:#fff;font-family:var(--font-mono);font-size:10px;font-weight:600;
+  display:grid;place-items:center;box-shadow:0 0 0 2px var(--bg-elev);line-height:1}
+.notif-bell.ring{animation:bellRing .6s var(--ease-reverent)}
+@keyframes bellRing{0%,100%{transform:rotate(0)}20%{transform:rotate(-11deg)}40%{transform:rotate(9deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(3deg)}}
+
+/* ── Bell dropdown (fixed, positioned in JS; glass surface) ────────────────── */
+.notif-menu{position:fixed;z-index:80;max-height:min(560px,80vh);overflow:hidden;display:flex;flex-direction:column;
+  background:var(--card-solid);border:.5px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);
+  opacity:0;transform:translateY(-8px) scale(.98);transition:opacity .18s var(--ease-premium),transform .18s var(--ease-premium)}
+.notif-menu.open{opacity:1;transform:none}
+.notif-menu-head{display:flex;align-items:center;gap:10px;padding:15px 16px 12px;border-bottom:.5px solid var(--line)}
+.notif-menu-head b{font-family:var(--font-serif);font-size:16px;color:var(--ink-900)}
+.notif-menu-head .notif-count{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--teal-700);background:rgba(0,105,110,.10);border-radius:var(--r-pill);padding:3px 9px}
+:root[data-theme="dark"] .notif-menu-head .notif-count{color:var(--teal-300);background:rgba(0,150,160,.14)}
+.notif-readall{margin-left:auto;background:none;border:none;cursor:pointer;font:inherit;font-size:12.5px;color:var(--teal-700)}
+:root[data-theme="dark"] .notif-readall{color:var(--teal-300)}
+.notif-readall:hover{text-decoration:underline}
+.notif-list{overflow-y:auto;padding:6px}
+.notif-group{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-400);padding:10px 10px 5px}
+.notif-row{display:flex;align-items:flex-start;gap:11px;width:100%;text-align:left;padding:11px 10px;border:none;border-radius:var(--r-md);
+  background:transparent;cursor:pointer;position:relative;transition:background .15s}
+.notif-row:hover{background:var(--row-hover)}
+.notif-row.unread{background:rgba(0,105,110,.045)}
+:root[data-theme="dark"] .notif-row.unread{background:rgba(0,150,160,.06)}
+.notif-ico{width:34px;height:34px;flex:none;border-radius:var(--r-sm);display:grid;place-items:center;font-size:16px;
+  background:rgba(0,105,110,.09);color:var(--teal-700)}
+.notif-body{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
+.notif-title{font-family:var(--font-serif);font-size:14px;color:var(--ink-900);line-height:1.25}
+.notif-text{font-size:12px;color:var(--ink-400);line-height:1.45;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.notif-meta{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-300);margin-top:2px}
+.notif-dot{position:absolute;top:14px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--teal-500);flex:none}
+.notif-skel{display:flex;align-items:center;gap:11px;padding:11px 10px}
+.notif-empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:34px 24px}
+.notif-empty .ne-ico{width:44px;height:44px;border-radius:var(--r-md);background:rgba(0,105,110,.10);color:var(--teal-700);display:grid;place-items:center;margin-bottom:4px}
+.notif-empty h4{font-family:var(--font-serif);font-size:16px;color:var(--ink-900)}
+.notif-empty p{font-size:12.5px;color:var(--ink-400);line-height:1.5;max-width:240px}
+.notif-menu-foot{display:block;text-align:center;padding:12px;border-top:.5px solid var(--line);
+  font-size:13px;color:var(--teal-700);cursor:pointer;transition:background .15s}
+:root[data-theme="dark"] .notif-menu-foot{color:var(--teal-300)}
+.notif-menu-foot:hover{background:var(--row-hover)}
+
+/* ── Feed page ────────────────────────────────────────────────────────────── */
+.feed-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:6px 0 18px}
+.feed-toolbar .spacer{flex:1}
+.feed-type{min-width:210px}
+.feed-type select{height:38px}
+.seg-group{display:inline-flex;padding:3px;gap:2px;border-radius:var(--r-md);border:.5px solid var(--line-strong);background:var(--bg-card)}
+.seg{height:30px;padding:0 14px;border:none;background:transparent;border-radius:var(--r-sm);cursor:pointer;
+  font-family:var(--font-sans);font-size:12.5px;color:var(--ink-400);transition:background .2s,color .2s}
+.seg:hover{color:var(--ink-900)}
+.seg.on{background:var(--teal-700);color:#fff}
+:root[data-theme="dark"] .seg.on{background:var(--teal-700);color:#04090A}
+
+.feed-panel{padding:12px 16px}
+.feed-group-label{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--ink-400);padding:14px 6px 6px}
+.feed-group-label .fg-count{font-family:var(--font-mono);color:var(--ink-300)}
+.feed-row{display:flex;align-items:flex-start;gap:14px;padding:14px 8px;border-top:.5px solid var(--line);
+  position:relative;cursor:pointer;transition:background .2s var(--ease-premium)}
+.feed-row:first-child{border-top:none}
+.feed-row:hover{background:var(--row-hover)}
+.feed-row:focus-visible{outline:none;background:var(--row-hover);box-shadow:inset 3px 0 0 var(--teal-500)}
+.feed-row.unread{background:rgba(0,105,110,.04)}
+:root[data-theme="dark"] .feed-row.unread{background:rgba(0,150,160,.05)}
+.feed-ico{width:40px;height:40px;flex:none;border-radius:var(--r-md);display:grid;place-items:center;font-size:18px;
+  background:rgba(0,105,110,.09);color:var(--teal-700)}
+.feed-body{min-width:0;flex:1}
+.feed-title{font-family:var(--font-serif);font-size:15.5px;color:var(--ink-900);line-height:1.3}
+.feed-text{font-size:13px;color:var(--ink-400);line-height:1.5;margin-top:2px}
+.feed-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:7px}
+.feed-meta .num{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-300)}
+.feed-chan{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-400)}
+.feed-actions{margin-left:auto;flex:none;display:flex;align-items:center}
+.feed-mark{width:32px;height:32px;border-radius:var(--r-sm);border:.5px solid var(--line-strong);background:transparent;
+  color:var(--ink-400);cursor:pointer;display:grid;place-items:center;transition:border-color .2s,color .2s,background .2s}
+.feed-mark:hover{border-color:var(--status-success);color:var(--status-success);background:rgba(46,158,123,.08)}
+.feed-read{width:32px;height:32px;display:grid;place-items:center;color:var(--status-success);opacity:.7}
+.feed-dot{position:absolute;left:0;top:20px;bottom:20px;width:3px;border-radius:2px;background:var(--grad-spine)}
+
+/* ── Preferences page ─────────────────────────────────────────────────────── */
+.pref-controls{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:22px}
+.pref-card{background:var(--glass-bg);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);
+  border:.5px solid var(--glass-border);border-radius:var(--r-lg);padding:18px 20px;
+  box-shadow:inset 0 1px 0 var(--glass-hi),0 8px 28px rgba(0,105,110,.07)}
+:root[data-theme="dark"] .pref-card{box-shadow:inset 0 1px 0 var(--glass-hi),0 8px 28px rgba(0,0,0,.26)}
+.pref-card-head{display:flex;align-items:flex-start;gap:12px}
+.pref-card-head .ph-ico{width:30px;height:30px;flex:none;border-radius:var(--r-sm);background:rgba(0,105,110,.10);color:var(--teal-700);display:grid;place-items:center}
+.pref-card-head h4{font-family:var(--font-serif);font-size:15px;color:var(--ink-900);font-weight:600}
+.pref-card-head p{font-size:12px;color:var(--ink-400);line-height:1.5;margin-top:3px}
+.pref-card-head .tgl{margin-left:auto;flex:none}
+.digest-seg{margin-top:14px;width:100%;display:flex}
+.digest-seg .seg{flex:1;text-align:center}
+.quiet-row{display:flex;gap:14px;margin-top:14px;transition:opacity .2s}
+.quiet-row.off{opacity:.4;pointer-events:none}
+.quiet-row label{display:flex;flex-direction:column;gap:5px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-400)}
+.quiet-row input[type="time"]{height:38px;padding:0 12px;background:var(--bg-card);border:.5px solid var(--line-strong);
+  border-radius:var(--r-sm);font-family:var(--font-mono);font-size:13px;color:var(--ink-900)}
+.quiet-row input[type="time"]:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px rgba(44,164,171,.15)}
+
+.pref-matrix-head{display:flex;align-items:center;gap:0;padding:0 6px 10px;border-bottom:.5px solid var(--line);margin-bottom:4px}
+.pref-matrix-head .pmh-type{flex:1;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-400)}
+.pref-matrix-head .pmh-ch{width:64px;text-align:center;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-400)}
+.pref-cat{margin-top:6px}
+.pref-cat-head{font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--teal-700);
+  padding:16px 6px 8px}
+:root[data-theme="dark"] .pref-cat-head{color:var(--teal-300)}
+.pref-row{display:flex;align-items:center;gap:14px;padding:11px 6px;border-top:.5px solid var(--line);transition:opacity .2s}
+.pref-row.muted-off{opacity:.45}
+.pref-row-main{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.pref-ico{width:34px;height:34px;flex:none;border-radius:var(--r-sm);display:grid;place-items:center;font-size:15px;background:rgba(0,105,110,.08);color:var(--teal-700)}
+.pref-name{font-family:var(--font-serif);font-size:14.5px;color:var(--ink-900);line-height:1.2}
+.pref-desc{font-size:12px;color:var(--ink-400);margin-top:1px}
+.pref-toggles{display:flex;flex:none}
+.pref-cell{width:64px;display:grid;place-items:center}
+
+/* ── Token toggle switch (in-app / email / push / mute / quiet) ───────────── */
+.tgl{position:relative;width:40px;height:23px;border-radius:var(--r-pill);border:.5px solid var(--line-strong);
+  background:var(--bg-card);cursor:pointer;padding:0;transition:background .25s var(--ease-premium),border-color .25s}
+.tgl.sm{width:36px;height:21px}
+.tgl .tgl-knob{position:absolute;top:2.5px;left:2.5px;width:16px;height:16px;border-radius:50%;background:var(--ink-400);
+  box-shadow:0 1px 2px rgba(0,42,44,.2);transition:transform .25s var(--ease-reverent),background .25s}
+.tgl.sm .tgl-knob{width:14px;height:14px}
+.tgl.on{background:var(--grad-brand);border-color:transparent}
+.tgl.on .tgl-knob{transform:translateX(17px);background:#fff}
+.tgl.sm.on .tgl-knob{transform:translateX(15px)}
+.tgl.disabled{opacity:.4;cursor:not-allowed}
+.tgl:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(44,164,171,.2)}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media(max-width:900px){
+  .pref-controls{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+  .notif-menu{max-height:74vh}
+  .feed-toolbar .feed-type{flex:1;min-width:0}
+  .pref-matrix-head{display:none}
+  .pref-row{flex-wrap:wrap;align-items:flex-start}
+  .pref-toggles{width:100%;margin-top:8px;gap:8px}
+  .pref-cell{width:auto;flex:1;flex-direction:column;gap:4px}
+  .pref-cell::before{content:attr(data-label);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-400)}
+}
+@media(max-width:520px){
+  .feed-ico{width:34px;height:34px;font-size:16px}
+  .seg{padding:0 11px}
+}
+@media(prefers-reduced-motion:reduce){
+  .notif-bell.ring{animation:none!important}
+  .tgl .tgl-knob,.tgl{transition:none!important}
+}

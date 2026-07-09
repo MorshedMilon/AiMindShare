@@ -1,0 +1,135 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   m02-roles.css — M02 Roles & Permissions surfaces on top of components.css.
+   Only what's unique to this module lives here: the role list rows, the
+   permission-matrix editor (modules × actions checkbox grid), base-tier pills,
+   and the per-member override chips. Shared shell + dashboard components stay in
+   components.css. Token vars only (no raw hex); .5px hairlines; pulse/glow motion
+   only; both themes via the sibling token block.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Roles list (built-in + custom) ───────────────────────────────────────── */
+.role-list{display:flex;flex-direction:column}
+.role-row{display:flex;align-items:center;gap:16px;padding:15px 8px;border-top:.5px solid var(--line);
+  cursor:pointer;transition:background .2s var(--ease-premium)}
+.role-row:first-child{border-top:none}
+.role-row:hover{background:var(--row-hover)}
+.role-row.selected{background:var(--teal-50)}
+:root[data-theme="dark"] .role-row.selected{background:rgba(0,150,160,.10)}
+.role-row .rr-badge{width:40px;height:40px;flex:none;border-radius:var(--r-sm);display:grid;place-items:center;
+  font-size:16px;background:rgba(0,105,110,.10);color:var(--teal-700)}
+.role-row.builtin .rr-badge{background:var(--grad-brand);color:#fff;box-shadow:var(--shadow-glow)}
+.role-row.custom .rr-badge{background:rgba(197,160,89,.16);color:var(--gold-500)}
+.role-row .rr-body{min-width:0;flex:1}
+.role-row .rr-name{font-family:var(--font-serif);font-size:16px;color:var(--ink-900);font-weight:600;display:flex;align-items:center;gap:8px}
+.role-row .rr-sub{font-size:12.5px;color:var(--ink-400);margin-top:2px;display:flex;gap:12px;flex-wrap:wrap}
+.role-row .rr-sub .num{font-family:var(--font-mono)}
+.role-row .rr-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex:none}
+.role-row .rr-actions{display:flex;gap:6px}
+.role-row .rr-lock{color:var(--ink-300);display:grid;place-items:center}
+
+/* base-tier + type pills reuse .pill; a subtle mono tier tag */
+.tier-tag{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:var(--r-pill);
+  border:.5px solid var(--line-strong);font-family:var(--font-mono);font-size:9.5px;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--ink-400)}
+
+/* ── Permission matrix editor ─────────────────────────────────────────────── */
+.matrix-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.matrix-head .mh-title{font-family:var(--font-serif);font-size:16px;color:var(--ink-900);font-weight:600}
+.matrix-head .mh-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+.matrix-note{font-size:12.5px;color:var(--ink-400);margin:2px 0 14px;line-height:1.55}
+.matrix-note .lock-ico{vertical-align:-2px}
+
+/* role selector chips */
+.role-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.role-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:var(--r-pill);
+  border:.5px solid var(--line-strong);background:var(--bg-card);cursor:pointer;font-size:12.5px;
+  color:var(--ink-500);transition:border-color .2s,background .2s,color .2s}
+.role-chip:hover{border-color:var(--teal-500)}
+.role-chip.on{background:var(--teal-700);border-color:var(--teal-700);color:#fff}
+.role-chip .rc-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.7}
+.role-chip.custom .rc-dot{background:var(--gold-500)}
+.role-chip.on .rc-dot{background:#fff;opacity:1}
+
+/* the grid: modules as rows, actions as columns */
+.matrix-wrap{overflow-x:auto;border:.5px solid var(--line);border-radius:var(--r-lg);background:var(--bg-card)}
+.matrix{width:100%;border-collapse:collapse;min-width:640px}
+.matrix thead th{position:sticky;top:0;background:var(--bg-card);z-index:1;font-family:var(--font-mono);
+  font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-400);
+  text-align:center;padding:12px 6px;border-bottom:.5px solid var(--line)}
+.matrix thead th.mx-modcol{text-align:left;padding-left:16px;min-width:150px}
+.matrix tbody td{padding:11px 6px;border-top:.5px solid var(--line);text-align:center;vertical-align:middle}
+.matrix tbody tr:hover{background:var(--row-hover)}
+.matrix .mx-mod{text-align:left;padding-left:16px}
+.matrix .mx-mod .mx-mod-name{font-family:var(--font-serif);font-size:14.5px;color:var(--ink-900)}
+.matrix .mx-mod .mx-mod-key{font-family:var(--font-mono);font-size:10px;color:var(--ink-300)}
+.matrix .mx-none{color:var(--ink-300);font-family:var(--font-mono);font-size:12px;opacity:.5}
+
+/* the checkbox itself — calm, token-based, no sweep */
+.perm-check{appearance:none;-webkit-appearance:none;width:20px;height:20px;border-radius:6px;
+  border:.5px solid var(--line-strong);background:var(--bg-elev);cursor:pointer;position:relative;
+  transition:background .18s var(--ease-premium),border-color .18s var(--ease-premium);vertical-align:middle}
+.perm-check:hover:not(:disabled){border-color:var(--teal-500)}
+.perm-check:checked{background:var(--grad-brand);border-color:transparent}
+.perm-check:checked::after{content:'';position:absolute;left:6px;top:2.5px;width:5px;height:9px;
+  border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.perm-check:disabled{cursor:not-allowed;opacity:.7}
+.perm-check:disabled:checked{background:linear-gradient(135deg,var(--ink-400),var(--ink-300));opacity:.55}
+.perm-check:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(44,164,171,.18)}
+.perm-check.dirty{box-shadow:0 0 0 3px rgba(197,160,89,.20)}
+
+/* save bar under an editable matrix */
+.matrix-foot{display:flex;align-items:center;gap:12px;margin-top:16px}
+.matrix-foot .mf-status{font-size:12.5px;color:var(--ink-400)}
+.matrix-foot .mf-status.dirty{color:var(--gold-700)}
+.matrix-foot .spacer{flex:1}
+
+/* ── Team: role dropdown + override chips ─────────────────────────────────── */
+.role-select{height:36px;padding:0 32px 0 12px;background:var(--bg-card);border:.5px solid var(--line-strong);
+  border-radius:var(--r-sm);font-family:var(--font-sans);font-size:13px;color:var(--ink-900);cursor:pointer;
+  appearance:none;transition:border-color .2s;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink-400) 50%),linear-gradient(135deg,var(--ink-400) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 15px,calc(100% - 11px) 15px;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.role-select:hover{border-color:var(--teal-500)}
+.role-select:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px rgba(44,164,171,.15)}
+.role-select:disabled{cursor:not-allowed;opacity:.7;background-image:none}
+.cell-role{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.ov-chip{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:var(--r-pill);
+  font-family:var(--font-mono);font-size:9.5px;letter-spacing:.03em}
+.ov-chip.grant{background:rgba(46,158,123,.14);color:var(--status-success)}
+.ov-chip.revoke{background:rgba(196,97,78,.14);color:var(--status-danger)}
+.ov-btn{color:var(--ink-400);cursor:pointer;display:inline-grid;place-items:center;width:28px;height:28px;
+  border-radius:var(--r-sm);border:.5px solid transparent;transition:border-color .2s,color .2s}
+.ov-btn:hover{border-color:var(--line-strong);color:var(--teal-700)}
+
+/* override editor lists inside the modal */
+.ov-list{display:flex;flex-direction:column;gap:4px;max-height:280px;overflow-y:auto;margin-top:6px;
+  border:.5px solid var(--line);border-radius:var(--r-md);padding:8px}
+.ov-item{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:var(--r-sm);transition:background .15s}
+.ov-item:hover{background:var(--row-hover)}
+.ov-item .ov-perm{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-700);flex:1;min-width:0}
+.ov-item .ov-base{font-family:var(--font-mono);font-size:9.5px;color:var(--ink-300);text-transform:uppercase;letter-spacing:.06em}
+.ov-seg{display:inline-flex;border:.5px solid var(--line-strong);border-radius:var(--r-pill);overflow:hidden;flex:none}
+.ov-seg button{border:none;background:transparent;font:inherit;font-size:11px;padding:4px 11px;cursor:pointer;color:var(--ink-400);transition:background .15s,color .15s}
+.ov-seg button.on[data-v="grant"]{background:var(--status-success);color:#fff}
+.ov-seg button.on[data-v="revoke"]{background:var(--status-danger);color:#fff}
+.ov-seg button.on[data-v="inherit"]{background:var(--teal-700);color:#fff}
+
+/* ── KPI tint variants used on the roles overview strip ───────────────────── */
+.kpi.kpi-tealico .kpi-ico{background:rgba(0,105,110,.10);color:var(--teal-700)}
+
+/* ── Denied (data-can disable mode) ───────────────────────────────────────── */
+.is-denied{opacity:.45;pointer-events:none;filter:grayscale(.3)}
+
+/* ── Loading skeletons ────────────────────────────────────────────────────── */
+.skel-line{height:14px;border-radius:6px}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media(max-width:760px){
+  .role-row{gap:12px}
+  .role-row .rr-right{gap:6px}
+  .matrix-head .mh-actions{margin-left:0;width:100%}
+  .cell-role{gap:6px}
+}
+@media(max-width:560px){
+  .role-row .rr-sub{font-size:11.5px;gap:8px}
+}

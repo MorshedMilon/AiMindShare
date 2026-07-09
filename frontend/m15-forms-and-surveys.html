@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AiMindShare — M15 · Forms &amp; Surveys</title>
+  <meta name="description" content="AiMindShare Module M15 — a premium drag-and-drop form, survey and quiz builder: field palette + canvas + settings panel, conditional logic, routing rules, token-bound design, spam protection, A/B variants, and a submissions + funnel-analytics results view. Every submission upserts a CRM contact, records consent, and fires the M13 automation bus.">
+
+  <!-- Fonts (D-014: Cormorant Garamond · Baskerville → Libre Baskerville · Shippori Mincho) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Shippori+Mincho:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Design tokens → base library → shared components → module layer -->
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/app.css">
+  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="styles/m15-forms.css">
+
+  <!-- Theme boot before first paint (light default per D-007) -->
+  <script>
+    (function(){try{var t=localStorage.getItem("aimindshare-theme");
+      document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light");}catch(e){}})();
+  </script>
+</head>
+<body>
+  <!-- Atmosphere (grid + orbs + radial washes; stars hidden in dark via app.css; JS never generates stars here) -->
+  <div class="bg-canvas" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- App shell (rail + topbar + content) rendered here by the hash router -->
+  <div class="shell" id="app"></div>
+
+  <!-- Modal + toast roots -->
+  <div id="modalRoot"></div>
+  <div class="toast-wrap" id="toasts"></div>
+
+  <!-- Connect-a-project drawer (same contract as M13) -->
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" id="drawer" aria-label="Connect a Supabase project">
+    <h3>Connect a project</h3>
+    <p class="muted">Enter your Supabase project URL and public <b>anon</b> key to run M15 live —
+      list, build, publish and read submission analytics under RLS. Public form submissions are
+      written server-side by the <span class="mono">public-form</span> Edge Function under the
+      service role; the browser only ever holds the anon key (Law&nbsp;3), in
+      <span class="mono">localStorage</span>.</p>
+    <div class="field">
+      <label class="label" for="inpUrl">Project URL</label>
+      <input id="inpUrl" placeholder="https://YOUR-PROJECT.supabase.co" spellcheck="false" autocomplete="off">
+    </div>
+    <div class="field">
+      <label class="label" for="inpAnon">Anon key</label>
+      <input id="inpAnon" placeholder="eyJhbGciOi…" spellcheck="false" autocomplete="off">
+      <span class="help">Public anon key only — never the service-role key.</span>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" id="saveCfg">Save &amp; connect</button>
+      <button class="btn btn-ghost" id="clearCfg">Clear</button>
+    </div>
+    <button class="btn btn-ghost btn-sm" id="closeDrawer" style="margin-top:18px">Close</button>
+  </aside>
+
+  <!-- Vendored libs (no CDN, no build step): Supabase UMD global · SortableJS · Chart.js -->
+  <script src="vendor/supabase-js.min.js"></script>
+  <script src="vendor/sortable.min.js"></script>
+  <script src="vendor/chart.min.js"></script>
+  <!-- Optional project config (copy config.example.js → config.js); fails soft if absent -->
+  <script src="config.js" onerror="void 0"></script>
+  <!-- Module app -->
+  <script src="js/m15-forms.js"></script>
+</body>
+</html>

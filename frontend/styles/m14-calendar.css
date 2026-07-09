@@ -1,0 +1,136 @@
+/* m14-calendar.css — Module M14 · Calendar & Booking layer. Composes the shared
+   shell/components; adds only M14-specific surfaces: calendar cards, the weekly
+   availability editor, the question builder, reminder + Google + embed cards, and
+   the team week/month calendar. Tokens only — no raw hex, no token redeclaration,
+   .5px hairlines, glow shadows only (no sweep animations). */
+
+/* ── Calendars list ─────────────────────────────────────────────────────────── */
+.cal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:18px}
+.cal-card{background:var(--bg-card);border:.5px solid var(--line-strong);border-radius:var(--r-xl);padding:20px;
+  box-shadow:var(--shadow-sm);transition:transform .3s var(--ease-reverent),box-shadow .3s var(--ease-reverent),border-color .3s var(--ease-reverent);cursor:pointer}
+.cal-card:hover{transform:translateY(-4px);border-color:rgba(26,154,161,.45);box-shadow:0 16px 40px rgba(0,105,110,.18)}
+.cal-card-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.cal-ico{width:38px;height:38px;border-radius:var(--r-sm);display:grid;place-items:center;background:var(--teal-50);color:var(--teal-700);flex:none}
+:root[data-theme="dark"] .cal-ico{background:rgba(0,150,160,.12)}
+.cal-card h3{font-family:var(--font-serif);font-size:18px;font-weight:600;color:var(--ink-900);margin:0;line-height:1.2}
+.cal-card .cc-slug{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-400)}
+.cal-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.cal-stat{display:flex;flex-direction:column;gap:2px}
+.cal-stat .cs-num{font-family:var(--font-mono);font-size:16px;color:var(--ink-900)}
+.cal-stat .cs-lab{font-size:10px;font-weight:600;letter-spacing:var(--label-track);text-transform:uppercase;color:var(--ink-400)}
+.cal-card-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px;padding-top:14px;border-top:.5px solid var(--line)}
+
+/* ── Editor sheet sections ──────────────────────────────────────────────────── */
+.ed-section{padding:18px 0;border-top:.5px solid var(--line)}
+.ed-section:first-of-type{border-top:none}
+.ed-section > h4{font-family:var(--font-serif);font-size:15px;font-weight:600;color:var(--ink-900);margin:0 0 4px}
+.ed-section > .es-hint{font-size:12.5px;color:var(--ink-400);margin:0 0 14px}
+
+/* Weekly availability editor */
+.avail-day{display:grid;grid-template-columns:112px 1fr auto;align-items:center;gap:12px;padding:8px 0;border-top:.5px solid var(--line)}
+.avail-day:first-child{border-top:none}
+.avail-day .ad-name{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-700)}
+.avail-day .ad-ranges{display:flex;flex-wrap:wrap;gap:8px}
+.time-range{display:flex;align-items:center;gap:6px}
+.time-range input[type=time]{width:104px}
+.time-range .tr-dash{color:var(--ink-400)}
+.avail-day.off .ad-ranges{opacity:.4;pointer-events:none}
+.switch{position:relative;width:38px;height:22px;border-radius:var(--r-pill);background:var(--line-strong);border:.5px solid var(--line);cursor:pointer;transition:background .2s var(--ease-premium);flex:none}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:var(--card-solid);box-shadow:var(--shadow-sm);transition:transform .2s var(--ease-premium)}
+.switch.on{background:var(--teal-600)}
+.switch.on::after{transform:translateX(16px)}
+
+/* Blocks + questions builder rows */
+.q-row,.block-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:10px 0;border-top:.5px solid var(--line)}
+.q-row:first-child,.block-row:first-child{border-top:none}
+.q-row .q-req{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-400);white-space:nowrap}
+.mini-add{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:13px;color:var(--teal-700);background:none;border:none;cursor:pointer;padding:0}
+:root[data-theme="dark"] .mini-add{color:var(--teal-300)}
+.icon-del{background:none;border:none;color:var(--ink-400);cursor:pointer;padding:4px;border-radius:var(--r-sm)}
+.icon-del:hover{color:var(--status-danger);background:var(--row-hover)}
+
+/* Reminder toggles */
+.rem-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:.5px solid var(--line)}
+.rem-row:first-child{border-top:none}
+.rem-row .rr-label{font-size:13.5px;color:var(--ink-700)}
+.rem-row .rr-sub{font-size:11.5px;color:var(--ink-400)}
+
+/* Google connect + embed + payment cards */
+.set-card{background:var(--bg-card);border:.5px solid var(--line-strong);border-radius:var(--r-lg);padding:16px;margin-top:4px}
+.set-card .sc-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.set-card .sc-title{font-family:var(--font-serif);font-size:15px;color:var(--ink-900)}
+.set-card .sc-sub{font-size:12px;color:var(--ink-400);margin-top:2px}
+.set-card.disabled{opacity:.62}
+.embed-box{width:100%;min-height:78px;font-family:var(--font-mono);font-size:11.5px;line-height:1.5;color:var(--ink-700);
+  background:var(--bg);border:.5px solid var(--line);border-radius:var(--r-sm);padding:10px;resize:vertical;margin-top:10px}
+
+/* ── Team calendar (custom week/month grid) ─────────────────────────────────── */
+.cal-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0}
+.cal-nav{display:flex;align-items:center;gap:6px}
+.cal-title{font-family:var(--font-serif);font-size:19px;color:var(--ink-900);min-width:210px}
+.seg{display:inline-flex;background:var(--bg-card);border:.5px solid var(--line-strong);border-radius:var(--r-pill);padding:3px}
+.seg button{border:none;background:none;font-size:12.5px;font-weight:600;color:var(--ink-400);padding:6px 14px;border-radius:var(--r-pill);cursor:pointer}
+.seg button.on{background:var(--card-solid);color:var(--teal-700);box-shadow:var(--shadow-sm)}
+:root[data-theme="dark"] .seg button.on{color:var(--teal-300)}
+
+.week-grid{display:grid;grid-template-columns:56px repeat(7,1fr);border:.5px solid var(--line);border-radius:var(--r-lg);overflow:hidden;background:var(--bg-card)}
+.wk-head{padding:10px 6px;text-align:center;border-left:.5px solid var(--line);border-bottom:.5px solid var(--line)}
+.wk-head .wh-dow{font-size:10px;font-weight:700;letter-spacing:var(--label-track);text-transform:uppercase;color:var(--ink-400)}
+.wk-head .wh-day{font-family:var(--font-mono);font-size:16px;color:var(--ink-900)}
+.wk-head.today .wh-day{color:var(--teal-700)}
+.wk-corner{border-bottom:.5px solid var(--line)}
+.wk-hour{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-400);text-align:right;padding:2px 6px 0 0;height:52px;border-top:.5px solid var(--line)}
+.wk-cell{border-left:.5px solid var(--line);border-top:.5px solid var(--line);height:52px;position:relative}
+.appt-block{position:absolute;left:3px;right:3px;border-radius:var(--r-sm);padding:4px 6px;font-size:11px;line-height:1.25;overflow:hidden;cursor:pointer;
+  background:rgba(0,105,110,.10);border:.5px solid rgba(0,105,110,.30);color:var(--ink-900)}
+.appt-block:hover{background:rgba(0,105,110,.16)}
+.appt-block.st-cancelled{background:rgba(196,97,78,.10);border-color:rgba(196,97,78,.30);text-decoration:line-through;opacity:.7}
+.appt-block.st-no_show{background:rgba(199,154,58,.12);border-color:rgba(199,154,58,.32)}
+.appt-block .ab-time{font-family:var(--font-mono);font-size:10px;color:var(--ink-400)}
+
+/* Month grid */
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);border:.5px solid var(--line);border-radius:var(--r-lg);overflow:hidden;background:var(--bg-card)}
+.mo-cell{min-height:104px;border-left:.5px solid var(--line);border-top:.5px solid var(--line);padding:6px}
+.mo-cell .mo-day{font-family:var(--font-mono);font-size:12px;color:var(--ink-400)}
+.mo-cell.today .mo-day{color:var(--teal-700);font-weight:600}
+.mo-cell.dim{opacity:.45}
+.mo-appt{margin-top:4px;font-size:11px;padding:2px 6px;border-radius:var(--r-sm);background:rgba(0,105,110,.10);border:.5px solid rgba(0,105,110,.28);color:var(--ink-900);cursor:pointer;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Appointment drawer detail */
+.appt-kv{display:grid;grid-template-columns:96px 1fr;gap:8px 12px;margin:14px 0}
+.appt-kv dt{font-size:10px;font-weight:600;letter-spacing:var(--label-track);text-transform:uppercase;color:var(--ink-400);align-self:center}
+.appt-kv dd{margin:0;font-size:13.5px;color:var(--ink-900)}
+.appt-kv dd.num{font-family:var(--font-mono)}
+
+/* ── Inputs (self-contained; design §8.8) ───────────────────────────────────── */
+.input{height:40px;width:100%;padding:0 12px;background:var(--bg-card);border:.5px solid var(--line-strong);border-radius:var(--r-sm);
+  font-family:var(--font-sans);font-size:13.5px;color:var(--ink-900);transition:border-color .18s var(--ease-premium),box-shadow .18s var(--ease-premium)}
+.input:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px rgba(44,164,171,.15)}
+textarea.input{height:auto;padding:10px 12px}
+
+/* ── Buttons: danger variant (design §8.8) ──────────────────────────────────── */
+.btn-danger{background:none;border:.5px solid var(--status-danger);color:var(--status-danger)}
+.btn-danger:hover{background:rgba(196,97,78,.08)}
+
+/* ── Pill: idle variant ─────────────────────────────────────────────────────── */
+.pill.idle{background:rgba(109,121,122,.14);color:var(--status-idle)}
+
+/* ── Right sheet (drawer) — glass deep, design §8.8 ─────────────────────────── */
+.sheet{position:fixed;top:0;right:0;height:100vh;width:min(560px,94vw);z-index:60;display:flex;flex-direction:column;
+  background:var(--glass-bg);backdrop-filter:blur(38px) saturate(1.7);-webkit-backdrop-filter:blur(38px) saturate(1.7);
+  border-left:.5px solid var(--glass-border);border-radius:var(--r-2xl) 0 0 var(--r-2xl);box-shadow:var(--shadow-lg);
+  transform:translateX(100%);transition:transform .32s var(--ease-reverent)}
+.sheet.open{transform:translateX(0)}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 24px;border-bottom:.5px solid var(--line)}
+.sheet-head h2{font-family:var(--font-serif);font-size:20px;font-weight:600;color:var(--ink-900);margin:0}
+.sheet-body{flex:1;overflow-y:auto;padding:8px 24px}
+.sheet-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 24px;border-top:.5px solid var(--line)}
+@media (prefers-reduced-motion:reduce){.sheet{transition:none}}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width:760px){
+  .week-grid{grid-template-columns:44px repeat(7,minmax(90px,1fr));overflow-x:auto}
+  .avail-day{grid-template-columns:1fr;gap:8px}
+  .cal-title{min-width:0}
+}

@@ -1,0 +1,202 @@
+{
+  "generatedAt": "2026-07-03T12:00:00Z",
+  "host": "local — Node/PGlite (real Postgres) + bash greps",
+  "note": "Regenerate with: bash scripts/verify.sh",
+  "gate8": {
+    "clean": true,
+    "checks": 7,
+    "laws": [
+      "Law 1 — no React/Next/Prisma/BullMQ imports",
+      "Law 3 — no secret tokens under frontend/",
+      "Law 6 — no sweep anims · quranlyai.com · no raw brand hex · 3 fonts",
+      "Law 2 — every tenant-table migration enables RLS"
+    ]
+  },
+  "m00": {
+    "pass": 9,
+    "fail": 0,
+    "assertions": [
+      "signup auto-creates a public.profiles row",
+      "profile email mirrors auth.users",
+      "profile name pulled from signup metadata",
+      "profile avatar pulled from signup metadata",
+      "B cannot SELECT A's auth_events",
+      "B CAN SELECT its own auth_events",
+      "B cannot directly INSERT an auth_event (no client insert policy)",
+      "append-only: B cannot UPDATE its own auth_events",
+      "B cannot SELECT A's profile (self-only)"
+    ]
+  },
+  "m01": {
+    "pass": 35,
+    "fail": 0,
+    "assertions": [
+      "create_workspace provisions an agency + the caller's OWNER membership",
+      "provisioning enqueues a queued workspace.provision job (defaults deferred)",
+      "sub-account created under the agency (parent set)",
+      "agency admin canNOT read a sub-account without an explicit membership (RLS §1)",
+      "B cannot SELECT/UPDATE A's workspace, memberships, or invitations",
+      "B (non-admin) cannot create an invitation in A",
+      "accept_invitation redeems a token → membership with the invited role",
+      "transfer_ownership swaps owner↔admin and updates owner_id",
+      "guard_last_owner blocks orphaning a workspace; leave blocked for sole owner",
+      "archive/restore toggle status; only the owner may archive",
+      "member can insert only status='queued' jobs (not 'running')"
+    ]
+  },
+  "m02": {
+    "pass": 43,
+    "fail": 0,
+    "assertions": [
+      "5 built-in roles seeded; permission arrays match the registry (no drift)",
+      "STAFF blocked from crm.delete and crm.export server-side (has_permission=false)",
+      "OWNER short-circuits to all; ADMIN lacks billing.manage / workspace.delete",
+      "MANAGER has crm.delete but not team.manage",
+      "CLIENT is portal-only; coarse RLS blocks a client write regardless of toggles",
+      "per-member overrides read server-side: grant adds, revoke wins",
+      "built-in roles immutable — cannot update, delete, or forge one",
+      "custom role clone → assign (role syncs to base_role) → toggle → delete guard",
+      "set_member_role refuses owner tier + protects the sole owner + rejects non-admin",
+      "cross-tenant: B cannot select/insert/update A's roles or change A's members",
+      "has_permission_for (service path) mirrors has_permission for an explicit user"
+    ]
+  },
+  "m03": {
+    "pass": 25,
+    "fail": 0,
+    "assertions": [
+      "meter_increment appends a usage_events ledger row AND upserts usage_meters atomically",
+      "ledger row stores a real unit_cost (rebilling data, §8)",
+      "N increments accumulate to exactly N (row-lock upsert; no lost updates)",
+      "credit wallet is drawn on increment and clamps at 0 (never negative)",
+      "meter_check returns included/used/remaining and over=true past quota+wallet",
+      "has_feature reads plan feature_gates (agency has m34_voice; free does not; unknown→false)",
+      "trial-expiry sweep flips a lapsed trialing workspace to billing_state='trial_expired'",
+      "cross-tenant: B cannot SELECT A's subscription/usage_meters/usage_events/credit_wallets",
+      "stripe_events is invisible to authenticated (service-role only)",
+      "usage_meters writes are service-role only (client cannot INSERT/UPDATE directly)",
+      "plans is a global catalog readable by any authenticated user (positive control)"
+    ]
+  },
+  "m41": {
+    "pass": 27,
+    "fail": 0,
+    "assertions": [
+      "null-aware uniqueness: one workspace override + one platform default per provider",
+      "scope/workspace_id CHECK: scope='platform' iff workspace_id is null",
+      "SELECT is admin+ on workspace rows; manager/staff/client see none (§2)",
+      "cross-tenant: B's admin cannot SELECT/write A's integrations",
+      "platform (null) rows are visible only to a platform-admin (is_platform_admin)",
+      "writes are service-role only: admin cannot insert/update/delete directly (D-029)",
+      "service role (worker) can update health columns (bypasses RLS)",
+      "resolveCredential order: workspace override beats platform default; else default; else none",
+      "integration.health_check is queued-only from the client (RLS)",
+      "hourly cron enqueues one health job per connected workspace integration",
+      "provider registry: _shared/providers.ts and js/providers.js agree (no drift, 20 providers)"
+    ]
+  },
+  "leak": {
+    "pass": 8,
+    "fail": 0,
+    "assertions": [
+      "B cannot SELECT workspace A",
+      "B cannot SELECT A's memberships",
+      "B cannot SELECT A's jobs",
+      "B cannot UPDATE workspace A",
+      "B cannot INSERT a job into workspace A",
+      "B cannot INSERT a non-queued job (queued-only enforced)",
+      "B CAN SELECT its own workspace B",
+      "A staff CAN INSERT a queued job into workspace A"
+    ]
+  },
+  "job": {
+    "pass": 5,
+    "fail": 0,
+    "assertions": [
+      "claim_job: queued → running",
+      "claim sets lease (locked_by/locked_at)",
+      "claim increments attempts",
+      "worker: running → done (with done_at)",
+      "claim_job on empty queue returns nothing"
+    ]
+  },
+  "m13": {
+    "pass": 36,
+    "fail": 0,
+    "assertions": [
+      "B cannot SELECT/INSERT/UPDATE A's workflows/versions/executions/steps",
+      "B CAN read global templates (positive control)",
+      "staff read · manager+ write · client cannot even read (internal-ops ceiling)",
+      "executions + steps are system-written (no client INSERT policy — Gate-4)",
+      "emit_trigger enrols matches + enqueues an automation.execute job",
+      "trigger_config {tag_id} narrows: wrong tag does not enrol, right tag does",
+      "re-entry: once blocks re-enrol · allow re-enrols · once_per_days:7 blocks inside window",
+      "contact insert → contact.created; deal move → deal.stage_changed; inbound msg → message.received",
+      "automation_apply_move_deal does NOT re-emit (loop guard) + logs deal_change via=automation",
+      "version pinning: editing nodes bumps version + snapshots; old snapshot unchanged (AC-3)",
+      "templates: global read · own-workspace save · cannot insert a global one"
+    ]
+  },
+  "m13walk": {
+    "pass": 14,
+    "fail": 0,
+    "assertions": [
+      "walker paused at WAIT; delayed resume job enqueued (run_after future); resume pinned to successor",
+      "add_tag wrote a real contact_tags row (tag created on demand)",
+      "IF/ELSE lead_score>0 → TRUE branch; second contact (0) → FALSE branch",
+      "internal_notification called the real notify() RPC (1 feed row)",
+      "resume walked to GOAL → completed; ≥5 step rows logged (green/red timeline)",
+      "completed execution idempotent; test-mode send_email suppressed (Gate-3: nothing metered)"
+    ]
+  },
+  "m06": {
+    "pass": 32,
+    "fail": 0,
+    "assertions": [
+      "media_folders + media_assets RLS-on; assets carry sel/ins/upd/del policies",
+      "cross-tenant: B cannot SELECT/INSERT/UPDATE A's folders or assets",
+      "bucket role matrix: media=staff write/manager delete · brand=admin · client ceiling",
+      "register_media_asset records the index row + enqueues one queued media.autotag job for images",
+      "non-image → tag_status='skipped' + no autotag job; foreign-workspace path rejected",
+      "used_in: register appends + dedups; a second distinct usage appends; unregister removes",
+      "backfill_asset_usage populates used_in {pipeline, deal_id} from deal_files (idempotent)",
+      "recompute_storage_meter writes storage_gb = Σbytes/GB as a GAUGE (re-run overwrites, not adds)",
+      "soft_delete_asset (manager+) hides the asset from the browse SELECT; the row survives (recoverable)"
+    ]
+  },
+  "m22": {
+    "pass": 46,
+    "fail": 0,
+    "assertions": [
+      "blog_articles/article_revisions/article_categories/article_authors RLS-on; 4 policies on blog_articles",
+      "cross-tenant: B cannot SELECT/INSERT/UPDATE/DELETE A's articles, categories, or authors",
+      "role matrix: staff create/edit · manager+ delete/publish/approve/reject · client CEILING (cannot even read)",
+      "article_revisions is append-only (client cannot INSERT directly — definer RPC owns the write)",
+      "save_article_revision snapshots + prunes to the last 20; restore reverts content as a draft",
+      "publish_article flips status + stamps published_at + builds Article JSON-LD (manager+ only)",
+      "schedule_article + publish_due_articles publishes DUE rows, skips future ones (the cron body)",
+      "editorial: submit_for_review → in_review; approve → published; reject stores feedback + returns to draft",
+      "(site_id, slug) is unique per site; the same slug on a different site is allowed"
+    ]
+  },
+  "m22render": {
+    "pass": 22,
+    "fail": 0,
+    "assertions": [
+      "blog index lists given (published) articles as cards + canonical + RSS link + brand vars",
+      "single article: stored Article JSON-LD + meta_title/desc + canonical + og:image + body + byline",
+      "empty schema falls back to a minimal Article node; category page labels + canonical",
+      "RSS 2.0 well-formed with one item per article; not-found shell is 404 + noindex"
+    ]
+  },
+  "m22seo": {
+    "pass": 17,
+    "fail": 0,
+    "assertions": [
+      "content-seo scoreArticle: 0..100, deterministic, checklist states pass/warn/fail, keyword-in-title pass",
+      "empty article → score 0 no throw; missing keyword → warn not throw; Flesch positive/empty=0",
+      "plainText strips script + tags (no code leaks into word count/readability)",
+      "content-editor sanitizeHtml: strips on* handlers, <script>, javascript: href; keeps a[href,title]/img[src,alt]/semantic blocks; unwraps disallowed tags keeping text"
+    ]
+  }
+}

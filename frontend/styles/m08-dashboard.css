@@ -1,0 +1,111 @@
+/* m08-dashboard.css — Module M08 · Dashboard (no Copilot).
+   Composes the shared base: .kpi-strip/.kpi (app.css), .needs-panel/.panel-head/.data-row/
+   .empty-state/.mock-note (components.css), .pill/.btn/.skeleton (app.css). Only the
+   dashboard-specific pieces the base doesn't ship live here: KPI meta+sparkline, the range
+   segment, the quick-actions bar, the pipeline mini (§8.4), usage-meter bars, and the trend
+   panel. Zero raw hex (teal tint = rgba(0,105,110,x), gold tint = rgba(197,160,89,x) — the
+   same rgba recipe app.css/components.css already use); zero token redeclaration. */
+
+/* ── Page head extras: freshness + range segment ─────────────────────────── */
+.dash-head-row{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.freshness{display:inline-flex;align-items:center;gap:7px;margin-top:10px;font-family:var(--font-mono);
+  font-size:11.5px;color:var(--ink-400)}
+.freshness::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--status-success);
+  box-shadow:0 0 0 3px rgba(46,158,123,.16)}
+
+/* Range segmented control (per-module .seg pattern, kept local like its siblings) */
+.seg{display:inline-flex;padding:3px;gap:2px;background:var(--bg-card);border:.5px solid var(--line-strong);
+  border-radius:var(--r-pill)}
+.seg button{appearance:none;border:none;background:transparent;cursor:pointer;padding:6px 14px;border-radius:var(--r-pill);
+  font-family:var(--font-sans);font-size:12.5px;font-weight:500;color:var(--ink-400);transition:color .2s,background .2s}
+.seg button:hover{color:var(--ink-700)}
+.seg button.on{background:var(--card-solid);color:var(--teal-700);box-shadow:var(--shadow-sm)}
+:root[data-theme="dark"] .seg button.on{color:var(--teal-300)}
+
+/* ── KPI tile: meta + Chart.js sparkline (base .kpi/.kpi-ico/.kpi-val/.kpi-label in app.css) ── */
+a.kpi{text-decoration:none;color:inherit;display:block}
+.kpi-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.kpi-head .kpi-ico{margin-bottom:0}
+.kpi-spark{width:78px;height:30px;flex:none;opacity:.9}
+.kpi-spark canvas{width:78px!important;height:30px!important}
+.kpi-val{margin-top:14px}
+.kpi-val .cur{font-size:18px;color:var(--ink-400);margin-right:1px}
+.kpi-meta{display:flex;align-items:center;gap:9px;margin-top:9px;flex-wrap:wrap}
+.kpi-delta{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:11.5px;font-weight:500}
+.kpi-delta.up{color:var(--status-success)}
+.kpi-delta.down{color:var(--status-danger)}
+.kpi-delta.flat{color:var(--ink-400)}
+.kpi-chip{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-400)}
+.kpi-chip.est{padding:2px 8px;border:.5px solid var(--line-strong);border-radius:var(--r-pill)}
+.kpi-empty{color:var(--ink-300)}
+
+/* ── Quick actions bar ───────────────────────────────────────────────────── */
+.qa-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:22px 0 26px}
+.qa-btn{display:flex;align-items:center;gap:11px;padding:13px 15px;border-radius:var(--r-lg);text-decoration:none;
+  background:var(--glass-bg);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);
+  border:.5px solid var(--glass-border);box-shadow:inset 0 1px 0 var(--glass-hi),0 6px 18px rgba(0,105,110,.06);
+  transition:transform .3s var(--ease-reverent),box-shadow .3s var(--ease-reverent),border-color .3s var(--ease-reverent)}
+.qa-btn:hover{transform:translateY(-3px);border-color:rgba(26,154,161,.42);box-shadow:0 14px 32px rgba(0,105,110,.16)}
+.qa-btn .qa-ico{width:32px;height:32px;flex:none;border-radius:var(--r-sm);display:grid;place-items:center;
+  background:rgba(0,105,110,.10);color:var(--teal-700)}
+.qa-btn .qa-label{font-size:13.5px;font-weight:600;color:var(--ink-900)}
+
+/* ── Widget grid ─────────────────────────────────────────────────────────── */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+.dash-grid .span-2{grid-column:1 / -1}
+/* Grid items default to min-width:auto and won't shrink below their content — force 0 so
+   panels honour the track (long rows ellipsize, the pipe-mini scrolls internally). */
+.dash-grid > .panel{min-width:0}
+.panel-empty{padding:26px 6px;text-align:center;color:var(--ink-400);font-size:13px}
+
+/* ── Pipeline mini (§8.4) — not in the shared base ───────────────────────── */
+.pipe-mini{display:flex;gap:12px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:thin;min-width:0}
+.pipe-stage{position:relative;flex:1 0 128px;min-width:128px;padding:14px 14px 14px 18px;border-radius:var(--r-md);
+  background:rgba(0,105,110,.05);border:.5px solid var(--line)}
+.pipe-stage::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:2px;
+  background:var(--grad-spine);opacity:.55}
+.pipe-stage .ps-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-400);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pipe-stage .ps-count{font-family:var(--font-mono);font-size:24px;font-weight:500;color:var(--ink-900);line-height:1.1;margin-top:6px}
+.pipe-stage .ps-value{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-400);margin-top:3px}
+.pipe-stage.dim{opacity:.5}
+
+/* ── Usage meters mini (M03) ─────────────────────────────────────────────── */
+.um-list{display:flex;flex-direction:column;gap:15px}
+.um-row .um-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:7px}
+.um-row .um-name{font-size:13px;color:var(--ink-700)}
+.um-row .um-val{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-400)}
+.um-track{height:6px;border-radius:var(--r-pill);background:rgba(0,105,110,.10);overflow:hidden}
+.um-fill{height:100%;border-radius:var(--r-pill);background:var(--grad-brand);transition:width .5s var(--ease-reverent)}
+.um-fill.warn{background:var(--status-warning)}
+.um-fill.danger{background:var(--status-danger)}
+.um-row.unlimited .um-track{opacity:.4}
+
+/* ── Trend panel (Chart.js canvas — legibility first, no glass behind it) ── */
+.trend-wrap{position:relative;height:200px}
+.trend-wrap canvas{max-width:100%}
+.trend-legend{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
+.trend-legend span{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-400)}
+.trend-legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.trend-legend i.primary{background:var(--teal-500)}
+.trend-legend i.compare{background:var(--gold-500)}
+
+/* activity feed row lead icon reuses .r-lead; a small type tint helper */
+.data-row .r-lead.gold{background:rgba(197,160,89,.14);color:var(--gold-500)}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media(max-width:960px){
+  .dash-grid{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+  .dash-head-row{align-items:flex-start}
+  .qa-bar{grid-template-columns:repeat(2,1fr)}
+  /* The shared topbar packs a dense control row; on phones the conn-status pill is
+     redundant with the Connect button, and tighter gaps keep the row within the viewport
+     (page-scoped so other modules are untouched). */
+  .tbar{gap:9px}
+  .tbar .pill.plain{display:none}
+}
+@media(max-width:420px){
+  .qa-bar{grid-template-columns:1fr}
+}

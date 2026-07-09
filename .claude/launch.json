@@ -1,0 +1,151 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "session0-console",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "port": 5173
+    },
+    {
+      "name": "m03-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5273" },
+      "port": 5273
+    },
+    {
+      "name": "m41-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5473" },
+      "port": 5473
+    },
+    {
+      "name": "m04-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5673" },
+      "port": 5673
+    },
+    {
+      "name": "m05-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5573" },
+      "port": 5573
+    },
+    {
+      "name": "m09-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5773" },
+      "port": 5773
+    },
+    {
+      "name": "m11-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5911" },
+      "port": 5911
+    },
+    {
+      "name": "m12-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5912" },
+      "port": 5912
+    },
+    {
+      "name": "m13-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5913" },
+      "port": 5913
+    },
+    {
+      "name": "m28-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5928" },
+      "port": 5928
+    },
+    {
+      "name": "m14-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5914" },
+      "port": 5914
+    },
+    {
+      "name": "m44-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5944" },
+      "port": 5944
+    },
+    {
+      "name": "m08-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5908" },
+      "port": 5908
+    },
+    {
+      "name": "m16-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5916" },
+      "port": 5916
+    },
+    {
+      "name": "m19-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5919" },
+      "port": 5919
+    },
+    {
+      "name": "m20-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5920" },
+      "port": 5920
+    },
+    {
+      "name": "m06-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5906" },
+      "port": 5906
+    },
+    {
+      "name": "m15-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5915" },
+      "port": 5915
+    },
+    {
+      "name": "m22-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5922" },
+      "port": 5922
+    },
+    {
+      "name": "m22-verify",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5924" },
+      "port": 5924
+    },
+    {
+      "name": "m21-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs"],
+      "env": { "PORT": "5921" },
+      "port": 5921
+    }
+  ]
+}

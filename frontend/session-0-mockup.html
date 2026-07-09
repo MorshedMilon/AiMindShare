@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AiMindShare — Session 0 · Supabase Foundation Console (mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Shippori+Mincho:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   tokens.css — AiMindShare.com canonical design tokens · v1.0 · 2026-07-02
+   ─────────────────────────────────────────────────────────────────────────
+   SOURCE OF TRUTH: extracted VERBATIM from publishlyai-command-center.html
+   (the canonical reference implementation, per DECISIONS D-004 / D-006).
+   Underlying law: QURANLYAI_DESIGN.md. Deviations from that law are recorded
+   in DECISIONS (D-007 light default, D-014 Baskerville body + Shippori Mincho numerals — supersedes D-008)
+   and in AIMINDSHARE-DESIGN §2.3 (token mapping table).
+
+   RULES (never bend):
+   · Never invent new colors — extend scales only via a DECISIONS entry.
+   · No raw hex inline in any page CSS/HTML except inside SVG <defs>.
+   · Theme blocks stay SIBLINGS of :root — never merged into it.
+   · data-theme="light" is the DEFAULT (D-007).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root{
+  /* ── Teal scale ── */
+  --teal-950:#062628;--teal-900:#0F2A2C;--teal-800:#003F44;--teal-700:#00696E;
+  --teal-600:#0297A1;--teal-500:#2CA4AB;--teal-400:#3FBFC7;--teal-300:#6AD7DE;
+  --teal-200:#8DD8DE;--teal-100:#C8EEF1;--teal-50:#EAF5F5;
+
+  /* ── Gold scale ── */
+  --gold-700:#9A7C3F;--gold-500:#C5A059;--gold-400:#D9B358;--gold-300:#E2C896;--gold-200:#EFD48A;--gold-50:#FBF6EA;
+
+  /* ── Status (semantic — use these, never the raw scales, for state) ── */
+  --status-success:#2E9E7B;--status-warning:#C79A3A;--status-danger:#C4614E;--status-info:#2CA4AB;--status-idle:#6D797A;
+
+  /* ── Gradients ── */
+  --grad-brand:linear-gradient(135deg,var(--teal-700),var(--teal-500));
+  --grad-gold:linear-gradient(135deg,var(--gold-500),var(--gold-700));
+  --grad-ai:linear-gradient(135deg,var(--teal-700),var(--teal-500),var(--gold-500));
+  --grad-spine:linear-gradient(180deg,var(--teal-500),var(--gold-500));
+
+  /* ── Typography (D-014: Baskerville body + Shippori Mincho numerals; supersedes D-008) ── */
+  --font-serif:'Cormorant Garamond',Georgia,serif;                                    /* display / headings */
+  --font-sans:'Baskerville','Baskerville Old Face','Libre Baskerville',Georgia,serif; /* body, labels, UI   */
+  --font-mono:'Shippori Mincho','Cormorant Garamond',Georgia,serif;                   /* numbers / data     */
+  --label-track:.16em;
+
+  /* ── Radii ── */
+  --r-sm:10px;--r-md:14px;--r-lg:18px;--r-xl:24px;--r-2xl:32px;--r-pill:999px;
+
+  /* ── Easing ── */
+  --ease-reverent:cubic-bezier(.22,1,.36,1);      /* card hover, entrances */
+  --ease-premium:cubic-bezier(.25,.46,.45,.94);   /* nav, buttons, chrome  */
+
+  /* ── Shadows ── */
+  --shadow-sm:0 1px 2px rgba(0,42,44,.04),0 1px 3px rgba(0,42,44,.04);
+  --shadow-md:0 4px 16px rgba(0,42,44,.06),0 1px 3px rgba(0,42,44,.04);
+  --shadow-lg:0 12px 40px rgba(0,42,44,.08),0 4px 12px rgba(0,42,44,.05);
+  --shadow-glow:0 8px 32px rgba(0,105,110,.18);
+}
+
+/* ── LIGHT (DEFAULT, D-007) — sibling block, never merged ── */
+:root[data-theme="light"]{
+  --bg:#EBF4F4;--bg-elev:#FFF;--bg-card:#FAFBFB;--card-solid:#FFF;
+  --line:rgba(0,42,44,.08);--line-strong:rgba(0,105,110,.18);
+  /* body ink near-black; muted lifted for hierarchy (D-014; headings --ink-900 unchanged) */
+  --ink-900:#0F2A2C;--ink-700:#0A0F0E;--ink-500:#0A0F0E;--ink-400:#2E3B3A;--ink-300:#556260;
+  --glass-bg:rgba(230,243,243,.68);--glass-border:rgba(0,105,110,.15);--glass-hi:rgba(255,255,255,.75);--row-hover:var(--teal-50);
+}
+
+/* ── DARK — sibling block, never merged ── */
+:root[data-theme="dark"]{
+  --bg:#04090A;--bg-elev:#0A1618;--bg-card:#0C1A1C;--card-solid:#0C1A1C;
+  --line:rgba(0,150,160,.16);--line-strong:rgba(0,150,160,.28);
+  --ink-900:#EDF6F6;--ink-700:#B8D0D0;--ink-500:#7A9E9F;--ink-400:#6D8080;--ink-300:#3D6062;
+  --glass-bg:rgba(8,22,24,.82);--glass-border:rgba(0,150,160,.22);--glass-hi:rgba(255,255,255,.06);--row-hover:rgba(0,150,160,.06);
+  --teal-700:#1A9AA1;--teal-500:#5BC1C7;--teal-300:#88E0E5;--gold-400:#D9B358;--gold-300:#E5C570;
+  --shadow-md:0 4px 16px rgba(0,0,0,.30),0 1px 3px rgba(0,0,0,.30);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.40),0 4px 12px rgba(0,0,0,.30);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   app.css — AiMindShare component library for the Session 0 console.
+   Depends on tokens.css. No raw brand hex (uses var()); .5px hairlines; cards
+   ≥ --r-xl; glow + pulse only (no sweep anims); dark mode has NO stars/dots.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-sans);font-size:16.5px;line-height:1.6;
+  color:var(--ink-500);background:var(--bg);
+  min-height:100vh;overflow-x:hidden;position:relative;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+h1,h2,h3{font-family:var(--font-serif);color:var(--ink-900);font-weight:600;line-height:1.15}
+.mono{font-family:var(--font-mono)}
+.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+/* ── Atmosphere ──────────────────────────────────────────────────────────── */
+.bg-canvas{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.bg-canvas::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 20% 45%, rgba(44,164,171,.06) 0%, transparent 42%),
+    radial-gradient(circle at 82% 55%, rgba(197,160,89,.05) 0%, transparent 50%);
+}
+.bg-grid{
+  position:absolute;inset:-2px;
+  background-image:
+    linear-gradient(0deg, var(--line) .5px, transparent .5px),
+    linear-gradient(90deg, var(--line) .5px, transparent .5px);
+  background-size:48px 48px;animation:gridDrift 60s linear infinite;
+}
+@keyframes gridDrift{from{transform:translate(0,0)}to{transform:translate(48px,48px)}}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.15;animation:orbFloat 24s ease-in-out infinite}
+.orb-1{width:420px;height:420px;top:-80px;left:-60px;background:radial-gradient(circle,var(--teal-500) 0%,transparent 70%)}
+.orb-2{width:520px;height:520px;bottom:-140px;right:-120px;background:radial-gradient(circle,var(--gold-500) 0%,transparent 70%);animation-delay:-8s}
+.orb-3{width:360px;height:360px;top:40%;left:55%;background:radial-gradient(circle,var(--teal-400) 0%,transparent 70%);animation-delay:-14s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(90px,70px)}}
+#starField{position:absolute;inset:0}
+.star{position:absolute;width:1px;height:1px;background:rgba(0,105,110,.4);border-radius:50%;opacity:.04;animation:starTwinkle var(--tw,5s) ease-in-out infinite;animation-delay:var(--td,0s)}
+:root[data-theme="dark"] .star{display:none}          /* NO stars/dots in dark mode */
+@keyframes starTwinkle{0%,100%{opacity:.04}50%{opacity:.13;transform:scale(1.25)}}
+
+/* ── Shell / layout ──────────────────────────────────────────────────────── */
+.topbar{
+  position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;
+  padding:14px 32px;background:var(--glass-bg);
+  backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);
+  border-bottom:.5px solid var(--glass-border);
+}
+.brand{display:flex;align-items:center;gap:11px;font-family:var(--font-serif);font-size:19px;font-weight:600}
+.brand .mark{position:relative;width:30px;height:30px;border-radius:var(--r-sm);background:var(--grad-brand);
+  display:grid;place-items:center;color:#fff;font-size:15px;box-shadow:var(--shadow-glow)}
+.brand .mark::after{content:'';position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:50%;
+  background:var(--gold-500);box-shadow:0 0 0 2px var(--bg-elev)}
+.brand b{color:var(--ink-900);font-weight:600}
+.brand em{color:var(--gold-500);font-style:italic;font-weight:600}
+.topbar .spacer{flex:1}
+.session-tag{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;color:var(--ink-400);
+  padding:5px 11px;border:.5px solid var(--line-strong);border-radius:var(--r-pill);text-transform:uppercase}
+
+.wrap{max-width:1200px;margin:0 auto;padding:32px}
+.page-head{margin:12px 0 26px}
+.page-head h1{font-size:clamp(30px,4.2vw,46px);letter-spacing:-.025em;line-height:1.03}
+.page-head h1 em{
+  font-style:italic;font-weight:500;
+  background:linear-gradient(125deg,var(--teal-700) 0%,var(--teal-500) 40%,var(--gold-700) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+}
+:root[data-theme="dark"] .page-head h1 em{
+  background:linear-gradient(125deg,var(--teal-300) 0%,var(--teal-500) 40%,var(--gold-400) 100%);
+  -webkit-background-clip:text;background-clip:text;
+}
+.page-head p{margin-top:10px;font-size:16.5px;line-height:1.6;color:var(--ink-400);max-width:64ch}
+
+.section-h{display:flex;align-items:baseline;gap:12px;margin:34px 0 16px}
+.section-h h2{font-size:20px}
+.section-h h2 em{color:var(--gold-500);font-style:italic;font-weight:500}
+.section-h .hint{font-family:var(--font-mono);font-size:11px;color:var(--ink-400);letter-spacing:.04em}
+.label{font-size:14.5px;font-weight:600;text-transform:uppercase;letter-spacing:var(--label-track);color:var(--ink-400)}
+
+/* ── Glass panel base ────────────────────────────────────────────────────── */
+.panel,.kpi{
+  background:var(--glass-bg);backdrop-filter:blur(24px) saturate(1.5);
+  -webkit-backdrop-filter:blur(24px) saturate(1.5);
+  border:.5px solid var(--glass-border);border-radius:var(--r-xl);
+  box-shadow:inset 0 1px 0 var(--glass-hi),0 8px 28px rgba(0,105,110,.09);
+}
+:root[data-theme="dark"] .panel,:root[data-theme="dark"] .kpi{box-shadow:inset 0 1px 0 var(--glass-hi),0 8px 28px rgba(0,0,0,.28)}
+.panel{padding:24px}
+
+/* ── KPI strip ───────────────────────────────────────────────────────────── */
+.kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.kpi{position:relative;padding:22px 24px;min-height:120px;overflow:hidden;
+  transition:transform .35s var(--ease-reverent),box-shadow .35s var(--ease-reverent),border-color .35s var(--ease-reverent)}
+.kpi::after{content:'';position:absolute;top:12px;right:12px;width:60px;height:60px;border-radius:50%;
+  background:radial-gradient(circle,rgba(44,164,171,.12) 0%,transparent 70%)}
+.kpi:hover{transform:translateY(-6px) scale(1.015);border-color:rgba(26,154,161,.38);
+  box-shadow:0 20px 52px rgba(0,105,110,.18),0 4px 14px rgba(0,105,110,.10)}
+.kpi .kpi-ico{width:34px;height:34px;border-radius:var(--r-sm);background:rgba(0,105,110,.10);
+  display:grid;place-items:center;color:var(--teal-700);font-size:16px;margin-bottom:14px}
+.kpi .kpi-val{font-family:var(--font-mono);font-size:29px;font-weight:500;letter-spacing:-.02em;color:var(--ink-900);line-height:1}
+.kpi .kpi-label{margin-top:8px;font-size:14.5px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--ink-400)}
+.kpi.kpi-featured{border-color:var(--gold-500)}
+.kpi.kpi-featured .kpi-ico{background:var(--grad-gold);color:#fff}
+.kpi.kpi-featured .kpi-label{color:var(--gold-500)}
+
+/* ── Probe cards ─────────────────────────────────────────────────────────── */
+.probe-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.probe{position:relative;padding:22px 22px 20px;display:flex;flex-direction:column;gap:14px;
+  transition:transform .35s var(--ease-reverent),box-shadow .35s var(--ease-reverent),border-color .35s var(--ease-reverent)}
+.probe:hover{transform:translateY(-4px);border-color:rgba(26,154,161,.38)}
+.probe .p-top{display:flex;align-items:flex-start;gap:12px}
+.probe .p-ico{width:38px;height:38px;flex:none;border-radius:var(--r-sm);display:grid;place-items:center;font-size:17px;
+  background:rgba(0,105,110,.08);color:var(--teal-700)}
+.probe h3{font-size:16px}
+.probe .p-sub{font-size:12px;color:var(--ink-400);margin-top:3px}
+.probe .p-body{font-size:15.5px;color:var(--ink-500)}
+.probe .p-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:12px;border-top:.5px solid var(--line)}
+.probe .assertions{list-style:none;display:flex;flex-direction:column;gap:7px;font-family:var(--font-mono);font-size:11.5px}
+.probe .assertions li{display:flex;align-items:center;gap:8px;color:var(--ink-500)}
+.probe .assertions li::before{content:'✓';color:var(--status-success);font-weight:700}
+.probe .assertions li.bad::before{content:'✕';color:var(--status-danger)}
+.probe.state-error{border-color:rgba(196,97,78,.4)}
+.probe .p-envelope{font-family:var(--font-mono);font-size:11.5px;line-height:1.55;background:rgba(0,105,110,.05);
+  border:.5px solid var(--line);border-radius:var(--r-sm);padding:12px 14px;white-space:pre-wrap;word-break:break-word;color:var(--ink-700)}
+
+/* ── Pills ───────────────────────────────────────────────────────────────── */
+.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:var(--r-pill);
+  font-family:var(--font-mono);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--status-idle);background:rgba(109,121,122,.14)}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.success{color:var(--status-success);background:rgba(46,158,123,.14)}
+.pill.warning{color:var(--status-warning);background:rgba(199,154,58,.14)}
+.pill.danger{color:var(--status-danger);background:rgba(196,97,78,.14)}
+.pill.info{color:var(--status-info);background:rgba(44,164,171,.14)}
+.pill.attention{color:var(--gold-500);background:rgba(197,160,89,.14)}
+.pill.plain{background:transparent;border:.5px solid var(--line-strong);color:var(--ink-400)}
+.pill.plain::before{display:none}
+
+/* ── Ledger (migration & RLS table) ──────────────────────────────────────── */
+.ledger{display:flex;flex-direction:column}
+.ledger .row{display:grid;grid-template-columns:1.6fr 1fr auto;align-items:center;gap:14px;
+  padding:14px 4px;border-top:.5px solid var(--line);transition:background .2s var(--ease-premium)}
+.ledger .row:first-child{border-top:none}
+.ledger .row:hover{background:var(--row-hover)}
+.ledger .t-name{font-family:var(--font-mono);font-size:13px;color:var(--ink-900)}
+.ledger .t-name small{display:block;font-family:var(--font-sans);font-size:11.5px;color:var(--ink-400);margin-top:2px}
+.ledger .t-scope{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-500)}
+.ledger .badges{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 22px;
+  border-radius:var(--r-md);font-size:13px;font-weight:500;cursor:pointer;border:.5px solid transparent;
+  transition:transform .3s var(--ease-premium),box-shadow .3s var(--ease-premium),border-color .2s}
+.btn:active{transform:translateY(0) scale(.99)}
+.btn-primary{background:var(--grad-brand);color:#fff;box-shadow:var(--shadow-glow)}
+.btn-primary:hover{transform:translateY(-2px) scale(1.02)}
+.btn-ghost{background:transparent;border-color:var(--teal-700);color:var(--teal-700)}
+:root[data-theme="dark"] .btn-ghost{border-color:var(--teal-300);color:var(--teal-300)}
+.btn-ghost:hover{background:rgba(0,105,110,.06)}
+.btn-gold{background:var(--grad-gold);color:#1A0E00}
+.btn-gold:hover{transform:translateY(-2px) scale(1.02)}
+.btn-sm{height:32px;padding:0 14px;font-size:12px;border-radius:var(--r-sm)}
+.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}
+.icon-btn{width:38px;height:38px;border-radius:var(--r-sm);border:.5px solid var(--line-strong);background:transparent;
+  color:var(--ink-500);cursor:pointer;display:grid;place-items:center;font-size:15px;transition:border-color .2s,color .2s}
+.icon-btn:hover{border-color:var(--teal-500);color:var(--teal-700)}
+
+/* ── Inputs / config drawer ──────────────────────────────────────────────── */
+.field{display:flex;flex-direction:column;gap:7px;margin-bottom:16px}
+.field input{height:40px;padding:0 12px;background:var(--bg-card);border:.5px solid var(--line-strong);
+  border-radius:var(--r-sm);font-family:var(--font-mono);font-size:12.5px;color:var(--ink-900);transition:border-color .2s,box-shadow .2s}
+.field input:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px rgba(44,164,171,.15)}
+.field .help{font-size:11px;color:var(--ink-400)}
+
+.scrim{position:fixed;inset:0;background:rgba(4,9,10,.32);backdrop-filter:blur(2px);z-index:40;opacity:0;pointer-events:none;transition:opacity .3s}
+.scrim.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(420px,92vw);z-index:50;transform:translateX(102%);
+  transition:transform .4s var(--ease-reverent);background:var(--glass-bg);
+  backdrop-filter:blur(36px) saturate(1.7);-webkit-backdrop-filter:blur(36px) saturate(1.7);
+  border-left:.5px solid var(--glass-border);border-top-left-radius:var(--r-2xl);border-bottom-left-radius:var(--r-2xl);
+  padding:26px;overflow-y:auto}
+.drawer.open{transform:translateX(0)}
+.drawer h3{font-size:19px;margin-bottom:6px}
+.drawer .muted{font-size:12.5px;color:var(--ink-400);margin-bottom:20px;line-height:1.6}
+
+/* ── Banner ──────────────────────────────────────────────────────────────── */
+.banner{display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:var(--r-lg);
+  background:linear-gradient(145deg,rgba(197,160,89,.10),rgba(0,105,110,.04));border:.5px solid rgba(197,160,89,.30);
+  font-size:13px;color:var(--ink-700);margin-bottom:20px}
+.banner .b-ico{font-size:18px}
+.banner .spacer{flex:1}
+
+/* ── Skeleton (pulse opacity only) ───────────────────────────────────────── */
+.skeleton{background:var(--bg-card);border-radius:var(--r-sm);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+.foot{margin:44px 0 12px;padding-top:18px;border-top:.5px solid var(--line);
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-400);display:flex;gap:16px;flex-wrap:wrap}
+
+/* ── Entrance ────────────────────────────────────────────────────────────── */
+.reveal{opacity:0;transform:translateY(10px)}
+.js-ready .reveal{animation:rise .6s var(--ease-reverent) forwards}
+.js-ready .reveal:nth-child(2){animation-delay:.05s}
+.js-ready .reveal:nth-child(3){animation-delay:.1s}
+.js-ready .reveal:nth-child(4){animation-delay:.15s}
+@keyframes rise{to{opacity:1;transform:none}}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media(max-width:900px){
+  .kpi-strip{grid-template-columns:repeat(2,1fr)}
+  .probe-grid{grid-template-columns:1fr}
+  .wrap{padding:24px 20px}
+  .topbar{padding:12px 20px}
+}
+@media(max-width:560px){
+  .kpi-strip{grid-template-columns:1fr}
+  .ledger .row{grid-template-columns:1fr;gap:8px}
+  .ledger .badges{justify-content:flex-start}
+  .session-tag{display:none}
+  .page-head h1{font-size:30px}
+}
+@media(prefers-reduced-motion:reduce){
+  .orb,.bg-grid,.star{animation:none!important}
+  .reveal{opacity:1!important;transform:none!important;animation:none!important}
+  *{transition:none!important}
+}
+</style>
+</head>
+<body>
+  <div class="bg-canvas" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div>
+    <div id="starField"></div>
+  </div>
+
+  <header class="topbar">
+    <div class="brand"><span class="mark">&#9650;</span><span><b>AiMind</b><em>Share</em></span></div>
+    <span class="session-tag">Session 0 &middot; Foundation</span>
+    <div class="spacer"></div>
+    <span class="pill plain" id="connPill">not connected</span>
+    <button class="btn btn-ghost btn-sm" id="openConnect">Connect</button>
+    <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme"><span id="themeIco">&#9790;</span></button>
+  </header>
+
+  <main class="wrap">
+    <div class="page-head">
+      <h1>The <em>foundation</em> every module stands on.</h1>
+      <p>Supabase project setup for AiMindShare &mdash; extensions, tenancy, the jobs control-plane,
+         storage, cron and Vault, all under database-enforced Row-Level Security. This console is the
+         living Definition-of-Done board for Session 0: it shows what the migrations create and the
+         real result of each acceptance probe.</p>
+    </div>
+
+    <div class="banner">
+      <span class="b-ico">&#10022;</span>
+      <span>Standalone mockup &mdash; probe results are the real local run (leak 8/8, job 5/5, Gate-8 clean).
+        The live Edge Function test needs a connected Supabase project.</span>
+    </div>
+
+    <div class="section-h"><h2>Foundation <em>at a glance</em></h2><span class="hint">from migrations 0000&ndash;0005</span></div>
+    <div class="kpi-strip" id="kpis"></div>
+
+    <div class="section-h"><h2>Accept-when <em>probes</em></h2><span class="hint">BUILD-SEQUENCE &middot; Session 0</span></div>
+    <div class="probe-grid">
+      <div class="probe panel reveal" id="probe-leak">
+        <div class="p-top"><div class="p-ico">&#9960;</div>
+          <div><h3>Cross-tenant leak probe</h3><div class="p-sub">Tenancy tables &middot; workspace_id isolation</div></div></div>
+        <div class="p-content"><div class="skeleton" style="height:120px"></div></div>
+        <div class="p-foot"><span class="mono" style="font-size:11px;color:var(--ink-400)">real Postgres &middot; PGlite</span><span class="pill p-status">loading</span></div>
+      </div>
+      <div class="probe panel reveal" id="probe-job">
+        <div class="p-top"><div class="p-ico">&#9881;</div>
+          <div><h3>Job queued &rarr; claimed &rarr; done</h3><div class="p-sub">Atomic claim &middot; service-role worker</div></div></div>
+        <div class="p-content"><div class="skeleton" style="height:120px"></div></div>
+        <div class="p-foot"><span class="mono" style="font-size:11px;color:var(--ink-400)">real Postgres &middot; PGlite</span><span class="pill p-status">loading</span></div>
+      </div>
+      <div class="probe panel reveal" id="probe-gate8">
+        <div class="p-top"><div class="p-ico">&#9636;</div>
+          <div><h3>DoD Gate-8 greps</h3><div class="p-sub">Laws 1 &middot; 2 &middot; 3 &middot; 6 &mdash; zero hits</div></div></div>
+        <div class="p-content"><div class="skeleton" style="height:120px"></div></div>
+        <div class="p-foot"><span class="mono" style="font-size:11px;color:var(--ink-400)">bash &middot; scripts/gate8.sh</span><span class="pill p-status">loading</span></div>
+      </div>
+      <div class="probe panel reveal" id="probe-health">
+        <div class="p-top"><div class="p-ico">&#10022;</div>
+          <div><h3>Edge Function envelope</h3><div class="p-sub">Vault read &rarr; standard envelope</div></div></div>
+        <div class="p-content"><div class="p-body">Connect a Supabase project to call the <span class="mono">health</span> function live.</div></div>
+        <div class="p-foot"><button class="btn btn-primary btn-sm" id="runHealth" disabled>Run</button><span class="pill p-status">idle</span></div>
+      </div>
+    </div>
+
+    <div class="section-h"><h2>Migration &amp; RLS <em>ledger</em></h2><span class="hint">every tenant table: RLS + 4 policies</span></div>
+    <div class="panel"><div class="ledger" id="ledger"></div></div>
+
+    <div class="foot">
+      <span>AiMindShare &middot; aimindshare.com</span>
+      <span>Stack: vanilla + Supabase</span>
+      <span>Status generated: <span id="genAt">&mdash;</span></span>
+    </div>
+  </main>
+
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" id="drawer" aria-label="Connect Supabase">
+    <h3>Connect a project</h3>
+    <p class="muted">Enter your Supabase URL and the <b>public anon key</b> only. The privileged
+      service-role key must never be entered here &mdash; it stays on the server (Constitution Law 3).</p>
+    <div class="field"><span class="label">Supabase URL</span>
+      <input id="inpUrl" type="text" placeholder="https://your-project.supabase.co" spellcheck="false"></div>
+    <div class="field"><span class="label">Anon key (public)</span>
+      <input id="inpAnon" type="text" placeholder="eyJhbGci&hellip;" spellcheck="false">
+      <span class="help">Stored in this browser's localStorage only.</span></div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" id="saveCfg">Save &amp; connect</button>
+      <button class="btn btn-ghost" id="clearCfg">Clear</button>
+      <div class="spacer" style="flex:1"></div>
+      <button class="btn btn-ghost btn-sm" id="closeDrawer">Close</button>
+    </div>
+  </aside>
+
+  <script>
+  (() => {
+    "use strict";
+    const $ = (s, r = document) => r.querySelector(s);
+    const el = (t, cls, html) => { const n = document.createElement(t); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
+
+    // Embedded real local-run status (no fetch — works on file://)
+    const VERIFY = {
+      generatedAt: "2026-07-03 (mockup)",
+      gate8: { clean: true, laws: [
+        "Law 1 — no React/Next/Prisma/BullMQ imports",
+        "Law 3 — no secret tokens under frontend/",
+        "Law 6 — no sweep anims · quranlyai.com · no raw brand hex · 3 fonts",
+        "Law 2 — every tenant-table migration enables RLS" ] },
+      leak: { pass: 8, fail: 0, assertions: [
+        "B cannot SELECT workspace A", "B cannot SELECT A's memberships", "B cannot SELECT A's jobs",
+        "B cannot UPDATE workspace A", "B cannot INSERT a job into workspace A",
+        "B cannot INSERT a non-queued job (queued-only enforced)", "B CAN SELECT its own workspace B",
+        "A staff CAN INSERT a queued job into workspace A" ] },
+      job: { pass: 5, fail: 0, assertions: [
+        "claim_job: queued → running", "claim sets lease (locked_by/locked_at)", "claim increments attempts",
+        "worker: running → done (with done_at)", "claim_job on empty queue returns nothing" ] }
+    };
+
+    const THEME_KEY = "aimindshare-theme";
+    const root = document.documentElement;
+    function setTheme(t){ root.setAttribute("data-theme", t); try{localStorage.setItem(THEME_KEY,t);}catch(e){} $("#themeIco").textContent = t==="dark"?"☀":"☾"; }
+    setTheme((()=>{ try{return localStorage.getItem(THEME_KEY)||"light";}catch(e){return "light";} })());
+    $("#themeToggle").addEventListener("click", () => setTheme(root.getAttribute("data-theme")==="dark"?"light":"dark"));
+
+    const field = $("#starField");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (field && !reduce) for (let i=0;i<55;i++){ const s=el("div","star");
+      s.style.left=Math.random()*100+"%"; s.style.top=Math.random()*100+"%";
+      s.style.setProperty("--tw",(3+Math.random()*7).toFixed(1)+"s"); s.style.setProperty("--td",(Math.random()*10).toFixed(1)+"s"); field.appendChild(s); }
+
+    const KPIS = [
+      { ico:"▤", val:"6", label:"Migrations", feat:false },
+      { ico:"⛨", val:"10", label:"Tables under RLS", feat:false },
+      { ico:"⛁", val:"4", label:"Storage buckets", feat:false },
+      { ico:"⏱", val:"2", label:"pg_cron jobs", feat:true },
+    ];
+    const LEDGER = [
+      ["profiles","user public mirror","self only",["success:RLS","info:sel/ins/upd"]],
+      ["workspaces","agency / sub-account","member read · owner write",["success:RLS","attention:owner-only"]],
+      ["memberships","role + status","self read · admin write",["success:RLS","attention:admin-only"]],
+      ["jobs","async control plane","member read · queued-only insert",["success:RLS","warning:queued-only"]],
+      ["plans","platform catalog","authenticated read",["success:RLS","plain:catalog"]],
+      ["subscriptions_platform","Stripe subscriptions","member read · service write",["success:RLS"]],
+      ["usage_meters","metered totals","member read · service write",["success:RLS"]],
+      ["usage_events","append-only ledger","member read · service write",["success:RLS"]],
+      ["credit_wallets","prepaid balance","member read · service write",["success:RLS"]],
+      ["rebilling_rules","agency markup","member read · admin write",["success:RLS","attention:admin-only"]],
+    ];
+    $("#kpis").append(...KPIS.map((k)=>{ const c=el("div","kpi reveal"+(k.feat?" kpi-featured":"")); c.append(el("div","kpi-ico",k.ico),el("div","kpi-val num",k.val),el("div","kpi-label",k.label)); return c; }));
+    const ledger=$("#ledger");
+    LEDGER.forEach(([name,desc,scope,badges])=>{ const row=el("div","row");
+      row.append(el("div","t-name",name+"<small>"+desc+"</small>"),el("div","t-scope",scope));
+      const b=el("div","badges"); badges.forEach((spec)=>{ const [k,txt]=spec.split(":"); b.append(el("span","pill "+k,txt)); }); row.append(b); ledger.append(row); });
+
+    function fillProbe(id,data){ const card=$("#probe-"+id),body=$(".p-content",card),foot=$(".p-status",card);
+      body.innerHTML=""; const ok=data.fail===0; const ul=el("ul","assertions");
+      data.assertions.forEach((a)=>ul.append(el("li","",a))); body.append(ul);
+      foot.className="pill p-status "+(ok?"success":"danger"); foot.textContent=ok?(data.pass+" passed"):(data.fail+" failed"); }
+    fillProbe("leak",VERIFY.leak); fillProbe("job",VERIFY.job);
+    (function(){ const g=$("#probe-gate8"),body=$(".p-content",g),foot=$(".p-status",g); body.innerHTML="";
+      const ul=el("ul","assertions"); VERIFY.gate8.laws.forEach((l)=>ul.append(el("li","",l))); body.append(ul);
+      foot.className="pill p-status "+(VERIFY.gate8.clean?"success":"danger"); foot.textContent=VERIFY.gate8.clean?"0 violations":"violations"; })();
+    $("#genAt").textContent=VERIFY.generatedAt;
+
+    const CFG_KEY="aimindshare-supabase";
+    function getCfg(){ try{ const s=JSON.parse(localStorage.getItem(CFG_KEY)||"null"); if(s&&s.url)return s; }catch(e){} return null; }
+    function renderConn(){ const cfg=getCfg(),pill=$("#connPill");
+      if(cfg){pill.className="pill success";pill.textContent="connected";}else{pill.className="pill plain";pill.textContent="not connected";}
+      $("#runHealth").disabled=!cfg; const hc=$("#probe-health");
+      if(!cfg){ $(".p-content",hc).innerHTML='<div class="p-body">Connect a Supabase project (URL + anon key) to call the <span class="mono">health</span> Edge Function and read its Vault-backed envelope live.</div>'; $(".p-status",hc).className="pill p-status"; $(".p-status",hc).textContent="idle"; }
+      else { $(".p-content",hc).innerHTML='<div class="p-body">Ready. Click <b>Run</b> to call <span class="mono">/functions/v1/health</span>.</div>'; } }
+    function escapeHtml(s){ return s.replace(/[&<>]/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+    async function runHealth(){ const cfg=getCfg(); if(!cfg)return; const hc=$("#probe-health"),status=$(".p-status",hc);
+      status.className="pill p-status info"; status.textContent="calling…"; $(".p-content",hc).innerHTML='<div class="skeleton" style="height:74px"></div>';
+      try{ const res=await fetch(cfg.url.replace(/\/$/,"")+"/functions/v1/health",{ headers: cfg.anon?{apikey:cfg.anon,Authorization:"Bearer "+cfg.anon}:{} });
+        const json=await res.json(); const good=json&&json.ok===true;
+        $(".p-content",hc).innerHTML='<div class="p-envelope">'+escapeHtml(JSON.stringify(json,null,2))+'</div>';
+        status.className="pill p-status "+(good?"success":"danger"); status.textContent=good?"envelope ok":((json&&json.error)||"error");
+      }catch(e){ hc.classList.add("state-error"); $(".p-content",hc).innerHTML='<div class="p-body" style="color:var(--status-danger)">'+escapeHtml(String(e))+'</div>'; status.className="pill p-status danger"; status.textContent="unreachable"; } }
+
+    const drawer=$("#drawer"),scrim=$("#scrim");
+    const openDrawer=()=>{ const c=getCfg(); if(c){$("#inpUrl").value=c.url;$("#inpAnon").value=c.anon||"";} drawer.classList.add("open"); scrim.classList.add("open"); };
+    const closeDrawer=()=>{ drawer.classList.remove("open"); scrim.classList.remove("open"); };
+    $("#openConnect").addEventListener("click",openDrawer); $("#closeDrawer").addEventListener("click",closeDrawer); scrim.addEventListener("click",closeDrawer);
+    $("#saveCfg").addEventListener("click",()=>{ const url=$("#inpUrl").value.trim(),anon=$("#inpAnon").value.trim(); if(!url){$("#inpUrl").focus();return;} try{localStorage.setItem(CFG_KEY,JSON.stringify({url,anon}));}catch(e){} closeDrawer(); renderConn(); });
+    $("#clearCfg").addEventListener("click",()=>{ try{localStorage.removeItem(CFG_KEY);}catch(e){} $("#inpUrl").value="";$("#inpAnon").value=""; renderConn(); });
+    $("#runHealth").addEventListener("click",runHealth);
+    renderConn(); document.body.classList.add("js-ready");
+  })();
+  </script>
+</body>
+</html>

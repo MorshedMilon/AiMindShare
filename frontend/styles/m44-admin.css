@@ -1,0 +1,147 @@
+/* m44-admin.css — Module M44 · Admin Basics (Platform Ops) surfaces only.
+   The app shell, panels, KPIs, pills, buttons, empty-states, drawer, toast, and
+   mock-note come from components.css + app.css + tokens.css. This file adds only
+   what M44 introduces: the super-admin scope chip, the impersonation banner, the
+   directory/jobs data tables, the feature-flag switch rows, the workspace manage
+   modal, and the Restricted screen. Tokens only (no raw hex); .5px hairlines;
+   numbers in --font-mono; a [data-theme="dark"] sibling block; motion-safe. */
+
+/* ── Super-admin scope chip (topbar) ─────────────────────────────────────── */
+.admin-scope{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:var(--r-pill);
+  border:.5px solid var(--line-strong);background:var(--grad-ai);color:#fff;font-size:12px;font-weight:600;letter-spacing:.02em}
+.admin-scope .as-ico{display:grid;place-items:center;opacity:.95}
+
+/* ── Impersonation banner ────────────────────────────────────────────────── */
+.imp-banner{display:flex;align-items:center;gap:12px;padding:11px 16px;margin-bottom:18px;border-radius:var(--r-lg);
+  border:.5px solid var(--gold-500);background:var(--gold-50);color:var(--ink-900)}
+.imp-banner .ib-ico{display:grid;place-items:center;width:28px;height:28px;flex:none;border-radius:var(--r-sm);
+  background:var(--grad-gold);color:#fff}
+.imp-banner .ib-txt{font-size:13.5px;line-height:1.4}
+.imp-banner .ib-exp{margin-left:8px;font-family:var(--font-mono);font-size:12px;color:var(--ink-400)}
+.imp-banner .btn{margin-left:auto}
+
+/* ── KPI strip: 7 tiles, wraps cleanly ───────────────────────────────────── */
+.kpi-strip.kpi-7{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:14px}
+
+/* ── Overview: recent-activity feed ──────────────────────────────────────── */
+.panel-head .ph-sub{margin-left:auto;font-size:12px;color:var(--ink-400);letter-spacing:.02em;text-transform:uppercase}
+.feed{display:flex;flex-direction:column}
+.feed-row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:.5px solid var(--line)}
+.feed-row:last-child{border-bottom:none}
+.feed-row .fr-ico{display:grid;place-items:center;width:28px;height:28px;flex:none;border-radius:var(--r-sm);
+  background:rgba(0,105,110,.10);color:var(--teal-700)}
+.feed-row .fr-body{flex:1;min-width:0;font-size:13.5px}
+.feed-row .fr-act{font-weight:600}
+.feed-row .fr-tgt{color:var(--ink-400);font-family:var(--font-mono);font-size:12.5px}
+.feed-row .fr-time{margin-left:auto;flex:none;font-size:12px;color:var(--ink-400)}
+.empty-inline{padding:26px 4px;text-align:center;color:var(--ink-400);font-size:13.5px}
+
+/* ── Segmented control + directory/jobs bar ──────────────────────────────── */
+.dir-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.dir-bar>.tb-search.sm{height:34px;flex:1;min-width:180px;max-width:320px}
+.dir-bar .dir-search{flex:1;min-width:0;background:none;border:none;outline:none;font:inherit;color:var(--ink-900)}
+.seg{display:inline-flex;padding:3px;gap:2px;border-radius:var(--r-pill);border:.5px solid var(--line);background:var(--bg-elev)}
+.seg-btn{border:none;background:none;cursor:pointer;font:inherit;font-size:13px;padding:6px 14px;border-radius:var(--r-pill);color:var(--ink-500)}
+.seg-btn.on{background:var(--teal-700);color:#fff}
+
+/* ── Filter chips (jobs) ─────────────────────────────────────────────────── */
+.fchips{display:inline-flex;gap:7px;flex-wrap:wrap}
+.fchip{display:inline-flex;align-items:center;gap:6px;border:.5px solid var(--line);background:var(--bg-elev);
+  cursor:pointer;font:inherit;font-size:12.5px;padding:6px 12px;border-radius:var(--r-pill);color:var(--ink-500);text-transform:capitalize}
+.fchip.on{border-color:var(--teal-500);background:rgba(0,105,110,.10);color:var(--teal-700)}
+.fchip .num{font-family:var(--font-mono);font-size:11.5px;opacity:.8}
+
+/* ── Data tables (directory + jobs) ──────────────────────────────────────── */
+.tbl-wrap{overflow-x:auto;border-radius:var(--r-lg);border:.5px solid var(--line);background:var(--bg-card)}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px}
+.tbl thead th{text-align:left;font-size:11px;letter-spacing:var(--label-track);text-transform:uppercase;color:var(--ink-400);
+  font-weight:600;padding:12px 14px;border-bottom:.5px solid var(--line);white-space:nowrap}
+.tbl tbody td{padding:12px 14px;border-bottom:.5px solid var(--line);vertical-align:middle}
+.tbl tbody tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover{background:var(--row-hover)}
+.tbl th.num,.tbl td.num{text-align:right;font-family:var(--font-mono);white-space:nowrap}
+.tbl .cell-main{font-weight:600;color:var(--ink-900)}
+.tbl .cell-sub{font-size:11.5px;color:var(--ink-400);margin-top:2px}
+.tbl .mono-cell{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-700)}
+.tbl .cell-err{color:var(--status-danger);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tbl .row-actions{text-align:right;white-space:nowrap}
+.tbl .row-actions .btn{margin-left:6px}
+.tbl-skel{padding:8px}
+
+/* ── Feature-flag rows + switch ──────────────────────────────────────────── */
+.flag-list{padding:6px 4px}
+.flag-row{display:flex;align-items:center;gap:16px;padding:13px 12px;border-bottom:.5px solid var(--line)}
+.flag-row:last-child{border-bottom:none}
+.flag-row .fl-id{flex:1;min-width:0}
+.flag-row .fl-key{font-family:var(--font-mono);font-size:13px;color:var(--ink-900)}
+.flag-row .fl-desc{font-size:12.5px;color:var(--ink-400);margin-top:3px}
+.switch{position:relative;flex:none;width:44px;height:26px;cursor:pointer}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.switch .track{position:absolute;inset:0;border-radius:var(--r-pill);background:var(--bg-elev);border:.5px solid var(--line);transition:background .18s var(--ease-premium)}
+.switch .track::after{content:"";position:absolute;top:2.5px;left:2.5px;width:20px;height:20px;border-radius:50%;background:var(--card-solid);
+  box-shadow:var(--shadow-sm);transition:transform .18s var(--ease-premium)}
+.switch input:checked+.track{background:var(--teal-700);border-color:var(--teal-700)}
+.switch input:checked+.track::after{transform:translateX(18px)}
+
+/* ── Workspace manage modal ──────────────────────────────────────────────── */
+.scrim{position:fixed;inset:0;z-index:70;background:rgba(4,9,10,.5);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.open{opacity:1;pointer-events:auto}
+.modal{position:fixed;z-index:71;top:50%;left:50%;transform:translate(-50%,-46%);width:calc(100% - 40px);max-width:520px;max-height:90vh;overflow-y:auto;
+  background:var(--card-solid);border:.5px solid var(--line-strong);border-radius:var(--r-xl);box-shadow:var(--shadow-lg);
+  padding:22px;opacity:0;pointer-events:none;transition:opacity .2s var(--ease-premium),transform .2s var(--ease-premium)}
+.modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%)}
+.modal-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.modal-head h3{font-size:19px;flex:1}
+.ws-detail .wd-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px;padding-bottom:16px;border-bottom:.5px solid var(--line)}
+.ws-detail .wd-grid .wd-k{display:block;font-size:11px;letter-spacing:var(--label-track);text-transform:uppercase;color:var(--ink-400);margin-bottom:5px}
+.ws-detail .wd-grid .wd-v{font-size:14px;color:var(--ink-900)}
+.ws-detail .wd-grid .wd-v.num{font-family:var(--font-mono)}
+.wd-section{padding-top:16px}
+.wd-section h4{font-size:12px;letter-spacing:var(--label-track);text-transform:uppercase;color:var(--ink-500);margin-bottom:12px}
+.wd-actions{display:flex;gap:10px;flex-wrap:wrap}
+.wd-note{font-size:12px;color:var(--ink-400);margin-top:10px;line-height:1.55}
+.wd-overrides{display:flex;flex-direction:column;gap:8px}
+.ovr-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border:.5px solid var(--line);border-radius:var(--r-sm);font-size:13px}
+.ovr-row span{font-family:var(--font-mono);font-size:12.5px}
+.ovr-sel{font:inherit;font-size:12.5px;padding:5px 8px;border-radius:var(--r-sm);border:.5px solid var(--line);background:var(--bg-elev);color:var(--ink-900)}
+.imp-form .field{margin-bottom:14px}
+.imp-form textarea{width:100%;font:inherit;font-size:13.5px;padding:10px 12px;border-radius:var(--r-sm);border:.5px solid var(--line);background:var(--bg-elev);color:var(--ink-900);resize:vertical}
+.imp-form .muted{font-size:13px;color:var(--ink-400);line-height:1.6;margin-bottom:14px}
+
+/* ── Restricted (non-admin) ──────────────────────────────────────────────── */
+.restricted{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:72px 24px;max-width:480px;margin:0 auto}
+.restricted .rs-ico{display:grid;place-items:center;width:72px;height:72px;border-radius:var(--r-xl);background:rgba(196,97,78,.10);color:var(--status-danger)}
+.restricted h1{font-size:30px}
+.restricted p{font-size:14px;color:var(--ink-500);line-height:1.65}
+.restricted .rs-note{font-size:12.5px;color:var(--ink-400)}
+.restricted .btn{margin-top:10px}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width:760px){
+  .kpi-strip.kpi-7{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  .ws-detail .wd-grid{grid-template-columns:1fr}
+  .imp-banner{flex-wrap:wrap}
+  .imp-banner .btn{margin-left:0}
+  /* Keep the page from horizontal-scrolling: force the shell's single column to the
+     viewport (minmax(0,1fr) beats the default min-content floor), let the content
+     track shrink so wide tables scroll inside .tbl-wrap, and trim the topbar's
+     nowrap items so its min-content no longer widens the column. */
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .content{min-width:0}
+  .tbar{gap:8px}
+  .admin-scope,.tbar #connPill{display:none}
+  .dir-bar{flex-wrap:wrap;gap:10px}
+  .dir-bar>.tb-search.sm{min-width:140px}
+}
+
+/* ── Dark theme sibling block ────────────────────────────────────────────── */
+:root[data-theme="dark"] .imp-banner{background:rgba(197,160,89,.10);color:var(--ink-900)}
+:root[data-theme="dark"] .fchip.on{background:rgba(45,212,191,.12);color:var(--teal-300)}
+:root[data-theme="dark"] .seg-btn.on{background:var(--teal-500);color:#04191b}
+:root[data-theme="dark"] .switch input:checked+.track{background:var(--teal-500);border-color:var(--teal-500)}
+:root[data-theme="dark"] .tbl .mono-cell{color:var(--ink-500)}
+
+/* ── Motion-safe ─────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion:reduce){
+  .switch .track,.switch .track::after,.modal{transition:none}
+}

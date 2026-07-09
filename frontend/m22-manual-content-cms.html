@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AiMindShare — M22 · Content / CMS</title>
+  <meta name="description" content="AiMindShare Module M22 (manual slice) — the article library and editorial workflow: a blog manager with status pipeline, autosave revisions, categories & authors, an editorial review queue, live readability + on-page SEO scoring, and one-click publishing onto M19 site blog routes with Article/FAQ schema and RSS.">
+
+  <!-- Fonts (D-014: Cormorant Garamond · Libre Baskerville · Shippori Mincho) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Shippori+Mincho:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Design tokens → base library → shared shell/components → module layer (order matters) -->
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/app.css">
+  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="styles/m22-content.css">
+
+  <!-- Theme boot before first paint (light default per D-007) -->
+  <script>
+    (function(){try{var t=localStorage.getItem("aimindshare-theme");
+      document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light");}catch(e){}})();
+  </script>
+</head>
+<body>
+  <!-- Atmosphere (soft gradient orbs; no stars/dots in dark — handled in app.css) -->
+  <div class="bg-canvas" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div id="starField"></div>
+  </div>
+
+  <!-- App shell (rail + topbar + content) is rendered here by the hash router -->
+  <div class="shell" id="app"></div>
+
+  <!-- Sheet (drawer), modal + toast roots -->
+  <div id="sheetRoot"></div>
+  <div id="modalRoot"></div>
+  <div class="toast-wrap" id="toasts"></div>
+
+  <!-- Hidden native file input (shared by the AssetPicker inline upload) -->
+  <input type="file" id="fileInput" hidden accept="image/*">
+
+  <!-- Connect-a-project drawer (same contract as every prior module) -->
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" id="drawer" aria-label="Connect a Supabase project">
+    <h3>Connect a project</h3>
+    <p class="muted">Enter your Supabase project URL and public <b>anon</b> key to run M22 live
+      (browse articles, edit + score, publish to your M19 site blog). Nothing secret touches the
+      browser — only the anon key is stored here (Law 3), in
+      <span class="mono">localStorage</span> on this device.</p>
+    <div class="field">
+      <label class="label" for="inpUrl">Project URL</label>
+      <input id="inpUrl" placeholder="https://YOUR-PROJECT.supabase.co" spellcheck="false" autocomplete="off">
+    </div>
+    <div class="field">
+      <label class="label" for="inpAnon">Anon key</label>
+      <input id="inpAnon" placeholder="eyJhbGciOi…" spellcheck="false" autocomplete="off">
+      <span class="help">Public anon key only — never the service-role key.</span>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" id="saveCfg">Save &amp; connect</button>
+      <button class="btn btn-ghost" id="clearCfg">Clear</button>
+    </div>
+    <button class="btn btn-ghost btn-sm" id="closeDrawer" style="margin-top:18px">Close</button>
+  </aside>
+
+  <!-- Vendored library (no CDN, no build step): Supabase UMD -->
+  <script src="vendor/supabase-js.min.js"></script>
+  <!-- Optional project config (copy config.example.js → config.js); fails soft if absent -->
+  <script src="config.js" onerror="void 0"></script>
+  <!-- Shared reusable picker (exported as window.AssetPicker), then the module app -->
+  <script src="js/asset-picker.js"></script>
+  <!-- Module: imports the shared pure scorer/sanitiser (content-seo.mjs + content-editor.mjs) -->
+  <script type="module" src="js/m22-content.js"></script>
+</body>
+</html>

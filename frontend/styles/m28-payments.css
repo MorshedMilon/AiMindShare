@@ -1,0 +1,153 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   m28-payments.css — AiMindShare Module M28 · Payments & Invoicing.
+   Module layer on top of tokens.css + app.css + components.css. Tokens only
+   (no raw hex — Gate-6/8); .5px hairlines; numbers in --font-mono; both themes
+   as sibling [data-theme] blocks; reduced-motion respected. Covers the pieces
+   the shared library doesn't: revenue cards row, tabs, the invoice-editor
+   line-item grid + live preview, status pills, the Stripe Connect status card,
+   and the standalone branded public pay page.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Page header ─────────────────────────────────────────────────────────── */
+.pay-head{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.pay-head .ph-title{font-family:var(--font-serif);font-size:30px;font-weight:500;letter-spacing:-.01em;color:var(--ink-900);line-height:1.05}
+.pay-head .ph-sub{margin-top:4px;color:var(--ink-400);font-size:13.5px}
+.pay-head .spacer{flex:1}
+
+/* ── Revenue KPI row (reuses .kpi; adds tone accents) ────────────────────── */
+.rev-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px}
+.kpi .kpi-delta{margin-top:8px;font-family:var(--font-mono);font-size:11px;color:var(--ink-400)}
+.kpi.tone-paid .kpi-ico{background:rgba(46,158,123,.12);color:var(--status-success)}
+.kpi.tone-out .kpi-ico{background:rgba(0,105,110,.10);color:var(--teal-700)}
+.kpi.tone-over{border-color:rgba(196,97,78,.45)}
+.kpi.tone-over .kpi-ico{background:rgba(196,97,78,.12);color:var(--status-danger)}
+.kpi.tone-over .kpi-val{color:var(--status-danger)}
+
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
+.tabs{display:flex;gap:4px;border-bottom:.5px solid var(--line);margin-bottom:18px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{position:relative;flex:none;display:inline-flex;align-items:center;gap:8px;padding:11px 15px;border:0;background:transparent;
+  font-family:var(--font-sans);font-size:13px;color:var(--ink-400);cursor:pointer;border-radius:var(--r-sm) var(--r-sm) 0 0;transition:color .18s var(--ease-premium)}
+.tab:hover{color:var(--ink-700)}
+.tab.on{color:var(--teal-700)}
+:root[data-theme="dark"] .tab.on{color:var(--teal-300)}
+.tab.on::after{content:"";position:absolute;left:12px;right:12px;bottom:-.5px;height:2px;border-radius:2px;background:var(--grad-brand)}
+.tab .tab-count{font-family:var(--font-mono);font-size:11px;padding:1px 7px;border-radius:var(--r-pill);background:var(--bg-card);color:var(--ink-400);border:.5px solid var(--line)}
+
+/* ── Status pills (invoice + estimate + subscription lifecycles) ─────────── */
+.st{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:var(--r-pill);
+  font-size:11px;font-weight:600;letter-spacing:.02em;border:.5px solid transparent;text-transform:capitalize}
+.st::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.st-draft{color:var(--ink-400);background:var(--bg-card);border-color:var(--line)}
+.st-sent,.st-viewed{color:var(--teal-700);background:rgba(0,105,110,.08)}
+:root[data-theme="dark"] .st-sent,:root[data-theme="dark"] .st-viewed{color:var(--teal-300)}
+.st-partial{color:var(--status-warning);background:rgba(199,154,58,.12)}
+.st-paid,.st-accepted,.st-active{color:var(--status-success);background:rgba(46,158,123,.12)}
+.st-overdue,.st-past_due,.st-declined{color:var(--status-danger);background:rgba(196,97,78,.12)}
+.st-void,.st-expired,.st-canceled{color:var(--ink-300);background:var(--bg-card);border-color:var(--line);text-decoration:line-through}
+.st-trialing{color:var(--gold-500);background:rgba(197,160,89,.12)}
+
+/* ── Data table (reuses .table; money right-aligned, mono) ───────────────── */
+.inv-table td.num,.inv-table th.num{text-align:right;font-family:var(--font-mono);white-space:nowrap}
+.inv-table tr{cursor:pointer}
+.inv-table tbody tr:hover{background:var(--row-hover)}
+.inv-num{font-family:var(--font-mono);font-weight:500;color:var(--ink-900)}
+.inv-sub{font-size:11.5px;color:var(--ink-400)}
+.cell-main{display:flex;flex-direction:column;gap:2px}
+
+/* ── Invoice editor ──────────────────────────────────────────────────────── */
+.editor-grid{display:grid;grid-template-columns:1fr 380px;gap:24px;align-items:start}
+@media(max-width:1080px){.editor-grid{grid-template-columns:1fr}}
+.li-table{width:100%;border-collapse:collapse;margin-top:6px}
+.li-table th{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-400);text-align:left;padding:6px 8px}
+.li-table th.num,.li-table td.num{text-align:right}
+.li-table td{padding:5px 8px;border-top:.5px solid var(--line);vertical-align:middle}
+.li-input{width:100%;height:34px;padding:0 10px;border:.5px solid var(--line);border-radius:var(--r-sm);
+  background:var(--bg-elev);color:var(--ink-900);font-family:var(--font-sans);font-size:13px}
+.li-input.num{text-align:right;font-family:var(--font-mono)}
+.li-input:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px rgba(0,105,110,.10)}
+.li-del{width:28px;height:28px;border-radius:var(--r-sm);border:.5px solid var(--line);background:transparent;
+  color:var(--ink-400);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.li-del:hover{color:var(--status-danger);border-color:var(--status-danger)}
+.li-amount{font-family:var(--font-mono);font-size:13px;color:var(--ink-900);text-align:right;white-space:nowrap}
+
+/* Live preview / totals card */
+.preview-card{position:sticky;top:88px}
+.doc{padding:26px;border-radius:var(--r-lg);border:.5px solid var(--line);background:var(--card-solid);box-shadow:var(--shadow-md)}
+.doc-brand{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:16px;border-bottom:.5px solid var(--line)}
+.doc-logo{width:40px;height:40px;border-radius:var(--r-sm);background:var(--grad-brand);color:#fff;display:grid;place-items:center;font-family:var(--font-serif);font-size:20px}
+.doc-kind{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.16em;color:var(--ink-400)}
+.doc-total-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px;color:var(--ink-700)}
+.doc-total-row .v{font-family:var(--font-mono)}
+.doc-total-row.grand{margin-top:8px;padding-top:12px;border-top:.5px solid var(--line);font-size:17px;color:var(--ink-900);font-weight:600}
+.doc-total-row.grand .v{font-size:19px}
+.doc-total-row.muted-row{color:var(--ink-400)}
+.doc-total-row.due .v{color:var(--status-danger)}
+
+/* meta fields row */
+.meta-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+@media(max-width:560px){.meta-row{grid-template-columns:1fr}}
+
+/* ── Segmented control (discount type, send channel) ─────────────────────── */
+.seg{display:inline-flex;padding:3px;border-radius:var(--r-pill);background:var(--bg-card);border:.5px solid var(--line);gap:2px}
+.seg button{border:0;background:transparent;padding:6px 13px;border-radius:var(--r-pill);font-family:var(--font-sans);
+  font-size:12px;color:var(--ink-400);cursor:pointer;transition:all .16s var(--ease-premium)}
+.seg button.on{background:var(--card-solid);color:var(--ink-900);box-shadow:var(--shadow-sm)}
+
+/* ── Connect / settings ──────────────────────────────────────────────────── */
+.connect-card{display:flex;align-items:center;gap:16px;padding:20px 22px}
+.connect-ico{width:46px;height:46px;flex:none;border-radius:var(--r-md);background:rgba(0,105,110,.10);color:var(--teal-700);display:grid;place-items:center}
+.connect-card.ok .connect-ico{background:rgba(46,158,123,.12);color:var(--status-success)}
+.subs-mini{font-family:var(--font-mono);font-size:12px;color:var(--ink-400)}
+
+/* ── Banner (deferred-email / info) ──────────────────────────────────────── */
+.banner{display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border-radius:var(--r-md);
+  border:.5px solid var(--line-strong);background:linear-gradient(150deg,rgba(197,160,89,.10),rgba(0,105,110,.03));margin:14px 0;font-size:13px;color:var(--ink-700)}
+.banner .b-ico{color:var(--gold-500);flex:none;margin-top:1px}
+
+/* ═══ Standalone public pay page (no rail — a client with no session) ═══════ */
+.pay-page{min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:48px 20px}
+.pay-doc{width:100%;max-width:560px}
+.pay-card{border-radius:var(--r-xl);border:.5px solid var(--glass-border);background:var(--glass-bg);
+  backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);
+  box-shadow:var(--shadow-lg);overflow:hidden}
+.pay-hero{padding:30px 32px;background:linear-gradient(150deg,rgba(0,105,110,.08),rgba(197,160,89,.05));border-bottom:.5px solid var(--line)}
+.pay-hero .ph-brand{display:flex;align-items:center;gap:12px}
+.pay-hero .ph-logo{width:44px;height:44px;border-radius:var(--r-md);background:var(--grad-brand);color:#fff;display:grid;place-items:center;font-family:var(--font-serif);font-size:22px}
+.pay-hero .ph-name{font-family:var(--font-serif);font-size:20px;color:var(--ink-900)}
+.pay-amount{margin-top:20px}
+.pay-amount .pa-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.16em;color:var(--ink-400)}
+.pay-amount .pa-val{font-family:var(--font-mono);font-size:38px;font-weight:500;color:var(--ink-900);letter-spacing:-.02em;line-height:1.1}
+.pay-body{padding:26px 32px}
+.pay-line{display:flex;justify-content:space-between;gap:12px;padding:8px 0;font-size:13.5px;color:var(--ink-700);border-top:.5px solid var(--line)}
+.pay-line:first-child{border-top:0}
+.pay-line .v{font-family:var(--font-mono);white-space:nowrap}
+.pay-line.total{margin-top:6px;padding-top:12px;border-top:.5px solid var(--line-strong);font-weight:600;color:var(--ink-900);font-size:16px}
+.pay-cta{margin-top:22px}
+.pay-cta .btn{width:100%;height:48px;font-size:15px}
+.pay-secure{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;font-size:11.5px;color:var(--ink-400)}
+.pay-paid{text-align:center;padding:14px 0}
+.pay-paid .pp-check{width:56px;height:56px;margin:0 auto 12px;border-radius:50%;background:rgba(46,158,123,.12);color:var(--status-success);display:grid;place-items:center}
+.pay-foot{text-align:center;margin-top:22px;font-size:11.5px;color:var(--ink-400)}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+/* Grid-overflow guard: let the shared 1fr content track (and the editor inputs)
+   shrink below their min-content so nothing forces a page-level horizontal scroll
+   at 360 (Gate-6). .content already clips via overflow-x:hidden; wide tables own
+   their scroll via .table-scroll. Scoped to this page (m28 CSS loads only here). */
+.content{min-width:0}
+.content-inner{min-width:0}
+.li-input{min-width:0}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media(max-width:900px){.rev-strip{grid-template-columns:1fr}}
+@media(max-width:768px){
+  .pay-head .ph-title{font-size:25px}
+}
+/* On a phone the shared topbar's search + connection pill don't fit alongside the
+   workspace, Connect, theme and avatar — hide that non-essential chrome so the bar
+   fits 360 without a page-level h-scroll (Connect/theme/avatar stay reachable). */
+@media(max-width:480px){
+  .tbar .tb-search{display:none}
+  .tbar #connPill{display:none}
+  .tbar{gap:9px;padding:0 12px}
+}

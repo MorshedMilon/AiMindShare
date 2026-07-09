@@ -1,0 +1,19 @@
+{
+  "name": "aimindshare-workers",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AiMindShare Session 0 — stub worker + local verification harness",
+  "scripts": {
+    "worker": "node worker.mjs",
+    "worker:once": "node worker.mjs --once",
+    "leakprobe": "node verify/leakprobe.mjs",
+    "jobprobe": "node verify/jobprobe.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.2.12"
+  }
+}

@@ -1,0 +1,215 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   m22-content.css — M22 Content/CMS (manual slice) module layer. Sits on top of
+   tokens.css + app.css + components.css (owns the shell, .btn, .pill, .table,
+   .modal, .empty-state, .mock-note). Only module-specific surfaces live here:
+   the articles table chrome, the two-pane editor + SEO sidebar (score ring +
+   checklist + meta meters), the revisions panel, the review-queue cards, the
+   taxonomy managers, and the settings page. var() only · .5px hairlines ·
+   3 fonts · pulse/glow motion only (no sweep) · dark inherits tokens (no stars).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Toolbar row above a list (filters + primary action) ──────────────────── */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 18px}
+.toolbar .spacer{flex:1}
+.seg{display:inline-flex;background:var(--bg-card);border:.5px solid var(--line-strong);border-radius:var(--r-pill);padding:3px;gap:2px;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{border:none;background:transparent;cursor:pointer;font:inherit;font-size:12.5px;color:var(--ink-400);
+  padding:6px 13px;border-radius:var(--r-pill);transition:background .2s,color .2s;white-space:nowrap}
+.seg button.on{background:var(--teal-700);color:#fff}
+:root[data-theme="dark"] .seg button.on{background:var(--teal-600)}
+.inp-search{height:36px;padding:0 13px;min-width:200px;background:var(--bg-card);border:.5px solid var(--line-strong);
+  border-radius:var(--r-pill);font-family:var(--font-sans);font-size:13.5px;color:var(--ink-900)}
+.inp-search:focus{outline:none;border-color:var(--teal-500)}
+.sel-mini{height:36px;padding:0 30px 0 13px;background:var(--bg-card);border:.5px solid var(--line-strong);
+  border-radius:var(--r-pill);font-family:var(--font-sans);font-size:13px;color:var(--ink-700);cursor:pointer;
+  appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink-400) 50%),linear-gradient(135deg,var(--ink-400) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 16px,calc(100% - 11px) 16px;background-size:5px 5px;background-repeat:no-repeat}
+
+/* Bulk action bar */
+.bulkbar{display:flex;align-items:center;gap:12px;padding:11px 16px;margin-bottom:14px;border-radius:var(--r-lg);
+  background:linear-gradient(145deg,rgba(0,105,110,.10),rgba(197,160,89,.05));border:.5px solid var(--line-strong)}
+.bulkbar .bb-count{font-family:var(--font-mono);font-size:13px;color:var(--teal-700)}
+:root[data-theme="dark"] .bulkbar .bb-count{color:var(--teal-300)}
+
+/* ── Articles table extras ────────────────────────────────────────────────── */
+.tbl-wrap{overflow-x:auto;border-radius:var(--r-lg)}
+.a-title-cell{display:flex;flex-direction:column;gap:2px;min-width:220px}
+.a-title-cell .at-name{font-family:var(--font-serif);font-size:15px;color:var(--ink-900);cursor:pointer}
+.a-title-cell .at-name:hover{color:var(--teal-700)}
+.a-title-cell .at-slug{font-family:var(--font-mono);font-size:11px;color:var(--ink-400)}
+.chk{width:17px;height:17px;border-radius:5px;border:1.5px solid var(--line-strong);cursor:pointer;flex:none;
+  display:grid;place-items:center;color:transparent;transition:all .15s}
+.chk.on{background:var(--teal-700);border-color:var(--teal-700);color:#fff}
+
+/* SEO/readability score chip (compact, in tables + cards) */
+.score-chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:12.5px}
+.score-chip .sc-dot{width:8px;height:8px;border-radius:50%}
+.score-chip.good .sc-dot{background:var(--status-success)}
+.score-chip.ok .sc-dot{background:var(--status-warning)}
+.score-chip.low .sc-dot{background:var(--status-danger)}
+
+/* ── Editor: two panes (editor + sticky SEO sidebar) ──────────────────────── */
+.editor-grid{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start}
+.ed-main{min-width:0;display:flex;flex-direction:column;gap:16px}
+.ed-titlebar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ed-title{flex:1;min-width:240px;font-family:var(--font-serif);font-size:30px;font-weight:600;color:var(--ink-900);
+  background:transparent;border:none;border-bottom:.5px solid var(--line);padding:6px 2px}
+.ed-title:focus{outline:none;border-bottom-color:var(--teal-500)}
+
+.ed-toolbar{display:flex;align-items:center;gap:3px;flex-wrap:wrap;padding:7px 9px;border-radius:var(--r-md);
+  background:var(--glass-bg);border:.5px solid var(--glass-border);position:sticky;top:66px;z-index:8;backdrop-filter:blur(18px)}
+.tb-btn{width:32px;height:32px;border:none;background:transparent;border-radius:var(--r-sm);cursor:pointer;
+  color:var(--ink-500);display:grid;place-items:center;transition:background .15s,color .15s}
+.tb-btn:hover{background:rgba(0,105,110,.09);color:var(--ink-900)}
+.tb-btn.active{background:var(--teal-50);color:var(--teal-700)}
+.tb-sep{width:.5px;height:20px;background:var(--line-strong);margin:0 4px}
+
+.ed-canvas{min-height:440px;padding:26px 30px;border-radius:var(--r-xl);background:var(--card-solid);
+  border:.5px solid var(--line);box-shadow:var(--shadow-sm);font-size:16.5px;line-height:1.7;color:var(--ink-700)}
+.ed-canvas:focus{outline:none;border-color:var(--line-strong)}
+.ed-canvas:empty::before{content:attr(data-placeholder);color:var(--ink-400)}
+.ed-canvas h2{font-family:var(--font-serif);font-size:26px;color:var(--ink-900);margin:1.1em 0 .4em}
+.ed-canvas h3{font-family:var(--font-serif);font-size:21px;color:var(--ink-900);margin:1em 0 .35em}
+.ed-canvas p{margin:0 0 1em}
+.ed-canvas a{color:var(--teal-700);text-decoration:underline}
+.ed-canvas ul,.ed-canvas ol{margin:0 0 1em;padding-left:1.4em}
+.ed-canvas blockquote{margin:1.2em 0;padding:.3em 1.1em;border-left:3px solid var(--teal-500);color:var(--ink-500);font-style:italic}
+.ed-canvas figure{margin:1.3em 0}.ed-canvas img{max-width:100%;border-radius:var(--r-md);display:block}
+.ed-canvas figcaption{font-size:12.5px;color:var(--ink-400);margin-top:6px;text-align:center}
+.ed-canvas hr{border:none;border-top:.5px solid var(--line-strong);margin:1.6em 0}
+
+/* Slash-command + link popups */
+.mini-pop{position:absolute;z-index:65;min-width:230px;background:var(--card-solid);border:.5px solid var(--line);
+  border-radius:var(--r-md);box-shadow:var(--shadow-lg);padding:6px;max-height:290px;overflow-y:auto}
+.mini-pop .mp-item{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;font-size:13.5px;color:var(--ink-700)}
+.mini-pop .mp-item:hover,.mini-pop .mp-item.hi{background:var(--row-hover)}
+.mini-pop .mp-ico{width:26px;height:26px;flex:none;border-radius:7px;background:rgba(0,105,110,.10);color:var(--teal-700);display:grid;place-items:center}
+.mini-pop .mp-sub{font-size:11.5px;color:var(--ink-400)}
+.mini-pop .mp-input{width:100%;height:34px;padding:0 11px;margin-bottom:5px;background:var(--bg-card);border:.5px solid var(--line-strong);border-radius:var(--r-sm);font-size:13px;color:var(--ink-900)}
+.mini-pop .mp-input:focus{outline:none;border-color:var(--teal-500)}
+
+/* ── SEO sidebar ──────────────────────────────────────────────────────────── */
+.ed-side{position:sticky;top:66px;display:flex;flex-direction:column;gap:16px}
+.side-card{padding:18px;border-radius:var(--r-xl);background:var(--card-solid);border:.5px solid var(--line);box-shadow:var(--shadow-sm)}
+.side-card h4{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-400);margin-bottom:14px}
+
+/* Score ring (SVG) */
+.score-ring{display:flex;align-items:center;gap:16px;margin-bottom:6px}
+.ring-svg{width:82px;height:82px;flex:none}
+.ring-svg .ring-bg{stroke:var(--line);}
+.ring-svg .ring-fg{stroke:var(--teal-500);stroke-linecap:round;transition:stroke-dashoffset .5s var(--ease-premium),stroke .3s}
+.ring-svg.good .ring-fg{stroke:var(--status-success)}
+.ring-svg.ok .ring-fg{stroke:var(--status-warning)}
+.ring-svg.low .ring-fg{stroke:var(--status-danger)}
+.ring-num{font-family:var(--font-mono);font-size:23px;fill:var(--ink-900)}
+.score-ring .sr-meta .srm-big{font-family:var(--font-serif);font-size:19px;color:var(--ink-900)}
+.score-ring .sr-meta .srm-sub{font-size:12px;color:var(--ink-400)}
+
+/* Checklist */
+.check-list{display:flex;flex-direction:column;gap:2px}
+.check-item{display:flex;align-items:flex-start;gap:10px;padding:8px 4px;border-top:.5px solid var(--line);font-size:13px;color:var(--ink-700)}
+.check-item:first-child{border-top:none}
+.check-item .ci-box{width:18px;height:18px;flex:none;border-radius:6px;display:grid;place-items:center;margin-top:1px}
+.check-item.ok .ci-box{background:rgba(46,158,123,.16);color:var(--status-success)}
+.check-item.warn .ci-box{background:rgba(199,154,58,.16);color:var(--status-warning)}
+.check-item.no .ci-box{background:rgba(196,97,78,.14);color:var(--status-danger)}
+.check-item .ci-hint{font-size:11.5px;color:var(--ink-400);margin-top:2px}
+
+/* Meta length meters */
+.meter-field{margin-bottom:14px}
+.meter-field label{display:flex;justify-content:space-between;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-400);margin-bottom:6px}
+.meter-field label .mf-count{font-family:var(--font-mono);letter-spacing:0}
+.meter-field label .mf-count.warn{color:var(--status-warning)}
+.meter-field label .mf-count.good{color:var(--status-success)}
+.meter-field input,.meter-field textarea{width:100%;padding:9px 11px;background:var(--bg-card);border:.5px solid var(--line-strong);
+  border-radius:var(--r-sm);font-family:var(--font-sans);font-size:13.5px;color:var(--ink-900);line-height:1.5}
+.meter-field textarea{resize:vertical;min-height:64px}
+.meter-field input:focus,.meter-field textarea:focus{outline:none;border-color:var(--teal-500)}
+.mbar{height:4px;border-radius:2px;background:var(--line);margin-top:7px;overflow:hidden}
+.mbar span{display:block;height:100%;background:var(--teal-500);transition:width .3s,background .3s}
+.mbar span.warn{background:var(--status-warning)}.mbar span.good{background:var(--status-success)}
+
+/* Featured image slot */
+.feat-slot{aspect-ratio:16/9;border-radius:var(--r-md);border:.5px dashed var(--line-strong);display:grid;place-items:center;
+  cursor:pointer;overflow:hidden;background:var(--bg-card);color:var(--ink-400);text-align:center;font-size:12.5px;transition:border-color .2s}
+.feat-slot:hover{border-color:var(--teal-500)}
+.feat-slot img{width:100%;height:100%;object-fit:cover}
+
+/* Revisions list */
+.rev-item{display:flex;align-items:center;gap:11px;padding:9px 4px;border-top:.5px solid var(--line);font-size:12.5px}
+.rev-item:first-child{border-top:none}
+.rev-item .rv-v{font-family:var(--font-mono);font-size:11px;color:var(--teal-700);background:rgba(0,105,110,.10);border-radius:var(--r-pill);padding:2px 8px}
+.rev-item .rv-when{color:var(--ink-400)}
+.rev-item .rv-restore{margin-left:auto;color:var(--teal-700);cursor:pointer;font-size:12px}
+.rev-item .rv-restore:hover{text-decoration:underline}
+
+/* ── Review queue cards ───────────────────────────────────────────────────── */
+.review-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
+.rev-card{display:flex;flex-direction:column;background:var(--card-solid);border:.5px solid var(--line);border-radius:var(--r-xl);
+  overflow:hidden;box-shadow:var(--shadow-sm);transition:transform .3s var(--ease-reverent),box-shadow .3s}
+.rev-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.rev-card .rc-cover{height:110px;background:var(--grad-brand);background-size:cover;background-position:center;position:relative}
+.rev-card .rc-cover .rc-status{position:absolute;top:12px;left:12px}
+.rev-card .rc-body{padding:16px 18px;display:flex;flex-direction:column;gap:9px;flex:1}
+.rev-card .rc-title{font-family:var(--font-serif);font-size:19px;color:var(--ink-900);line-height:1.25}
+.rev-card .rc-excerpt{font-size:13px;color:var(--ink-400);line-height:1.55;flex:1}
+.rev-card .rc-scores{display:flex;gap:16px;padding-top:4px}
+.rev-card .rc-foot{display:flex;gap:9px;padding:14px 18px;border-top:.5px solid var(--line)}
+.rev-card .rc-foot .btn{flex:1}
+
+/* ── Taxonomy (two managers side by side) ─────────────────────────────────── */
+.tax-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+.tax-row{display:flex;align-items:center;gap:12px;padding:12px 4px;border-top:.5px solid var(--line)}
+.tax-row:first-child{border-top:none}
+.tax-row .tr-badge{width:34px;height:34px;flex:none;border-radius:var(--r-sm);background:var(--grad-brand);color:#fff;display:grid;place-items:center;font-family:var(--font-serif);font-weight:600}
+.tax-row .tr-badge.gold{background:var(--grad-gold);color:#1A0E00}
+.tax-row .tr-body{flex:1;min-width:0}
+.tax-row .tr-name{font-family:var(--font-serif);font-size:15px;color:var(--ink-900)}
+.tax-row .tr-sub{font-size:11.5px;color:var(--ink-400);font-family:var(--font-mono)}
+.tax-row .tr-actions{display:flex;gap:6px}
+.icon-btn{width:30px;height:30px;border:none;background:transparent;border-radius:var(--r-sm);cursor:pointer;color:var(--ink-400);display:grid;place-items:center;transition:background .15s,color .15s}
+.icon-btn:hover{background:rgba(0,105,110,.09);color:var(--ink-900)}
+.icon-btn.danger:hover{background:rgba(196,97,78,.12);color:var(--status-danger)}
+
+/* Tag input chips (editor sidebar) */
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:var(--bg-card);border:.5px solid var(--line-strong);border-radius:var(--r-sm)}
+.chip-x{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:var(--r-pill);background:rgba(0,105,110,.10);color:var(--teal-700);font-size:12px}
+.chip-x b{cursor:pointer;font-weight:400;opacity:.7}.chip-x b:hover{opacity:1}
+.chips input{border:none;background:transparent;font:inherit;font-size:13px;color:var(--ink-900);flex:1;min-width:80px;height:24px}
+.chips input:focus{outline:none}
+
+/* ── Settings page + S23 scaffold banner ──────────────────────────────────── */
+.scaffold-note{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:var(--r-lg);
+  background:linear-gradient(145deg,rgba(197,160,89,.10),rgba(0,105,110,.03));border:.5px dashed rgba(197,160,89,.4);font-size:13px;color:var(--ink-500)}
+.scaffold-note .sn-ico{color:var(--gold-500);font-size:16px;flex:none}
+fieldset.locked{border:none;padding:0;margin:0;opacity:.55;pointer-events:none}
+
+/* ── Status pill colour mapping helper (uses .pill base) ───────────────────── */
+.pill.st-draft{color:var(--ink-400);background:rgba(109,121,122,.14)}
+.pill.st-in_review{color:var(--gold-500);background:rgba(197,160,89,.16)}
+.pill.st-scheduled{color:var(--status-info);background:rgba(44,164,171,.14)}
+.pill.st-published{color:var(--status-success);background:rgba(46,158,123,.14)}
+.pill.st-archived{color:var(--ink-300);background:rgba(109,121,122,.10)}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+/* Let the shell's 1fr content track shrink below the articles table's min-content
+   (the `240px 1fr` grid resolves 1fr to minmax(auto,1fr); auto = min-content, which
+   the wide table would otherwise force past the viewport). With min-width:0 the
+   track shrinks and .content's overflow-x:hidden clips, so the table scrolls inside
+   its own .tbl-wrap — deliberate table degradation, the page never scrolls. */
+.content{min-width:0}
+/* On the single-column mobile shell (≤760, components.css), hide the top-bar
+   workspace name/kind text (keep the badge) — the shared shell hides `.ws-meta`
+   for this, but this module wraps the labels in a bare <span>, so its ~445px
+   min-content would otherwise force the shared grid column past the viewport. */
+@media(max-width:760px){ .tbar .ws-trigger > span:not(.ws-badge){display:none} }
+@media(max-width:1040px){
+  .editor-grid{grid-template-columns:1fr}
+  .ed-side{position:static;flex-direction:column}
+  .tax-grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .ed-title{font-size:24px}
+  .ed-canvas{padding:20px 18px}
+  .toolbar .inp-search{min-width:0;flex:1}
+}
