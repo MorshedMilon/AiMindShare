@@ -215,7 +215,6 @@
   })();
 
   /* ── State ────────────────────────────────────────────────────────────────── */
-  const PREVIEW_STATES = ["default", "empty", "loading", "error", "success"];
   const state = {
     loaded: false, loading: false, error: null, previewState: "default",
     user: null, workspaceId: null, workspaceName: "", role: "staff",
@@ -386,10 +385,7 @@
       <main class="content"><div class="content-inner">${content}</div></main>`;
   }
   function previewStrip() {
-    if (connected()) return "";
-    return `<div class="mock-note"><span class="mn-ico">◈</span><b>Mockup mode.</b>
-      Connect a project to manage live sites. Sample data shown. Preview state:
-      ${PREVIEW_STATES.map((s) => `<button class="link ${state.previewState === s ? "on" : ""}" data-preview="${s}">${s}</button>`).join(" ")}</div>`;
+    return "";
   }
   function pageHead(title, sub, extra = "") {
     return `<div class="page-head reveal"><span class="eyebrow">Module · M19</span>
@@ -421,46 +417,76 @@
     const spark = (s.traffic && s.traffic.length)
       ? `<span class="spark" title="Last 7 days">${s.traffic.map((v) => `<i style="height:${Math.max(12, Math.round(v / Math.max(...s.traffic) * 100))}%"></i>`).join("")}</span>`
       : `<span class="spark spark-empty">no traffic yet</span>`;
-    const pubMeta = s.last_published
+    // Team assigned to this site — avatar cluster + "last edited by" convention
+    // (the first assigned member stands in for "last touched by").
+    const teamIds = (state.teamBySite || {})[s.id] || [];
+    const teamMembers = teamIds.map((id) => (state.team || []).find((t) => t.id === id)).filter(Boolean);
+    const lastEditor = teamMembers[0] ? teamMembers[0].name : null;
+    const pubMeta = (s.last_published
       ? `${s.last_version ? "v" + s.last_version + " · " : ""}published ${fmtDate(s.last_published)}`
-      : `never published`;
+      : `never published`) + (lastEditor ? ` · edited by ${esc(lastEditor)}` : "");
     // Domain-status chip (custom + live, or staging-only).
     const domChip = s.primary_domain
       ? `<span class="pill success" title="Custom domain connected">${svg("link", 11)} ${esc(s.primary_domain)}</span>`
       : `<span class="pill plain" title="Always-on staging subdomain">staging only</span>`;
-    // Health-dimension dots from the site's quality report (SEO / schema / perf).
+    // Health-dimension dots from the site's quality report (SEO / schema / accessibility / perf).
     const h = (state.healthBySite || {})[s.id];
     const dot = (key, label) => { const c = h && (h.categories || []).find((x) => x.key === key); const st = c ? c.status : "na";
       return `<span class="hd hd-${st}" title="${label}: ${c ? esc(c.detail) : "—"}"></span>`; };
-    const dots = h ? `<span class="sc-dots" title="Content health">${dot("seo", "SEO")}${dot("schema", "Schema")}${dot("perf", "Performance")}</span>` : "";
+    const dots = h ? `<span class="sc-dots" title="Content health">${dot("seo", "SEO")}${dot("schema", "Schema")}${dot("a11y", "Accessibility")}${dot("perf", "Performance")}</span>` : "";
+    // Client / category identity row — client_name falls back to the site name.
+    const clientName = s.client_name || s.name;
+    const nicheOpt = NICHE_OPTS.find(([v]) => v === s.niche);
+    // Card-local status pill: Archived / Review override the base status pill for
+    // display purposes only — s.status itself is never mutated here.
+    const isReview = (state.reviewBySite || {})[s.id] === "review";
+    const cardStatus = s.archived ? `<span class="pill idle">Archived</span>` : isReview ? `<span class="pill warning">Review</span>` : statusPill(s.status);
+    // Team avatar cluster — up to 3 stacked initials + "+N" overflow.
+    const teamCluster = teamMembers.length ? `<span class="sc-team" title="${esc(teamMembers.map((t) => t.name + " · " + t.role).join(", "))}">${
+      teamMembers.slice(0, 3).map((t) => `<span class="team-av ${t.color === "gold" ? "ta-gold" : ""}">${esc(t.initials)}</span>`).join("")
+    }${teamMembers.length > 3 ? `<span class="team-av ta-more">+${teamMembers.length - 3}</span>` : ""}</span>` : "";
+    // One inline AI-insight line — the single top-ranked attentionItems() result for
+    // just this site (same engine the Dashboard panel and the attention strip use).
+    const insight = attentionItems([s])[0];
+    // Favorites + tags — both local-only (Task 13), no schema change.
+    const isFav = favSites().includes(s.id);
+    const tags = siteTagsFor(s.id);
+    const tagsRow = `<div class="sc-tags">${tags.map((t) => `<span class="tag-chip">${esc(t)}</span>`).join("")}<button class="tag-add" data-tagedit="${esc(s.id)}">${svg("plus", 10)} Tag</button></div>`;
     return `
-      <div class="site-card sc-rich reveal" data-site="${esc(s.id)}" data-status="${esc(s.status)}" data-attn="${attn ? 1 : 0}" data-name="${esc(s.name.toLowerCase())}">
+      <div class="site-card sc-rich reveal" data-site="${esc(s.id)}" data-status="${esc(s.status)}" data-attn="${attn ? 1 : 0}" data-name="${esc(s.name.toLowerCase())}" data-niche="${esc(s.niche || "")}" data-archived="${s.archived ? 1 : 0}" data-fav="${isFav ? 1 : 0}" data-tags="${esc(tags.join(",").toLowerCase())}">
+        <input type="checkbox" class="sc-bulk-check" data-bulk="${esc(s.id)}" title="Select for bulk actions">
         <div class="sc-top">
           <span class="sc-favi ${s.style_preset ? "sc-favi-" + esc(s.style_preset) : ""}">${esc(initials(s.name))}</span>
           <div class="sc-id"><h3>${esc(s.name)}</h3>
             <button class="sc-domain" data-copy="${esc(domain)}">${svg("globe", 13)} ${esc(domain)} ${svg("copy", 12)}</button>
           </div>
+          <button class="icon-btn sm sc-fav ${isFav ? "on" : ""}" data-favsite="${esc(s.id)}" title="Favorite">${svg("star", 14)}</button>
           <button class="sc-health" data-gohealth="${esc(s.id)}" title="Site health — SEO, schema, accessibility, performance">${healthRing(s.health_score)}</button>
         </div>
+        <div class="sc-client">
+          <span class="sc-client-name">${esc(clientName)}</span>
+          ${nicheOpt ? `<span class="pill plain sc-niche">${esc(nicheOpt[1])}</span>` : ""}
+        </div>
         <div class="sc-meta">
-          ${statusPill(s.status)}
+          ${cardStatus}
           ${s.maintenance_mode ? `<span class="pill warning">maintenance</span>` : ""}
           ${domChip}
           <span class="pill plain">${s.pages} ${s.pages === 1 ? "page" : "pages"}</span>
           ${s.language && s.language !== "en" ? `<span class="pill plain">${esc(s.language)}</span>` : ""}
           ${dots}
         </div>
+        ${insight ? `<div class="sc-insight"><span class="si-ico">${svg(insight.ico, 13)}</span><span>${esc(insight.title)}</span></div>` : ""}
+        ${tagsRow}
         <div class="sc-stats">
-          <span class="sc-stat"><span class="cs-num">${esc(pubMeta)}</span><span class="cs-lab">Publish history</span></span>
+          <span class="sc-stat"><span class="cs-num">${pubMeta}</span><span class="cs-lab">Publish history</span></span>
           <span class="sc-stat sc-stat-spark">${spark}<span class="cs-lab">${s.sessions_7d != null ? s.sessions_7d + " sessions · 7d" : "Traffic"}</span></span>
         </div>
         <div class="sc-foot">
           <span class="sc-quick">
+            ${teamCluster}
             <button class="icon-btn sm" data-copy="${esc(staging)}" title="Copy staging preview link (drafts + maintenance bypass)">${svg("eye", 14)}</button>
-            <button class="icon-btn sm" data-copy="${share}" title="Copy public share link">${svg("link", 14)}</button>
-            <button class="icon-btn sm" data-goseo="${esc(s.id)}" title="SEO defaults & schema">${svg("search", 14)}</button>
-            <button class="icon-btn sm" data-goanalytics="${esc(s.id)}" title="Analytics & publish history">${svg("layers", 14)}</button>
             <button class="icon-btn sm" data-publish="${esc(s.id)}" title="Publish — runs the pre-flight quality gate">${svg("rocket", 14)}</button>
+            <button class="icon-btn sm" data-more="${esc(s.id)}" data-share="${share}" title="More actions">⋯</button>
           </span>
           <span style="display:flex;gap:8px">
             <button class="btn btn-ghost btn-sm" data-open="${esc(s.id)}">Manage</button>
@@ -540,29 +566,99 @@
       <div class="dh-actions"><button class="btn btn-primary" id="newSite">${svg("plus", 14)} New site</button></div>
     </div>`;
   }
+  // Compact, page-level attention summary — same attentionItems() ranking the
+  // Dashboard's full panel uses; this is a summary view onto it, not a second
+  // control center, so it only ever shows the top 2-3 and links out to `#/dashboard`.
+  function sitesAttentionStrip(sites) {
+    const items = attentionItems(sites);
+    if (!items.length) return "";
+    const siteCount = new Set(items.filter((a) => a.site).map((a) => a.site.id)).size;
+    const top = items.slice(0, 3).map((a) => esc(a.title));
+    return `<div class="attn-strip reveal">
+      <span class="as-ico">${svg("bell", 14)}</span>
+      <span class="as-text">${siteCount} site${siteCount === 1 ? "" : "s"} need attention — ${top.join(", ")}${items.length > 3 ? "…" : ""}</span>
+      <button class="st-link" data-nav-to="dashboard" style="margin-left:auto">View all ${svg("chev", 12)}</button>
+    </div>`;
+  }
+  // Sort — pure function over a list, driven by state.sitesToolbar.sort. A full
+  // render() is what actually invokes this (see viewSites()), since reordering the
+  // DOM in place isn't worth the complexity for a mockup-scale site list.
+  function sortSites(list) {
+    const sort = state.sitesToolbar.sort;
+    const arr = list.slice();
+    if (sort === "updated") arr.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+    else if (sort === "health") arr.sort((a, b) => (b.health_score || 0) - (a.health_score || 0));
+    else if (sort === "traffic") arr.sort((a, b) => (b.sessions_7d || 0) - (a.sessions_7d || 0));
+    else arr.sort((a, b) => a.name.localeCompare(b.name));
+    return arr;
+  }
   function viewSites() {
     if (stp("loading") || (state.loading && !state.loaded)) return previewStrip() + skeleton();
     if (stp("error") || state.error) return previewStrip() + pageHead("Websites", "AI-built websites, published to the web.") + errorBlock(state.error);
     const sites = stp("empty") ? [] : state.sites;
     const items = attentionItems(sites);
     const attnIds = new Set(items.filter((a) => a.sev !== "opp").map((a) => a.site && a.site.id).filter(Boolean));
-    const live = sites.filter((s) => s.status === "published").length;
-    const draft = sites.filter((s) => s.status === "draft").length;
-    const chips = [["all", "All", sites.length], ["published", "Live", live], ["draft", "Drafts", draft], ["attn", "Needs action", attnIds.size]]
-      .map(([k, l, n], i) => `<button class="dt-chip ${i === 0 ? "on" : ""}" data-schip="${k}">${l} <span class="dc-n">${n}</span></button>`).join("");
+    const tb = state.sitesToolbar;
+    // "All" excludes archived sites (spec §2) — Archived is its own chip. Review is
+    // computable today from state.reviewBySite, just not surfaced as a chip until now.
+    const nonArchived = sites.filter((s) => !s.archived);
+    const liveCount = nonArchived.filter((s) => s.status === "published").length;
+    const draftCount = nonArchived.filter((s) => s.status === "draft").length;
+    const reviewCount = nonArchived.filter((s) => (state.reviewBySite || {})[s.id] === "review").length;
+    const archivedCount = sites.filter((s) => s.archived).length;
+    const attnCount = nonArchived.filter((s) => attnIds.has(s.id)).length;
+    const chipsHtml = [["all", "All", nonArchived.length], ["published", "Live", liveCount], ["draft", "Drafts", draftCount], ["review", "Review", reviewCount], ["attn", "Needs action", attnCount], ["archived", "Archived", archivedCount]]
+      .map(([k, l, n]) => `<button class="dt-chip ${k === tb.chip ? "on" : ""}" data-schip="${k}">${l} <span class="dc-n">${n}</span></button>`).join("");
+    // Filters popover (category / needs-attention / tag) decides which sites are
+    // eligible at all; the status chip + search box then hide/show within that set.
+    const eligible = sites.filter((s) => {
+      if (tb.niche && s.niche !== tb.niche) return false;
+      if (tb.needsAttn && !attnIds.has(s.id)) return false;
+      if (tb.tag && !siteTagsFor(s.id).some((t) => t.toLowerCase().includes(tb.tag.toLowerCase()))) return false;
+      return true;
+    });
+    const sorted = sortSites(eligible);
+    // Grid defaults to 2 columns (richer cards need the width); List reuses the
+    // existing Dashboard row renderer (dtRow) at lower fidelity — no new component.
+    const gridBody = tb.view === "list"
+      ? `<div class="dt" id="sitesListWrap"><div class="dt-inner">
+          <div class="dt-row dt-head"><span>Site</span><span>Status</span><span class="dt-c">Pages</span><span>Domain</span><span class="dt-c">Health</span><span>Last publish</span><span>Updated</span><span class="dt-r">Actions</span></div>
+          ${sorted.map((s) => dtRow(s, attnIds.has(s.id))).join("")}
+        </div></div>`
+      : `<div class="site-grid sg-2col" id="sitesGrid">${sorted.map((s) => siteCard(s, attnIds.has(s.id))).join("")}</div>`;
     return previewStrip() + `<div class="studio">
       ${sitesHero()}
-      ${heroMetrics()}
       ${sitesQuickCreate(sites)}
+      ${heroMetrics()}
+      ${sitesAttentionStrip(nonArchived)}
       ${sitesHead(sites)}
       <section class="st-sec reveal">
         <div class="dt-toolbar">
-          <label class="dt-search">${svg("search", 15)}<input id="sitesSearch" placeholder="Filter websites by name…" autocomplete="off"></label>
-          <div class="dt-chips">${chips}</div>
+          <label class="dt-search">${svg("search", 15)}<input id="sitesSearch" placeholder="Filter websites by name…" autocomplete="off" value="${esc(tb.q)}"></label>
+          <div class="dt-chips">${chipsHtml}</div>
+          <button class="btn btn-ghost btn-sm" id="sitesFilterBtn">${svg("filter", 13)} Filters</button>
+          <select class="gen-select" id="sitesSort" title="Sort">
+            <option value="name" ${tb.sort === "name" ? "selected" : ""}>Name</option>
+            <option value="updated" ${tb.sort === "updated" ? "selected" : ""}>Last edited</option>
+            <option value="health" ${tb.sort === "health" ? "selected" : ""}>Health score</option>
+            <option value="traffic" ${tb.sort === "traffic" ? "selected" : ""}>Traffic</option>
+          </select>
+          <span class="seg-toggle">
+            <button class="icon-btn sm ${tb.view === "grid" ? "on" : ""}" data-view="grid" title="Grid view">${svg("grid", 14)}</button>
+            <button class="icon-btn sm ${tb.view === "list" ? "on" : ""}" data-view="list" title="List view">${svg("rows", 14)}</button>
+          </span>
+          <button class="btn btn-ghost btn-sm" id="sitesSavedViewsBtn">${svg("star", 13)} Saved views</button>
         </div>
-        <div class="site-grid" id="sitesGrid">${sites.map((s) => siteCard(s, attnIds.has(s.id))).join("")}</div>
-        <div class="empty-inline" id="sitesEmpty" style="${sites.length ? "display:none" : ""}">${sites.length ? "No websites match this filter." : "No websites yet — create your first one above."}</div>
+        ${gridBody}
+        <div class="empty-inline" id="sitesEmpty" style="${sorted.length ? "display:none" : ""}">${sites.length ? "No websites match this filter." : "No websites yet — create your first one above."}</div>
       </section>
+      <div class="bulk-bar" id="bulkBar" style="display:none">
+        <span class="bulk-count" id="bulkCount">0 selected</span>
+        <button class="btn btn-ghost btn-sm" data-bulk-act="publish">${svg("rocket", 13)} Publish selected</button>
+        <button class="btn btn-ghost btn-sm" data-bulk-act="archive">${svg("doc", 13)} Archive selected</button>
+        <button class="btn btn-ghost btn-sm" data-bulk-act="tag">${svg("layers", 13)} Tag selected</button>
+        <button class="icon-btn sm" id="bulkClear" title="Clear selection">${svg("x", 13)}</button>
+      </div>
     </div>`;
   }
 
@@ -1424,6 +1520,38 @@
   const HERO_PROMPTS_KEY = "aimindshare-hero-prompts";
   const heroPromptHistory = () => { try { return JSON.parse(localStorage.getItem(HERO_PROMPTS_KEY) || "[]"); } catch (e) { return []; } };
   const pushHeroPrompt = (text) => { const list = heroPromptHistory().filter((p) => p !== text); list.unshift(text); try { localStorage.setItem(HERO_PROMPTS_KEY, JSON.stringify(list.slice(0, 5))); } catch (e) {} };
+  // Portfolio favorites/tags — same localStorage pattern again, this time keyed by
+  // site id instead of template id. No schema change; local-only, per spec §3.
+  const FAV_SITES_KEY = "aimindshare-sites-favs", SITE_TAGS_KEY = "aimindshare-sites-tags";
+  const favSites = () => { try { return JSON.parse(localStorage.getItem(FAV_SITES_KEY) || "[]"); } catch (e) { return []; } };
+  const toggleFavSite = (id) => { const f = favSites(); const i = f.indexOf(id); if (i >= 0) f.splice(i, 1); else f.push(id); try { localStorage.setItem(FAV_SITES_KEY, JSON.stringify(f)); } catch (e) {} return f.includes(id); };
+  const siteTagsMap = () => { try { return JSON.parse(localStorage.getItem(SITE_TAGS_KEY) || "{}"); } catch (e) { return {}; } };
+  const siteTagsFor = (id) => siteTagsMap()[id] || [];
+  const setSiteTags = (id, tags) => { const m = siteTagsMap(); m[id] = tags; try { localStorage.setItem(SITE_TAGS_KEY, JSON.stringify(m)); } catch (e) {} };
+  // Saved views — same localStorage pattern once more; a saved view snapshots the
+  // whole toolbar combo (status chip, search, category, needs-attention, tag, sort, layout).
+  const SITES_VIEWS_KEY = "aimindshare-sites-views";
+  const savedSitesViews = () => { try { return JSON.parse(localStorage.getItem(SITES_VIEWS_KEY) || "[]"); } catch (e) { return []; } };
+  const saveSitesView = (name, cfg) => { const list = savedSitesViews(); list.push({ name, ...cfg }); try { localStorage.setItem(SITES_VIEWS_KEY, JSON.stringify(list)); } catch (e) {} };
+  function sitesFiltersPopoverHtml() {
+    const tb = state.sitesToolbar;
+    const nicheItems = NICHE_OPTS.map(([v, l]) => `<div class="pop-item" data-nicheval="${v}">${tb.niche === v ? svg("check", 13) : ""}<span class="pi-name">${esc(l)}</span></div>`).join("");
+    return `
+      <div class="pop-label">Category</div>
+      <div class="pop-item" data-nicheval="">${!tb.niche ? svg("check", 13) : ""}<span class="pi-name">All categories</span></div>
+      ${nicheItems}
+      <div class="pop-sep"></div>
+      <div class="pop-item" data-needsattn-toggle>${tb.needsAttn ? svg("check", 13) : ""}<span class="pi-name">Needs attention only</span></div>
+      <div class="pop-sep"></div>
+      <div class="pop-label">Tag contains</div>
+      <input class="pop-search" id="sitesTagFilterInput" placeholder="e.g. priority — press Enter" value="${esc(tb.tag)}">`;
+  }
+  function sitesSavedViewsPopoverHtml() {
+    const views = savedSitesViews();
+    const rows = views.length ? views.map((v, i) => `<div class="pop-item" data-viewidx="${i}"><span class="pi-name">${esc(v.name)}</span></div>`).join("")
+      : `<div class="pop-item" style="cursor:default"><span class="pi-sub">No saved views yet</span></div>`;
+    return `<div class="pop-item action" data-saveview>${svg("plus", 13)}<span class="pi-name">Save current view…</span></div><div class="pop-sep"></div><div class="pop-label">Saved views</div>${rows}`;
+  }
 
   /* ── Shared studio building blocks ────────────────────────────────────────── */
   const HERO_SUGGESTIONS = ["a dental clinic in Dhaka", "a SaaS landing page", "a real-estate agency", "a restaurant with online menu", "a coaching program", "a fashion storefront"];
@@ -1669,9 +1797,12 @@
     const isCustom = !!s.primary_domain;
     const domain = s.primary_domain || ((s.subdomain || "site") + ".aimindshare.site");
     const pub = s.last_published ? `${s.last_version ? "v" + s.last_version + " · " : ""}${fmtDate(s.last_published)}` : "Never";
-    return `<div class="dt-row" data-site="${esc(s.id)}" data-status="${esc(s.status)}" data-attn="${attn ? 1 : 0}" data-name="${esc(s.name.toLowerCase())}">
+    // Archived / Review override the base status pill for display purposes only —
+    // mirrors siteCard()'s cardStatus so Grid and List agree on what a site's status reads as.
+    const rowStatus = s.archived ? `<span class="pill idle">Archived</span>` : (state.reviewBySite || {})[s.id] === "review" ? `<span class="pill warning">Review</span>` : statusPill(s.status);
+    return `<div class="dt-row" data-site="${esc(s.id)}" data-status="${esc(s.status)}" data-attn="${attn ? 1 : 0}" data-name="${esc(s.name.toLowerCase())}" data-archived="${s.archived ? 1 : 0}">
       <span class="dt-site"><span class="sc-favi ${s.style_preset ? "sc-favi-" + esc(s.style_preset) : ""}">${esc(initials(s.name))}</span><span class="dt-id"><b>${esc(s.name)}</b><span class="mono">${esc(s.subdomain || "site")}.aimindshare.site</span></span></span>
-      <span class="dt-cell">${statusPill(s.status)}${s.maintenance_mode ? ` <span class="pill warning">maint</span>` : ""}</span>
+      <span class="dt-cell">${rowStatus}${s.maintenance_mode ? ` <span class="pill warning">maint</span>` : ""}</span>
       <span class="dt-cell dt-c">${s.pages}</span>
       <span class="dt-cell dt-dom">${isCustom ? `<span class="pill success">${svg("link", 11)} ${esc(domain)}</span>` : `<span class="pill plain">staging</span>`}</span>
       <span class="dt-cell dt-c">${healthRing(s.health_score, 30)}</span>
@@ -1989,8 +2120,122 @@
     $$("[data-nav-to]", root).forEach((b) => b.addEventListener("click", () => { location.hash = "#/" + b.dataset.navTo; }));
     $$("[data-qa]", root).forEach((b) => b.addEventListener("click", () => studioAction(b.dataset.qa)));
   }
+  // Small shared dropdown primitive (reuses the existing `.pop`/`.pop-item` classes
+  // already defined in components.css) — the "⋯ More" card menu here, and a later
+  // task's toolbar Filters/Sort/Saved-views menus, all open through this one helper.
+  function closePop() { $$(".pop.open").forEach((p) => p.remove()); document.removeEventListener("click", popOutside, true); }
+  function popOutside(e) { if (!e.target.closest(".pop")) closePop(); }
+  function openPop(anchor, html) {
+    closePop();
+    const p = el("div", "pop open", html);
+    document.body.appendChild(p);
+    const r = anchor.getBoundingClientRect();
+    const pw = p.offsetWidth || 240;
+    const left = Math.max(8, Math.min(r.right + window.scrollX - pw, window.scrollX + document.documentElement.clientWidth - pw - 8));
+    p.style.top = (r.bottom + 6 + window.scrollY) + "px";
+    p.style.left = left + "px";
+    setTimeout(() => document.addEventListener("click", popOutside, true), 0);
+    return p;
+  }
+  // Details drawer — a per-site deep-dive. Built and torn down dynamically (append/
+  // remove from document.body) rather than a persistent mounted root like Copilot,
+  // since its content differs per site on every open.
+  const DD_BUCKETS = [
+    ["content", "Content"], ["seo", "SEO"], ["schema", "Design"],
+    ["a11y", "Accessibility"], ["fields", "QA"], ["links", "Publishing"],
+  ];
+  const DD_PROGRESS = { pass: 100, warn: 60, fail: 20, na: 20 };
+  function detailsDrawerBody(site) {
+    const h = (state.healthBySite || {})[site.id] || { categories: [] };
+    const cats = h.categories || [];
+    const catByKey = {}; cats.forEach((c) => catByKey[c.key] = c);
+    const catIco = { seo: "search", schema: "layers", a11y: "eye", perf: "gauge", links: "link", fields: "check", security: "gear", conversion: "chart", content: "doc" };
+    const healthRows = cats.map((c) => `<div class="pf-row"><span class="pf-ico pf-${c.status}">${svg(catIco[c.key] || "doc", 12)}</span><div class="pf-main"><b>${esc(c.label)}</b><span>${esc(c.detail)}</span></div><span class="pill ${c.status === "pass" ? "success" : c.status === "fail" ? "danger" : "warning"}">${c.status}</span></div>`).join("") || `<div class="empty-inline">No health report yet.</div>`;
+    const bars = DD_BUCKETS.map(([key, label]) => { const c = catByKey[key]; const pct = c ? (DD_PROGRESS[c.status] ?? 20) : 20;
+      return `<div class="opt-row"><div class="o-main"><b>${label}</b><div class="o-track"><i class="${pct >= 85 ? "" : pct >= 55 ? "warn" : "bad"}" style="width:${pct}%"></i></div></div><span class="o-val">${pct}%</span></div>`; }).join("");
+    const overall = Math.round(DD_BUCKETS.reduce((sum, [key]) => { const c = catByKey[key]; return sum + (c ? (DD_PROGRESS[c.status] ?? 20) : 20); }, 0) / DD_BUCKETS.length);
+    const leadsAll = (state.leadsBySite || {})[site.id] || [];
+    const forms = leadsAll.filter((l) => l.type === "form").length;
+    const bookings = leadsAll.filter((l) => l.type === "booking").length;
+    const sessions = site.sessions_7d || 0;
+    const convRate = sessions ? ((leadsAll.length / sessions) * 100).toFixed(1) + "%" : "—";
+    const uniqueVisitors = Math.round(sessions * 0.7);
+    const m = (state.metricsBySite || {})[site.id] || { revenue: 0, bounce_rate: 0, cwv: { lcp: 0, cls: 0, inp: 0 } };
+    const dom = (state.domainsBySite || {})[site.id] || [];
+    const ssl = dom[0] ? dom[0].ssl_status : "—";
+    const env = site.status === "published" ? "Production" : site.status === "draft" ? "Development" : "Staging";
+    const build = (site.last_version || 0) * 10;
+    const insights = attentionItems([site]);
+    const insightRows = insights.length ? insights.map((a) => `<div class="attn-item ai-${a.sev}"><span class="ai-ico">${svg(a.ico, 15)}</span><div class="ai-main"><b>${esc(a.title)}</b><span>${esc(a.detail)}</span></div></div>`).join("")
+      : `<div class="attn-clear"><span class="ac-ico">${svg("check", 18)}</span><div><b>All clear</b><span>No issues need attention on this site.</span></div></div>`;
+    // publishLog entries aren't per-site in the mock dataset (only domain-verify rows
+    // carry a domain); entries without a domain marker are shown for every site, same
+    // as the existing global activityPanel() already does.
+    const timeline = (MOCK.publishLog || []).filter((l) => !l.detail?.domain || l.detail.domain === site.primary_domain);
+    const timelineRows = timeline.length ? timeline.map((l) => `<div class="ov-row"><span class="ov-favi">${svg(l.status === "ok" ? "check" : "x", 14)}</span><div class="ov-main"><b class="mono">${esc(l.kind)}</b><span>${esc(l.detail?.slug ? "/" + l.detail.slug : l.detail?.domain || "")}</span></div><span class="ov-right">${fmtDate(l.created_at)}</span></div>`).join("")
+      : emptyInline("No activity yet.");
+    return `
+      <div class="dd-section"><div class="dd-h">Full health breakdown</div><div class="pf-list">${healthRows}</div></div>
+      <div class="dd-section"><div class="dd-h">Progress <span class="pill plain" style="margin-left:8px">${overall}% overall</span></div><div class="opt-list">${bars}</div></div>
+      <div class="dd-section"><div class="dd-h">Business metrics</div>
+        <div class="ov-stats" style="grid-template-columns:repeat(3,1fr)">
+          <div class="ov-stat"><span class="ovs-ico">${svg("users", 15)}</span><div class="ovs-t"><b>${leadsAll.length}</b><span>Leads</span></div></div>
+          <div class="ov-stat"><span class="ovs-ico">${svg("form", 15)}</span><div class="ovs-t"><b>${forms}</b><span>Forms submitted</span></div></div>
+          <div class="ov-stat"><span class="ovs-ico">${svg("clock", 15)}</span><div class="ovs-t"><b>${bookings}</b><span>Bookings</span></div></div>
+          <div class="ov-stat"><span class="ovs-ico">${svg("gauge", 15)}</span><div class="ovs-t"><b>${convRate}</b><span>Conversion rate</span></div></div>
+          <div class="ov-stat"><span class="ovs-ico">${svg("eye", 15)}</span><div class="ovs-t"><b>${uniqueVisitors}</b><span>Unique visitors (est.)</span></div></div>
+          <div class="ov-stat"><span class="ovs-ico">${svg("chart", 15)}</span><div class="ovs-t"><b>$${m.revenue.toLocaleString()}</b><span>Revenue (mock)</span></div></div>
+          <div class="ov-stat"><span class="ovs-ico">${svg("gauge", 15)}</span><div class="ovs-t"><b>${m.bounce_rate}%</b><span>Bounce rate (mock)</span></div></div>
+          <div class="ov-stat"><span class="ovs-ico">${svg("rocket", 15)}</span><div class="ovs-t"><b>${m.cwv.lcp}s / ${m.cwv.cls} / ${m.cwv.inp}ms</b><span>LCP / CLS / INP (mock)</span></div></div>
+        </div>
+      </div>
+      <div class="dd-section"><div class="dd-h">AI insights</div><div class="attn-list" style="max-height:none">${insightRows}</div></div>
+      <div class="dd-section"><div class="dd-h">Activity timeline</div><div class="ov-list">${timelineRows}</div></div>
+      <div class="dd-section"><div class="dd-h">Environment</div>
+        <div class="ov-stats" style="grid-template-columns:repeat(3,1fr)">
+          <div class="ov-stat"><span class="ovs-ico">${svg("link", 15)}</span><div class="ovs-t"><b>${esc(ssl)}</b><span>SSL status</span></div></div>
+          <div class="ov-stat"><span class="ovs-ico">${svg("globe", 15)}</span><div class="ovs-t"><b>${esc(env)}</b><span>Environment</span></div></div>
+          <div class="ov-stat"><span class="ovs-ico">${svg("layers", 15)}</span><div class="ovs-t"><b>${build}</b><span>Build number</span></div></div>
+        </div>
+      </div>`;
+  }
+  function closeDetailsDrawer() {
+    const scrim = $(".dd-scrim"), panel = $(".dd-panel");
+    if (!scrim && !panel) return;
+    scrim?.classList.remove("open");
+    panel?.classList.remove("open");
+    setTimeout(() => { scrim?.remove(); panel?.remove(); }, 340);
+  }
+  function openDetailsDrawer(siteId) {
+    const site = (state.sites || []).find((s) => s.id === siteId); if (!site) return;
+    closeDetailsDrawer();
+    const scrim = el("div", "dd-scrim");
+    const panel = el("aside", "dd-panel", `
+      <header class="dd-head"><span class="sc-favi ${site.style_preset ? "sc-favi-" + esc(site.style_preset) : ""}">${esc(initials(site.name))}</span>
+        <div class="dd-title"><b>${esc(site.name)}</b><span>${esc(site.client_name || site.name)}</span></div>
+        <button class="icon-btn" id="ddClose" aria-label="Close details">${svg("x", 16)}</button></header>
+      <div class="dd-body">${detailsDrawerBody(site)}</div>`);
+    document.body.appendChild(scrim); document.body.appendChild(panel);
+    requestAnimationFrame(() => { scrim.classList.add("open"); panel.classList.add("open"); });
+    scrim.addEventListener("click", closeDetailsDrawer);
+    $("#ddClose", panel).addEventListener("click", closeDetailsDrawer);
+  }
+  // The card's consolidated quick-actions menu — everything that used to be its own
+  // icon button except Preview and Publish (kept visible on the card in Task 10).
+  function siteMoreMenu() {
+    const items = [
+      ["details", "eye", "Details"],
+      ["seo", "search", "SEO defaults & schema"],
+      ["analytics", "chart", "Analytics"],
+      ["share", "link", "Copy share link"],
+      ["clone", "copy", "Clone this site"],
+      ["versions", "clock", "Version history"],
+      ["settings", "gear", "Settings"],
+    ];
+    return items.map(([act, ico, label]) => `<div class="pop-item" data-moreact="${act}">${svg(ico, 15)}<span class="pi-name">${label}</span></div>`).join("");
+  }
   function bindSiteCardActions() {
-    $$(".site-card").forEach((c) => c.addEventListener("click", (e) => { if (e.target.closest("button")) return; state.tab = "overview"; location.hash = "#/sites/" + c.dataset.site; }));
+    $$(".site-card").forEach((c) => c.addEventListener("click", (e) => { if (e.target.closest("button, input")) return; state.tab = "overview"; location.hash = "#/sites/" + c.dataset.site; }));
     $$("[data-open]").forEach((b) => b.addEventListener("click", () => { state.tab = "overview"; location.hash = "#/sites/" + b.dataset.open; }));
     $$("[data-editsite]").forEach((b) => b.addEventListener("click", async () => { const id = b.dataset.editsite; const d = await loadSite(id); const home = (d.pages || []).find((p) => p.is_home) || d.pages[0]; if (home) location.hash = `#/sites/${id}/edit/${home.id}`; else location.hash = "#/sites/" + id; }));
     $$("[data-editpage]").forEach((b) => b.addEventListener("click", () => { const [s, p] = b.dataset.editpage.split(":"); location.hash = `#/sites/${s}/edit/${p}`; }));
@@ -1998,6 +2243,22 @@
     $$("[data-goanalytics]").forEach((b) => b.addEventListener("click", () => { state.tab = "analytics"; location.hash = "#/sites/" + b.dataset.goanalytics; }));
     $$("[data-gohealth]").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); state.tab = "health"; location.hash = "#/sites/" + b.dataset.gohealth; }));
     $$("[data-publish]").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); state.tab = "publish"; location.hash = "#/sites/" + b.dataset.publish; }));
+    $$("[data-more]").forEach((b) => b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = b.dataset.more, shareUrl = b.dataset.share;
+      const pop = openPop(b, siteMoreMenu());
+      $$("[data-moreact]", pop).forEach((it) => it.addEventListener("click", () => {
+        closePop();
+        const act = it.dataset.moreact;
+        if (act === "details") openDetailsDrawer(id);
+        else if (act === "seo") { state.tab = "seo"; location.hash = "#/sites/" + id; }
+        else if (act === "analytics") { state.tab = "analytics"; location.hash = "#/sites/" + id; }
+        else if (act === "share") { try { navigator.clipboard.writeText(shareUrl); toast("Copied.", "success"); } catch (er) {} }
+        else if (act === "clone") toast("Cloning duplicates this site as a new draft — runs with the AI provider, flagged, not faked.", "info");
+        else if (act === "versions") { state.tab = "publish"; location.hash = "#/sites/" + id; }
+        else if (act === "settings") { state.tab = "settings"; location.hash = "#/sites/" + id; }
+      }));
+    }));
   }
   function bindTemplateCards(root) {
     root = root || document;
@@ -2119,7 +2380,7 @@
     bindNavTo();
     $("#newSite")?.addEventListener("click", () => openCreateModal());
     bindSiteCardActions();
-    bindSitesFilter();
+    bindPortfolioToolbar();
     // Hero composer — Generate opens the create modal on the AI tab, prefilled
     // (nothing to close first — the hero isn't itself a generation path). Every
     // successful Generate also records the prompt into local history.
@@ -2140,21 +2401,103 @@
       toast("Business brief / competitor analysis runs with the AI provider — flagged, not faked.", "info");
     });
     $$("#heroRecent [data-recent]").forEach((b) => b.addEventListener("click", () => { const ta = $("#heroPrompt"); ta.value = b.dataset.recent; ta.focus(); }));
-  }
-  function bindSitesFilter() {
-    const grid = $("#sitesGrid"); if (!grid) return;
-    const search = $("#sitesSearch"), empty = $("#sitesEmpty"), st = { chip: "all", q: "" };
-    function apply() {
-      let shown = 0;
-      $$(".site-card", grid).forEach((c) => {
-        const okChip = st.chip === "all" || (st.chip === "attn" ? c.dataset.attn === "1" : c.dataset.status === st.chip);
-        const okQ = !st.q || (c.dataset.name || "").includes(st.q);
-        const show = okChip && okQ; c.style.display = show ? "" : "none"; if (show) shown++;
-      });
-      if (empty) empty.style.display = shown ? "none" : "block";
+    // Favorites — instant local toggle, no full re-render needed.
+    $$("[data-favsite]").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); const on = toggleFavSite(b.dataset.favsite); b.classList.toggle("on", on); b.closest(".site-card")?.setAttribute("data-fav", on ? "1" : "0"); }));
+    // Tag editor — a plain prompt() (comma-separated), same lightweight convention
+    // already used by the Business Profile tab's ad-hoc inputs.
+    $$("[data-tagedit]").forEach((b) => b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = b.dataset.tagedit;
+      const current = siteTagsFor(id).join(", ");
+      const next = prompt("Tags (comma-separated)", current);
+      if (next == null) return;
+      setSiteTags(id, next.split(",").map((t) => t.trim()).filter(Boolean));
+      render();
+    }));
+    // Bulk selection — a plain Set kept in this closure; rebuilt every render().
+    const bulkBar = $("#bulkBar"), bulkCount = $("#bulkCount");
+    const selected = new Set();
+    function updateBulkBar() {
+      if (!bulkBar) return;
+      bulkBar.style.display = selected.size ? "flex" : "none";
+      if (bulkCount) bulkCount.textContent = selected.size + " selected";
     }
-    $$("[data-schip]").forEach((b) => b.addEventListener("click", () => { $$("[data-schip]").forEach((x) => x.classList.remove("on")); b.classList.add("on"); st.chip = b.dataset.schip; apply(); }));
-    search?.addEventListener("input", () => { st.q = search.value.trim().toLowerCase(); apply(); });
+    $$("[data-bulk]").forEach((cb) => cb.addEventListener("change", () => {
+      if (cb.checked) selected.add(cb.dataset.bulk); else selected.delete(cb.dataset.bulk);
+      updateBulkBar();
+    }));
+    $("#bulkClear")?.addEventListener("click", () => { selected.clear(); $$("[data-bulk]").forEach((cb) => cb.checked = false); updateBulkBar(); });
+    $$("[data-bulk-act]").forEach((b) => b.addEventListener("click", () => {
+      const act = b.dataset.bulkAct, ids = Array.from(selected); if (!ids.length) return;
+      if (act === "publish") {
+        ids.forEach((id) => { const s = state.sites.find((x) => x.id === id); if (s && s.status !== "published") { s.status = "published"; s.last_published = new Date().toISOString(); } });
+        toast(`Published ${ids.length} site${ids.length === 1 ? "" : "s"} (mockup).`, "success");
+      } else if (act === "archive") {
+        ids.forEach((id) => { const s = state.sites.find((x) => x.id === id); if (s) s.archived = true; });
+        toast(`Archived ${ids.length} site${ids.length === 1 ? "" : "s"}.`, "success");
+      } else if (act === "tag") {
+        const next = prompt("Tags to apply (comma-separated)", ""); if (next == null) return;
+        const tags = next.split(",").map((t) => t.trim()).filter(Boolean);
+        ids.forEach((id) => setSiteTags(id, tags));
+        toast(`Tagged ${ids.length} site${ids.length === 1 ? "" : "s"}.`, "success");
+      }
+      selected.clear(); render();
+    }));
+  }
+  function bindPortfolioToolbar() {
+    const tb = state.sitesToolbar;
+    const search = $("#sitesSearch");
+    // Status chip + search box hide/show within whatever the Filters popover already
+    // made eligible (state.sites is the source of truth, not stale dataset strings —
+    // this works identically whether Grid (.site-card) or List (.dt-row) is showing).
+    function applyQuickFilters() {
+      const q = (search?.value || "").trim().toLowerCase();
+      tb.q = q;
+      const container = $("#sitesGrid") || $("#sitesListWrap");
+      let shown = 0;
+      (state.sites || []).forEach((s) => {
+        const row = container && $(`[data-site="${s.id}"]`, container);
+        if (!row) return;
+        const okChip = tb.chip === "all" ? !s.archived
+          : tb.chip === "attn" ? (row.dataset.attn === "1" && !s.archived)
+          : tb.chip === "review" ? ((state.reviewBySite || {})[s.id] === "review" && !s.archived)
+          : tb.chip === "archived" ? !!s.archived
+          : (s.status === tb.chip && !s.archived);
+        const okQ = !q || s.name.toLowerCase().includes(q);
+        const show = okChip && okQ; row.style.display = show ? "" : "none"; if (show) shown++;
+      });
+      const empty = $("#sitesEmpty"); if (empty) empty.style.display = shown ? "none" : "block";
+    }
+    applyQuickFilters();
+    $$("[data-schip]").forEach((b) => b.addEventListener("click", () => { $$("[data-schip]").forEach((x) => x.classList.remove("on")); b.classList.add("on"); tb.chip = b.dataset.schip; applyQuickFilters(); }));
+    search?.addEventListener("input", applyQuickFilters);
+    // Sort + Grid/List both reorder/relayout the DOM, so both go through render().
+    $("#sitesSort")?.addEventListener("change", (e) => { tb.sort = e.target.value; render(); });
+    $$("[data-view]").forEach((b) => b.addEventListener("click", () => { tb.view = b.dataset.view; render(); }));
+    // Filters popover — category / needs-attention / tag all change which sites are
+    // eligible at all, so they also go through render() (see viewSites()'s `eligible`).
+    $("#sitesFilterBtn")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const pop = openPop(e.currentTarget, sitesFiltersPopoverHtml());
+      $$("[data-nicheval]", pop).forEach((it) => it.addEventListener("click", () => { tb.niche = it.dataset.nicheval; closePop(); render(); }));
+      $("[data-needsattn-toggle]", pop)?.addEventListener("click", () => { tb.needsAttn = !tb.needsAttn; closePop(); render(); });
+      $("#sitesTagFilterInput", pop)?.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { tb.tag = ev.target.value.trim(); closePop(); render(); } });
+    });
+    // Saved views — snapshot/restore the whole toolbar combo.
+    $("#sitesSavedViewsBtn")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const pop = openPop(e.currentTarget, sitesSavedViewsPopoverHtml());
+      $("[data-saveview]", pop)?.addEventListener("click", () => {
+        const name = prompt("Name this view"); if (!name) return;
+        saveSitesView(name, { chip: tb.chip, q: tb.q, niche: tb.niche, needsAttn: tb.needsAttn, tag: tb.tag, sort: tb.sort, view: tb.view });
+        closePop(); toast("View saved.", "success");
+      });
+      $$("[data-viewidx]", pop).forEach((it) => it.addEventListener("click", () => {
+        const v = savedSitesViews()[Number(it.dataset.viewidx)]; if (!v) return;
+        Object.assign(tb, { chip: v.chip, q: v.q, niche: v.niche, needsAttn: v.needsAttn, tag: v.tag, sort: v.sort, view: v.view });
+        closePop(); render();
+      }));
+    });
   }
   async function openSiteEditor(siteId) {
     const d = detailCache && detailCache.site && detailCache.site.id === siteId ? detailCache : await loadSite(siteId);
@@ -2382,6 +2725,7 @@
     window.addEventListener("keydown", (e) => { if (e.key === "Escape" && copilot.open) copilotClose(); });
   }
 
+  window.addEventListener("keydown", (e) => { if (e.key === "Escape") { closePop(); closeDetailsDrawer(); } });
   window.addEventListener("hashchange", () => { if (state.editor && !location.hash.includes("/edit/")) teardownEditor(); render(); if (copilot.open) { const ctx = copilotContext(); const c = $("#cpCtx"); if (c) c.textContent = "Context · " + ctx.label; renderCpSuggest(ctx); } });
   if (!reduce) document.body.classList.add("js-ready"); else $$(".reveal").forEach((n) => n.classList.add("in"));
   mountCopilot();
