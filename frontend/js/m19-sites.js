@@ -2709,8 +2709,7 @@
     const h = (location.hash || "").replace(/^#\//, "").split("/");
     if (h[0] === "sites" && h[2] === "edit") return { key: "editor", label: "Editor" };
     if (h[0] === "sites" && h[1]) { const s = (state.sites || []).find((x) => x.id === h[1]); return { key: "site", label: s ? s.name : "Site", site: s }; }
-    const map = { dashboard: "Overview", sites: "Websites", templates: "Template library", components: "Components", sections: "Sections", assets: "Media Library", forms: "Forms", blog: "Blog / CMS", structure: "Structure", content: "Content", preview: "Preview", seo: "Optimization Center", publish: "Publishing Center", pipeline: "Build Pipeline", analytics: "Analytics", growth: "Growth Center", integrations: "Integrations", settings: "Settings", clients: "Client Workspace", help: "Help & Resources" };
-    return { key: h[0] || "dashboard", label: map[h[0]] || "Studio" };
+    return { key: h[0] || "dashboard", label: ROUTE_LABELS[h[0]] || "Studio" };
   }
   const CP_SUGGEST = {
     dashboard: ["What needs my attention today?", "Summarize this week’s publishes", "Which sites have SEO issues?", "Draft a new landing page"],
