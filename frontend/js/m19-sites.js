@@ -2450,6 +2450,20 @@
     $$("[data-copy]").forEach((b) => b.addEventListener("click", () => { try { navigator.clipboard.writeText(b.dataset.copy); toast("Copied.", "success"); } catch (e) {} }));
     // Sidebar navigation + topbar quick actions
     $$("[data-nav]").forEach((b) => b.addEventListener("click", () => { location.hash = "#/" + b.dataset.nav; $("#rail")?.classList.remove("open"); }));
+    $("#railAiBuilder")?.addEventListener("click", () => openCreateModal("ai"));
+    $("[data-wtoggle]")?.addEventListener("click", (e) => { e.stopPropagation(); state.railWebsiteOpen = !state.railWebsiteOpen; render(); });
+    // Website submenu's per-site tabs (Pages, Navigation, Design System, SEO
+    // Settings, Version History, Publish) — switch tab in place if a site is
+    // already open, else resolve activeSiteId() and navigate into it.
+    $$("[data-websitetab]").forEach((b) => b.addEventListener("click", () => {
+      const key = b.dataset.websitetab;
+      const cur = parseHash();
+      $("#rail")?.classList.remove("open");
+      if (cur[0] === "sites" && cur[1]) { state.tab = key; render(); return; }
+      const sid = activeSiteId();
+      if (!sid) { openCreateModal("ai"); return; }
+      state.tab = key; location.hash = "#/sites/" + sid;
+    }));
     $("#tbGenerate")?.addEventListener("click", () => openCreateModal("ai"));
     $("#tqTemplates")?.addEventListener("click", () => { location.hash = "#/templates"; });
     $("#tqNew")?.addEventListener("click", () => openCreateModal());
