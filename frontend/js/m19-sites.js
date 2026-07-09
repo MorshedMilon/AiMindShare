@@ -324,8 +324,6 @@
   }
 
   /* ── Shell ────────────────────────────────────────────────────────────────── */
-  // Workspace sidebar — slim, portfolio-level. Per-site tools (pages, SEO, domains,
-  // publish, versions…) live in the contextual site rail (siteRail), not here.
   // Website Studio sidebar — one flat list of major destinations. "sites" is the
   // only entry with `children`: those 15 are the direct site-building tools.
   //
@@ -337,6 +335,11 @@
   //   "tab"  — a per-site tab. Resolves activeSiteId() and sets state.tab.
   //   "page" — a normal top-level route (workspace capability page or the bare
   //            Sites portfolio); navigates via #/<key> regardless of any open site.
+  //
+  // Note: "sites", "seo" and "publish" each appear twice by design — once as a
+  // top-level entry (the bare portfolio / workspace-wide Optimization Center /
+  // Publishing Center) and once as a "sites" child (a single site's own tab) —
+  // these are deliberately distinct destinations that happen to share a key.
   const NAV = [
     { k: "dashboard", l: "Overview", ic: "grid" },
     { k: "sites", l: "Website", ic: "globe", children: [
@@ -369,30 +372,44 @@
     { k: "help", l: "Help & Resources", ic: "book" },
   ];
   const ROUTE_LABELS = { dashboard: "Overview", sites: "Websites", templates: "Template library", components: "Components", sections: "Sections", assets: "Media Library", forms: "Forms", blog: "Blog / CMS", structure: "Structure", content: "Content", preview: "Preview", seo: "Optimization Center", publish: "Publishing Center", pipeline: "Build Pipeline", analytics: "Analytics", growth: "Growth Center", integrations: "Integrations", settings: "Settings", clients: "Client Workspace", help: "Help & Resources" };
-  function railNav(active) {
-    return NAV.map(([label, items]) => `<div class="nav-group"><div class="nav-group-label">${label}</div>${items.map(([k, l, ic]) =>
-      `<div class="nav-item ${k === active ? "active" : ""}" data-nav="${k}"><span class="ni-ico">${svg(ic)}</span><span>${l}</span>${k === "dashboard" && (state.sites || []).some((s) => s.status === "published") ? `<span class="ni-dot" title="Live sites"></span>` : ""}</div>`).join("")}</div>`).join("");
-  }
-  // Contextual per-site rail — back link + site identity + the SITE_NAV groups.
-  function siteRail(site, tab) {
-    const dom = site.primary_domain || ((site.subdomain || "site") + ".aimindshare.site");
-    const groups = SITE_NAV.map(([label, items]) => `<div class="nav-group"><div class="nav-group-label">${label}</div>${items.map(([k, l, ic]) =>
-      k === "__editor"
-        ? `<div class="nav-item" data-openeditor="${esc(site.id)}"><span class="ni-ico">${svg(ic)}</span><span>${l}</span><span class="ni-tag">open</span></div>`
-        : `<div class="nav-item ${k === tab ? "active" : ""}" data-tab="${k}"><span class="ni-ico">${svg(ic)}</span><span>${l}</span></div>`).join("")}</div>`).join("");
-    return `
-      <button class="rail-back" id="backSites">${svg("back", 14)} All websites</button>
-      <div class="rail-site"><span class="rs-favi ${site.style_preset ? "sc-favi-" + esc(site.style_preset) : ""}">${esc(initials(site.name))}</span>
-        <span class="rs-id"><b>${esc(site.name)}</b><span class="rs-dom">${esc(dom)}</span></span></div>
-      ${groups}`;
+  // Persistent Website Studio sidebar. `siteCtx` (present only on a site-detail
+  // route) supplies the currently-open site + active per-site tab, used to render
+  // the site-identity header and highlight the right row *inside* the already-
+  // rendered "Website" children — the rail itself never swaps out.
+  function railNav(active, siteCtx) {
+    const site = siteCtx && siteCtx.site;
+    const tab = siteCtx && siteCtx.tab;
+    return NAV.map((item) => {
+      if (!item.children) {
+        if (item.action) return `<div class="nav-item" id="railAiBuilder"><span class="ni-ico">${svg(item.ic)}</span><span>${item.l}</span></div>`;
+        return `<div class="nav-item ${item.k === active ? "active" : ""}" data-nav="${item.k}"><span class="ni-ico">${svg(item.ic)}</span><span>${item.l}</span>${item.k === "dashboard" && (state.sites || []).some((s) => s.status === "published") ? `<span class="ni-dot" title="Live sites"></span>` : ""}</div>`;
+      }
+      const parentActive = (active === "sites") || !!site;
+      const open = !!state.railWebsiteOpen;
+      const childRows = item.children.map((c) => {
+        const childActive = c.k === "sites" ? (active === "sites" && !site)
+          : c.kind === "tab" ? (!!site && (tab || "overview") === c.k)
+          : (active === c.k);
+        const attr = c.kind === "tab" ? `data-websitetab="${c.k}"` : `data-nav="${c.k}"`;
+        return `<div class="nav-item nav-child ${childActive ? "active" : ""}" ${attr}><span class="ni-ico">${svg(c.ic, 15)}</span><span>${c.l}</span></div>`;
+      }).join("");
+      const siteHeader = site ? `
+        <button class="rail-back" id="backSites">${svg("back", 14)} All websites</button>
+        <div class="rail-site"><span class="rs-favi ${site.style_preset ? "sc-favi-" + esc(site.style_preset) : ""}">${esc(initials(site.name))}</span>
+          <span class="rs-id"><b>${esc(site.name)}</b><span class="rs-dom">${esc(site.primary_domain || (site.subdomain || "site") + ".aimindshare.site")}</span></span></div>` : "";
+      return `<div class="nav-item nav-parent ${parentActive ? "active" : ""}" data-nav="sites">
+          <span class="ni-ico">${svg(item.ic)}</span><span>${item.l}</span>
+          <button class="nav-chevron ${open ? "open" : ""}" data-wtoggle title="${open ? "Collapse" : "Expand"}">${svg("chev", 12)}</button>
+        </div>
+        <div class="nav-children ${open ? "open" : ""}">${siteHeader}${childRows}</div>`;
+    }).join("");
   }
   function shell(content, opts) {
     opts = opts || {};
     if (opts.bare) return `<main class="content editor-full"><div class="content-inner editor-inner">${content}</div></main>`;
     const site = opts.siteCtx && opts.siteCtx.site;
     const active = opts.active || "dashboard";
-    const railBody = site ? siteRail(site, opts.siteCtx.tab)
-      : `<div class="rail-mod"><span class="rm-ico">${svg("globe", 15)}</span><span class="rm-t"><b>Website Studio</b><span>Module · M19</span></span></div>${railNav(active)}`;
+    const railBody = `<div class="rail-mod"><span class="rm-ico">${svg("globe", 15)}</span><span class="rm-t"><b>Website Studio</b><span>Module · M19</span></span></div>${railNav(active, opts.siteCtx)}`;
     const tbLabel = site ? "Website workspace" : (ROUTE_LABELS[active] || "");
     return `
       <aside class="rail ${site ? "rail-in-site" : ""}" id="rail">
