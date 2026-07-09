@@ -225,7 +225,18 @@
     team: [], teamBySite: {}, metricsBySite: {},
     sitesToolbar: { chip: "all", q: "", niche: "", needsAttn: false, tag: "", sort: "name", view: "grid" },
     tab: "overview", editor: null,
+    // Website Studio sidebar (IA restructure) — the "Website" row's expand state,
+    // and the last site opened this session, used to resolve which site the
+    // per-site Website submodules (Pages, Navigation, ...) should jump into.
+    railWebsiteOpen: true, lastSiteId: null,
   };
+  // Resolves "which site" for Website submodule items clicked from outside a site
+  // detail view: last-opened site if it still exists, else the first site, else null.
+  function activeSiteId() {
+    const sites = state.sites || [];
+    if (state.lastSiteId && sites.some((s) => s.id === state.lastSiteId)) return state.lastSiteId;
+    return sites[0] ? sites[0].id : null;
+  }
   const stp = (name) => !connected() && state.previewState === name;
   const canManage = () => ["manager", "admin", "owner"].includes(state.role);
   const canAdmin = () => ["admin", "owner"].includes(state.role);
@@ -664,6 +675,12 @@
 
   /* ── Screen: site detail ──────────────────────────────────────────────────── */
   let detailCache = null;
+  // Tracks which top-level rail section was active on the PREVIOUS render, so the
+  // "Website" submenu auto-opens only when navigation transitions INTO its scope
+  // (not on every in-place re-render while already inside it, which would fight a
+  // manual collapse). See WEBSITE_PAGE_KEYS + the render() edit in Task 1 Step 3.
+  let lastRailSection = null;
+  const WEBSITE_PAGE_KEYS = new Set(["structure", "components", "sections", "content", "assets", "forms", "blog", "preview"]);
   async function viewSiteDetail(id) {
     if (!detailCache || detailCache.site?.id !== id) {
       const box = $("#app .content-inner"); if (box && !detailCache) box.innerHTML = previewStrip() + skeleton(1);
@@ -2331,14 +2348,19 @@
   async function render() {
     const app = $("#app");
     const parts = parseHash();
+    const websiteScoped = parts[0] === "sites" || WEBSITE_PAGE_KEYS.has(parts[0]);
+    const section = websiteScoped ? "website" : (parts[0] || "dashboard");
+    if (section === "website" && lastRailSection !== "website") state.railWebsiteOpen = true;
+    lastRailSection = section;
     if (parts[0] === "sites" && parts[2] === "edit") { // editor (full-bleed)
       app.innerHTML = shell(viewEditor(parts[1], parts[3]), { bare: true });
       bindGlobal(); await mountEditor(parts[1], parts[3]); return;
     }
-    if (parts[0] === "sites" && parts[1]) { // site detail — contextual per-site rail
+    if (parts[0] === "sites" && parts[1]) { // site detail — Website submenu shows this site's tabs
       if (detailCache && detailCache.site?.id !== parts[1]) detailCache = null;
       const body = await viewSiteDetail(parts[1]);
-      app.innerHTML = shell(body, { siteCtx: { site: detailCache && detailCache.site, tab: state.tab } });
+      state.lastSiteId = parts[1];
+      app.innerHTML = shell(body, { active: "sites", siteCtx: { site: detailCache && detailCache.site, tab: state.tab } });
       bindGlobal(); bindDetail(parts[1]); reveal(); return;
     }
     detailCache = null;
