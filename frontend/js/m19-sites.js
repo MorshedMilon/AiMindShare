@@ -326,22 +326,49 @@
   /* ── Shell ────────────────────────────────────────────────────────────────── */
   // Workspace sidebar — slim, portfolio-level. Per-site tools (pages, SEO, domains,
   // publish, versions…) live in the contextual site rail (siteRail), not here.
+  // Website Studio sidebar — one flat list of major destinations. "sites" is the
+  // only entry with `children`: those 15 are the direct site-building tools.
+  //
+  // PRODUCT RULE: if the item is about building the website directly, it's a
+  // `sites` child. If it's about operations, collaboration, reporting, growth,
+  // optimization, or system-wide controls, it's a top-level entry instead.
+  //
+  // Child `kind`:
+  //   "tab"  — a per-site tab. Resolves activeSiteId() and sets state.tab.
+  //   "page" — a normal top-level route (workspace capability page or the bare
+  //            Sites portfolio); navigates via #/<key> regardless of any open site.
   const NAV = [
-    ["Overview", [["dashboard", "Dashboard", "grid"]]],
-    ["Create", [["sites", "Websites", "globe"], ["templates", "Templates", "layers"]]],
-    ["Library", [["assets", "Assets", "image"]]],
-    ["Grow", [["analytics", "Analytics", "chart"]]],
-    ["Configure", [["settings", "Settings", "gear"]]],
+    { k: "dashboard", l: "Overview", ic: "grid" },
+    { k: "sites", l: "Website", ic: "globe", children: [
+        { k: "sites", l: "Sites", ic: "globe", kind: "page" },
+        { k: "pages", l: "Pages", ic: "doc", kind: "tab" },
+        { k: "nav", l: "Navigation", ic: "rows", kind: "tab" },
+        { k: "structure", l: "Structure", ic: "layers", kind: "page" },
+        { k: "profile", l: "Design System", ic: "palette", kind: "tab" },
+        { k: "components", l: "Components", ic: "puzzle", kind: "page" },
+        { k: "sections", l: "Sections", ic: "grid", kind: "page" },
+        { k: "content", l: "Content", ic: "type", kind: "page" },
+        { k: "assets", l: "Media Library", ic: "image", kind: "page" },
+        { k: "forms", l: "Forms", ic: "form", kind: "page" },
+        { k: "blog", l: "Blog / CMS", ic: "book", kind: "page" },
+        { k: "seo", l: "SEO Settings", ic: "search", kind: "tab" },
+        { k: "versions", l: "Version History", ic: "clock", kind: "tab" },
+        { k: "preview", l: "Preview", ic: "eye", kind: "page" },
+        { k: "publish", l: "Publish", ic: "rocket", kind: "tab" },
+      ] },
+    { k: "templates", l: "Templates", ic: "layers" },
+    { k: "ai-builder", l: "AI Builder", ic: "spark", action: true },
+    { k: "clients", l: "Client Workspace", ic: "users" },
+    { k: "pipeline", l: "Build Pipeline", ic: "gauge" },
+    { k: "publish", l: "Publishing Center", ic: "rocket" },
+    { k: "analytics", l: "Analytics", ic: "chart" },
+    { k: "growth", l: "Growth Center", ic: "zap" },
+    { k: "seo", l: "Optimization Center", ic: "wand" },
+    { k: "integrations", l: "Integrations", ic: "puzzle" },
+    { k: "settings", l: "Settings", ic: "gear" },
+    { k: "help", l: "Help & Resources", ic: "book" },
   ];
-  // Per-site workspace nav — swaps into the rail when you're inside a site.
-  const SITE_NAV = [
-    ["Site", [["overview", "Overview", "grid"], ["pages", "Pages", "doc"], ["__editor", "Editor", "edit"]]],
-    ["Design", [["profile", "Brand & profile", "palette"], ["nav", "Navigation", "rows"]]],
-    ["Optimize", [["seo", "SEO & schema", "search"], ["health", "Site Health", "gauge"], ["domains", "Domains", "link"]]],
-    ["Grow", [["analytics", "Analytics", "chart"], ["publish", "Publish", "rocket"], ["integrations", "Integrations", "puzzle"]]],
-    ["Configure", [["settings", "Settings", "gear"]]],
-  ];
-  const ROUTE_LABELS = { dashboard: "Command center", sites: "Websites", templates: "Template library", pages: "Pages", components: "Components", sections: "Sections", assets: "Assets", forms: "Forms", blog: "Blog", seo: "SEO", domains: "Domains", publish: "Publish", analytics: "Analytics", settings: "Settings" };
+  const ROUTE_LABELS = { dashboard: "Overview", sites: "Websites", templates: "Template library", components: "Components", sections: "Sections", assets: "Media Library", forms: "Forms", blog: "Blog / CMS", structure: "Structure", content: "Content", preview: "Preview", seo: "Optimization Center", publish: "Publishing Center", pipeline: "Build Pipeline", analytics: "Analytics", growth: "Growth Center", integrations: "Integrations", settings: "Settings", clients: "Client Workspace", help: "Help & Resources" };
   function railNav(active) {
     return NAV.map(([label, items]) => `<div class="nav-group"><div class="nav-group-label">${label}</div>${items.map(([k, l, ic]) =>
       `<div class="nav-item ${k === active ? "active" : ""}" data-nav="${k}"><span class="ni-ico">${svg(ic)}</span><span>${l}</span>${k === "dashboard" && (state.sites || []).some((s) => s.status === "published") ? `<span class="ni-dot" title="Live sites"></span>` : ""}</div>`).join("")}</div>`).join("");
@@ -2054,6 +2081,20 @@
       feats: [["form", "Drag-and-drop", "Build forms without code."], ["puzzle", "Conditional logic", "Show fields based on answers."], ["users", "CRM capture", "Every submission becomes a contact."], ["spark", "Spam protection", "Turnstile-ready, honeypots built in."]], cta: "href", href: "m15-forms-and-surveys.html", ctaLabel: "Open Forms & Surveys" },
     blog: { ico: "book", title: "Blog", lead: "Publish articles and a structured blog with AI drafting, scheduling and SEO built in — perfect for content that ranks and feeds your funnels.",
       feats: [["book", "Structured CMS", "Posts, categories and authors."], ["spark", "AI drafting", "Generate and refine posts fast."], ["clock", "Scheduling & RSS", "Queue posts and syndicate."], ["search", "SEO-ready", "Meta, schema and internal links per post."]], cta: "href", href: "m22-manual-content-cms.html", ctaLabel: "Open Content & Blog" },
+    structure: { ico: "layers", title: "Structure", lead: "A bird's-eye map of every page, its parent/child relationships and internal links — reorganize your site's shape without opening each page individually.",
+      feats: [["layers", "Visual sitemap", "See every page and how they connect."], ["rows", "Drag to reorder", "Restructure navigation depth in one view."], ["link", "Orphan detection", "Find pages nothing links to."], ["search", "SEO impact", "Preview how structure changes affect crawlability."]], cta: "editor", ctaLabel: "Open the visual editor" },
+    content: { ico: "type", title: "Content", lead: "A single place to review and edit copy across every page and post — headlines, body text and CTAs — without hunting through the page editor.",
+      feats: [["type", "Cross-page copy view", "Every headline and paragraph in one list."], ["spark", "AI rewrite", "Improve tone or length in a click."], ["search", "Find & replace", "Update a phrase across the whole site."], ["clock", "Change history", "See what copy changed and when."]], cta: "editor", ctaLabel: "Open the visual editor" },
+    preview: { ico: "eye", title: "Preview", lead: "See exactly what visitors see before you publish — desktop, tablet and mobile — with a shareable staging link for quick sanity checks.",
+      feats: [["eye", "Live device preview", "Desktop, tablet and mobile in one view."], ["link", "Shareable staging link", "Send a preview without publishing."], ["monitor", "Responsive check", "Catch layout issues before launch."], ["rocket", "One click to publish", "Move straight from preview to live."]], cta: "editor", ctaLabel: "Open the visual editor" },
+    clients: { ico: "users", title: "Client Workspace", lead: "Branded collaboration with your clients — approvals, comments and file sharing — layered on top of the review link and approval stepper already built into every site's Publish tab.",
+      feats: [["users", "Branded client portal", "A dedicated space clients recognize as yours."], ["check", "Approvals", "Clients approve directly, no email back-and-forth."], ["edit", "Inline comments", "Feedback pinned to the exact section."], ["download", "File sharing", "Share briefs and assets in one thread."]], cta: "editor", ctaLabel: "Open the visual editor" },
+    growth: { ico: "zap", title: "Growth Center", lead: "Cross-workspace growth signals — CRM pipeline, campaigns, funnels and forms performance — surfaced next to your websites instead of siloed in separate modules.",
+      feats: [["chart", "Funnel performance", "See where visitors drop off, site by site."], ["users", "CRM pipeline", "Leads generated per site, in one view."], ["spark", "Campaign attribution", "Which campaigns actually drive traffic."], ["form", "Form conversion", "Submission rates across every embedded form."]], cta: "editor", ctaLabel: "Open the visual editor" },
+    integrations: { ico: "puzzle", title: "Integrations", lead: "Workspace-level third-party connections — analytics, payments, email and more — distinct from the CRM widgets (forms, booking, chat) you already embed per site.",
+      feats: [["puzzle", "Third-party apps", "Connect the tools your workspace already uses."], ["link", "Webhooks", "Push site events to external systems."], ["gear", "API access", "Programmatic access for custom integrations."], ["check", "Connection health", "See what's connected and what needs attention."]], cta: "editor", ctaLabel: "Open the visual editor" },
+    help: { ico: "book", title: "Help & Resources", lead: "Documentation, keyboard shortcuts and support — everything you need to get unstuck without leaving the studio.",
+      feats: [["book", "Documentation", "Guides for every part of the studio."], ["search", "Searchable help", "Find answers without contacting support."], ["users", "Contact support", "Reach a real person when you're stuck."], ["spark", "What's new", "Release notes for recent studio updates."]], cta: "editor", ctaLabel: "Open the visual editor" },
   };
   function viewCapability(key) {
     const c = CAP[key]; if (!c) return viewDashboard();
