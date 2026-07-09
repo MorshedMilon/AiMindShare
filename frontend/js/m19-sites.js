@@ -2025,37 +2025,35 @@
     return `<div class="panel"><div class="panel-head"><span class="ph-ico">${svg("spark", 15)}</span><h3>Technical SEO &amp; GEO — automatic</h3></div><div class="seo-tech">${rows}</div></div>`;
   }
 
-  /* ── Screen: Domains (cross-site) ─────────────────────────────────────────── */
-  function viewDomainsOverview() {
-    const sites = state.sites || [];
-    const all = Object.entries(state.domainsBySite || {}).flatMap(([sid, ds]) => (ds || []).map((d) => ({ ...d, site: sites.find((s) => s.id === sid) })));
-    const domRows = all.length ? all.map((d) => `<div class="ov-row"><span class="ov-favi">${svg("link", 15)}</span>
-      <div class="ov-main"><b>${esc(d.domain)}</b><span>${esc(d.site?.name || "")}${d.is_primary ? " · primary" : ""}</span></div>
-      <span class="ov-right"><span class="pill ${d.status === "active" ? "success" : "warning"}">${d.status}</span><span class="pill ${d.ssl_status === "active" ? "success" : "plain"}">SSL: ${d.ssl_status}</span></span></div>`).join("")
-      : emptyInline("No custom domains connected yet.");
-    const subRows = sites.map((s) => `<div class="ov-row"><span class="ov-favi ${s.style_preset ? "sc-favi-" + esc(s.style_preset) : ""}">${esc(initials(s.name))}</span>
-      <div class="ov-main"><b>${esc(s.name)}</b><span class="mono">${esc(s.subdomain || "site")}.aimindshare.site</span></div>
-      <span class="ov-right"><button class="btn btn-ghost btn-sm" data-open="${esc(s.id)}">Connect domain</button></span></div>`).join("");
-    return previewStrip() + pageHead("Domains", "Connect custom domains with automatic DNS verification and SSL. Every site also gets an always-on staging subdomain.")
-      + `<div class="studio">
-        <div class="panel"><div class="panel-head"><span class="ph-ico">${svg("link", 15)}</span><h3>Custom domains</h3></div><div class="ov-list">${domRows}</div>
-          <div class="hint-card" style="margin:14px 0 0">${svg("globe", 15)}<div><b>How it works.</b> Add a domain on a site, point a <span class="mono">CNAME</span> → <span class="mono">sites.aimindshare.com</span> plus a <span class="mono">TXT</span> record, and we verify DNS and issue SSL automatically.</div></div></div>
-        <div class="panel"><div class="panel-head"><span class="ph-ico">${svg("globe", 15)}</span><h3>Staging subdomains</h3></div><div class="ov-list">${subRows || emptyInline("No sites yet.")}</div></div>
-      </div>`;
+  /* ── Screen: Build Pipeline (cross-site) ──────────────────────────────────── */
+  // The production-stage visualization that used to live inline inside the old
+  // Publish center — promoted to its own top-level page (status flow, milestones,
+  // production tracking). Deployment/domains/release status stays in Publishing
+  // Center below; this page never shows per-site editing controls.
+  function viewBuildPipeline() {
+    const PIPE = [["Brief", "done"], ["AI structure", "done"], ["Design", "done"], ["Content", "active"], ["Forms", ""], ["SEO", ""], ["Domain", ""], ["Publish", ""], ["Optimize", ""]];
+    const pipeIco = { Brief: "doc", "AI structure": "spark", Design: "palette", Content: "type", Forms: "form", SEO: "search", Domain: "link", Publish: "rocket", Optimize: "gauge" };
+    const pipe = PIPE.map(([label, st], i) => `<div class="pipe-node ${st}"><span class="pn-dot">${svg(pipeIco[label] || "check", 16)}</span><span class="pn-label">${label}</span><span class="pn-step">0${i + 1}</span></div>`).join("");
+    return previewStrip() + pageHead("Build Pipeline", "Where every site sits in the build process — brief through optimize — across your whole workspace.")
+      + `<div class="studio"><div class="panel st-pipe"><div class="pipe-track">${pipe}</div></div></div>`;
   }
-
-  /* ── Screen: Publish center ───────────────────────────────────────────────── */
-  function viewPublishCenter() {
+  /* ── Screen: Publishing Center (cross-site deployment, domains, release) ───── */
+  function viewPublishingCenter() {
     const sites = state.sites || [];
     const rows = sites.map((s) => `<div class="ov-row"><span class="ov-favi ${s.style_preset ? "sc-favi-" + esc(s.style_preset) : ""}">${esc(initials(s.name))}</span>
       <div class="ov-main"><b>${esc(s.name)}</b><span>${s.last_published ? "v" + (s.last_version || "?") + " · published " + fmtDate(s.last_published) : "never published"}</span></div>
       <span class="ov-right">${statusPill(s.status)}<button class="btn btn-primary btn-sm" data-editsite="${esc(s.id)}">${svg("rocket", 13)} Open</button></span></div>`).join("");
-    const PIPE = [["Brief", "done"], ["AI structure", "done"], ["Design", "done"], ["Content", "active"], ["Forms", ""], ["SEO", ""], ["Domain", ""], ["Publish", ""], ["Optimize", ""]];
-    const pipeIco = { Brief: "doc", "AI structure": "spark", Design: "palette", Content: "type", Forms: "form", SEO: "search", Domain: "link", Publish: "rocket", Optimize: "gauge" };
-    const pipe = PIPE.map(([label, st], i) => `<div class="pipe-node ${st}"><span class="pn-dot">${svg(pipeIco[label] || "check", 16)}</span><span class="pn-label">${label}</span><span class="pn-step">0${i + 1}</span></div>`).join("");
-    return previewStrip() + pageHead("Publish", "Staging previews, one-click publish, version history and rollback — every publish runs the pre-flight quality gate first.")
-      + `<div class="studio"><div class="panel st-pipe"><div class="pipe-track">${pipe}</div></div>
-        <div class="st-cols"><div class="panel"><div class="panel-head"><span class="ph-ico">${svg("rocket", 15)}</span><h3>Sites &amp; status</h3></div><div class="ov-list">${rows || emptyInline("No sites yet.")}</div></div>${activityPanel()}</div></div>`;
+    const domAll = Object.entries(state.domainsBySite || {}).flatMap(([sid, ds]) => (ds || []).map((d) => ({ ...d, site: sites.find((s) => s.id === sid) })));
+    const domRows = domAll.length ? domAll.map((d) => `<div class="ov-row"><span class="ov-favi">${svg("link", 15)}</span>
+      <div class="ov-main"><b>${esc(d.domain)}</b><span>${esc(d.site?.name || "")}${d.is_primary ? " · primary" : ""}</span></div>
+      <span class="ov-right"><span class="pill ${d.status === "active" ? "success" : "warning"}">${d.status}</span><span class="pill ${d.ssl_status === "active" ? "success" : "plain"}">SSL: ${d.ssl_status}</span></span></div>`).join("")
+      : emptyInline("No custom domains connected yet.");
+    return previewStrip() + pageHead("Publishing Center", "Deployment, environments, domains and release status — every site's shipping state in one place.")
+      + `<div class="studio">
+        <div class="st-cols"><div class="panel"><div class="panel-head"><span class="ph-ico">${svg("rocket", 15)}</span><h3>Sites &amp; status</h3></div><div class="ov-list">${rows || emptyInline("No sites yet.")}</div></div>${activityPanel()}</div>
+        <div class="panel"><div class="panel-head"><span class="ph-ico">${svg("link", 15)}</span><h3>Custom domains</h3></div><div class="ov-list">${domRows}</div>
+          <div class="hint-card" style="margin:14px 0 0">${svg("globe", 15)}<div><b>How it works.</b> Add a domain on a site, point a <span class="mono">CNAME</span> → <span class="mono">sites.aimindshare.com</span> plus a <span class="mono">TXT</span> record, and we verify DNS and issue SSL automatically.</div></div></div>
+      </div>`;
   }
 
   /* ── Screen: Analytics (cross-site) ───────────────────────────────────────── */
