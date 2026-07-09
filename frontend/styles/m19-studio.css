@@ -563,6 +563,20 @@ body.cp-lock .copilot-fab{opacity:0;pointer-events:none;transform:scale(.9)}
 .rail-site .rs-id{min-width:0;display:flex;flex-direction:column;line-height:1.2}
 .rail-site .rs-id b{font-family:var(--font-serif);font-size:14px;color:var(--ink-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rail-site .rs-dom{font-family:var(--font-mono);font-size:9.5px;color:var(--ink-400);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Website Studio sidebar — expandable "Website" row + its 15-item nested submenu.
+   PRODUCT RULE: direct site-building tools live here; operations/collaboration/
+   reporting/growth/optimization/system-wide controls stay as top-level rows. */
+.nav-parent{cursor:pointer}
+.nav-parent .nav-chevron{margin-left:auto;display:flex;align-items:center;justify-content:center;
+  width:20px;height:20px;border:none;background:transparent;color:inherit;opacity:.6;
+  border-radius:var(--r-sm);transition:transform .15s ease}
+.nav-parent .nav-chevron:hover{opacity:1;background:rgba(0,105,110,.1)}
+.nav-parent .nav-chevron.open{transform:rotate(90deg)}
+.nav-children{display:none;padding-left:10px;margin:2px 0 4px;border-left:1px solid var(--line)}
+.nav-children.open{display:block}
+.nav-children .nav-child{padding:7px 12px;font-size:12.5px}
+.nav-children .rail-back{margin:2px 8px 4px 2px}
+.nav-children .rail-site{margin:0 2px 8px}
 
 /* Site Overview */
 .ov-summary{padding:22px}
