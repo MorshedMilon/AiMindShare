@@ -765,6 +765,8 @@
       ["edit", "Open editor", "Design & content", `data-openeditor="${esc(site.id)}"`],
       ["doc", "Manage pages", `${site.pages} page${site.pages === 1 ? "" : "s"}`, `data-tab="pages"`],
       ["search", "SEO & schema", "Titles, meta, JSON-LD", `data-tab="seo"`],
+      ["link", "Domains", site.primary_domain ? esc(site.primary_domain) : "Staging subdomain only", `data-tab="domains"`],
+      ["puzzle", "Integrations", "CRM widgets", `data-tab="integrations"`],
       ["rocket", "Publish", site.last_published ? "Last " + fmtDate(site.last_published) : "Not published yet", `data-tab="publish"`],
     ].map(([ico, t, s, attr]) => `<button class="qa-line" ${attr}><span class="ql-ico">${svg(ico, 15)}</span><span class="ql-t"><b>${t}</b><span>${s}</span></span>${svg("chev", 13)}</button>`).join("");
     return `<div class="studio">
