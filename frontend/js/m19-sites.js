@@ -2359,7 +2359,7 @@
     if (parts[0] === "sites" && parts[1]) { // site detail — Website submenu shows this site's tabs
       if (detailCache && detailCache.site?.id !== parts[1]) detailCache = null;
       const body = await viewSiteDetail(parts[1]);
-      state.lastSiteId = parts[1];
+      if (detailCache?.site) state.lastSiteId = parts[1];
       app.innerHTML = shell(body, { active: "sites", siteCtx: { site: detailCache && detailCache.site, tab: state.tab } });
       bindGlobal(); bindDetail(parts[1]); reveal(); return;
     }
