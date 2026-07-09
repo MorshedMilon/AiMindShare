@@ -2002,7 +2002,7 @@
     const rows = sites.map((s) => `<div class="ov-row"><span class="ov-favi ${s.style_preset ? "sc-favi-" + esc(s.style_preset) : ""}">${esc(initials(s.name))}</span>
       <div class="ov-main"><b>${esc(s.name)}</b><span>${s.pages || 0} pages · ${esc(s.primary_domain || s.subdomain + ".aimindshare.site")}</span></div>
       <span class="ov-right">${healthRing(s.health_score)}<button class="btn btn-ghost btn-sm" data-goseo="${esc(s.id)}">Open SEO</button></span></div>`).join("");
-    return previewStrip() + pageHead("SEO", "Search & generative-engine optimization across every site — titles, meta, JSON-LD, sitemaps and llms.txt, generated on every publish.")
+    return previewStrip() + pageHead("Optimization Center", "Search & generative-engine optimization across every site — titles, meta, JSON-LD, sitemaps and llms.txt, generated on every publish.")
       + `<div class="studio">${kp}<div class="panel"><div class="panel-head"><span class="ph-ico">${svg("search", 15)}</span><h3>SEO by site</h3></div><div class="ov-list">${rows || emptyInline("No sites yet.")}</div></div>${seoTechPanel()}</div>`;
   }
   function seoTechPanel() {
