@@ -1728,7 +1728,7 @@
     Object.entries(doms).forEach(([sid, ds]) => (ds || []).forEach((d) => {
       const s = byId[sid]; if (!s) return;
       if (d.ssl_status && d.ssl_status !== "active")
-        items.push({ group: "domain", sev: "warn", ico: "link", site: s, title: `SSL pending · ${d.domain}`, detail: "Certificate not yet issued — finish DNS verification to secure the domain.", actLabel: "Domains", nav: "domains" });
+        items.push({ group: "domain", sev: "warn", ico: "link", site: s, title: `SSL pending · ${d.domain}`, detail: "Certificate not yet issued — finish DNS verification to secure the domain.", actLabel: "Domains", godomains: s.id });
     }));
     // Latest DNS verification per domain — surface only if the most recent check failed.
     const src = (state.activity && state.activity.length) ? state.activity : (!connected() ? MOCK.publishLog : []);
@@ -1737,7 +1737,7 @@
     const flaggedDomains = new Set();
     Object.values(latestVerify).forEach((l) => {
       if (l.status === "error") { const s = sites.find((x) => x.primary_domain === l.detail.domain) || null;
-        items.push({ group: "domain", sev: "crit", ico: "link", site: s, title: `DNS not found · ${l.detail.domain}`, detail: "Add the CNAME → sites.aimindshare.com plus the TXT record, then re-verify.", actLabel: "Domains", nav: "domains" });
+        items.push({ group: "domain", sev: "crit", ico: "link", site: s, title: `DNS not found · ${l.detail.domain}`, detail: "Add the CNAME → sites.aimindshare.com plus the TXT record, then re-verify.", actLabel: "Domains", godomains: s?.id });
         flaggedDomains.add(l.detail.domain); }
     });
     // Domain expiring soon — skip only if that same domain already has a DNS-failure row above
@@ -1748,7 +1748,7 @@
       const s = byId[sid]; if (!s || !d.expires_at || flaggedDomains.has(d.domain)) return;
       const daysLeft = Math.ceil((new Date(d.expires_at).getTime() - Date.now()) / 864e5);
       if (daysLeft > 30) return;
-      items.push({ group: "domain", sev: daysLeft <= 7 ? "crit" : "warn", ico: "link", site: s, title: `Domain expires in ${daysLeft}d · ${d.domain}`, detail: "Renew before it lapses to avoid downtime.", actLabel: "Domains", nav: "domains" });
+      items.push({ group: "domain", sev: daysLeft <= 7 ? "crit" : "warn", ico: "link", site: s, title: `Domain expires in ${daysLeft}d · ${d.domain}`, detail: "Renew before it lapses to avoid downtime.", actLabel: "Domains", godomains: s.id });
     }));
     // Per-page health categories that aren't passing (SEO, schema, a11y, perf, links, fields).
     Object.entries(health).forEach(([sid, h]) => { const s = byId[sid]; if (!s || !h) return;
@@ -1800,7 +1800,8 @@
   }
 
   function actAttr(a) {
-    return a.gohealth ? `data-gohealth="${esc(a.gohealth)}"` : a.goanalytics ? `data-goanalytics="${esc(a.goanalytics)}"`
+    return a.gohealth ? `data-gohealth="${esc(a.gohealth)}"` : a.godomains ? `data-godomains="${esc(a.godomains)}"`
+      : a.goanalytics ? `data-goanalytics="${esc(a.goanalytics)}"`
       : a.publish ? `data-publish="${esc(a.publish)}"` : a.editsite ? `data-editsite="${esc(a.editsite)}"`
       : a.open ? `data-open="${esc(a.open)}"` : `data-nav-to="${esc(a.nav)}"`;
   }
@@ -1920,13 +1921,13 @@
   function dashQuickActions() {
     const acts = [
       ["New site", "spark", "gen", "Describe it, AI builds it"],
-      ["Add a page", "doc", "nav:pages", "Into an existing site"],
-      ["Connect domain", "link", "nav:domains", "DNS + auto-SSL"],
+      ["Add a page", "doc", "wtab:pages", "Into an existing site"],
+      ["Connect domain", "link", "wtab:domains", "DNS + auto-SSL"],
       ["Publish changes", "rocket", "nav:publish", "Review & deploy"],
       ["Restore a version", "undo", "nav:publish", "Roll back a publish"],
       ["Add CRM widget", "form", "nav:forms", "Form · calendar · chat"],
     ].map(([t, ic, act, sub]) => {
-      const attr = act.startsWith("nav:") ? `data-nav-to="${act.slice(4)}"` : `data-qa="${act}"`;
+      const attr = act.startsWith("nav:") ? `data-nav-to="${act.slice(4)}"` : act.startsWith("wtab:") ? `data-websitetab="${act.slice(5)}"` : `data-qa="${act}"`;
       return `<button class="qa-line" ${attr}><span class="ql-ico">${svg(ic, 15)}</span><span class="ql-t"><b>${t}</b><span>${sub}</span></span>${svg("chev", 13)}</button>`;
     }).join("");
     return `<div class="panel dash-qa"><div class="panel-head"><span class="ph-ico">${svg("zap", 15)}</span><h3>Quick actions</h3></div><div class="qa-lines">${acts}</div></div>`;
@@ -2314,6 +2315,7 @@
     $$("[data-goseo]").forEach((b) => b.addEventListener("click", () => { state.tab = "seo"; location.hash = "#/sites/" + b.dataset.goseo; }));
     $$("[data-goanalytics]").forEach((b) => b.addEventListener("click", () => { state.tab = "analytics"; location.hash = "#/sites/" + b.dataset.goanalytics; }));
     $$("[data-gohealth]").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); state.tab = "health"; location.hash = "#/sites/" + b.dataset.gohealth; }));
+    $$("[data-godomains]").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); state.tab = "domains"; location.hash = "#/sites/" + b.dataset.godomains; }));
     $$("[data-publish]").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); state.tab = "publish"; location.hash = "#/sites/" + b.dataset.publish; }));
     $$("[data-more]").forEach((b) => b.addEventListener("click", (e) => {
       e.stopPropagation();
