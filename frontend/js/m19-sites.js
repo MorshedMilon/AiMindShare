@@ -1988,21 +1988,6 @@
     </div>`;
   }
 
-  /* ── Screen: Pages (cross-site) ───────────────────────────────────────────── */
-  function viewPagesOverview() {
-    const sites = state.sites || [];
-    if (!sites.length) return previewStrip() + pageHead("Pages", "Every page across your websites.") + emptyPanel("doc", "No pages yet", "Create a website first — its pages will appear here.", "Create a website", "generate");
-    const blocks = sites.map((s) => {
-      const pages = (state.pagesBySite || {})[s.id] || [];
-      const rows = pages.length ? pages.map((p) => `<div class="ov-row"><span class="ov-favi">${p.is_home ? svg("home", 15) : svg("doc", 15)}</span>
-        <div class="ov-main"><b>${esc(p.title)}</b><span class="mono">/${esc(p.is_home ? "" : p.slug)}</span></div>
-        <span class="ov-right">${statusPill(p.status)}<button class="btn btn-primary btn-sm" data-editpage="${esc(s.id)}:${esc(p.id)}">${svg("edit", 13)} Edit</button></span></div>`).join("")
-        : `<div class="ov-row"><div class="ov-main"><span class="muted">${s.pages || 0} page${s.pages === 1 ? "" : "s"} — open the site to manage them.</span></div><span class="ov-right"><button class="btn btn-ghost btn-sm" data-open="${esc(s.id)}">Open site</button></span></div>`;
-      return `<div class="panel"><div class="panel-head"><span class="ph-ico">${svg("globe", 15)}</span><h3>${esc(s.name)}</h3><span class="pill plain" style="margin-left:8px">${s.pages || pages.length} pages</span><button class="st-link" data-open="${esc(s.id)}" style="margin-left:auto">Manage ${svg("chev", 12)}</button></div><div class="ov-list">${rows}</div></div>`;
-    }).join("");
-    return previewStrip() + pageHead("Pages", "Every page across your websites — jump straight into the editor.") + `<div class="studio">${blocks}</div>`;
-  }
-
   /* ── Screen: SEO (cross-site) ─────────────────────────────────────────────── */
   function viewSeoOverview() {
     const sites = state.sites || [];
@@ -2389,7 +2374,6 @@
     $$(".dt-row:not(.dt-head)", table).forEach((r) => r.addEventListener("click", (e) => { if (e.target.closest("button")) return; location.hash = "#/sites/" + r.dataset.site; }));
   }
   function bindDashboard() { bindNavTo(); bindSiteCardActions(); bindDashTable(); bindAttentionChips(); bindAttentionDismiss(); }
-  function bindPagesOverview() { bindNavTo(); bindSiteCardActions(); }
   function bindOverview() { bindNavTo(); bindSiteCardActions(); }
   function bindCapability() { bindNavTo(); $("[data-cap-editor]")?.addEventListener("click", openRecent); }
   function bindSettings() { bindNavTo(); $("#seConnect")?.addEventListener("click", openDrawer); $("#seSave")?.addEventListener("click", () => toast("Studio defaults saved.", "success")); }
@@ -2439,12 +2423,13 @@
     switch (r0) {
       case "sites": html = viewSites(); binder = bindSites; break;
       case "templates": html = viewTemplates(); binder = bindTemplates; break;
-      case "pages": html = viewPagesOverview(); binder = bindPagesOverview; break;
       case "components": case "sections": case "assets": case "forms": case "blog":
+      case "structure": case "content": case "preview":
+      case "clients": case "growth": case "integrations": case "help":
         html = viewCapability(r0); binder = bindCapability; break;
       case "seo": html = viewSeoOverview(); binder = bindOverview; break;
-      case "domains": html = viewDomainsOverview(); binder = bindOverview; break;
-      case "publish": html = viewPublishCenter(); binder = bindOverview; break;
+      case "publish": html = viewPublishingCenter(); binder = bindOverview; break;
+      case "pipeline": html = viewBuildPipeline(); binder = bindOverview; break;
       case "analytics": html = viewAnalyticsOverview(); binder = bindOverview; break;
       case "settings": html = viewSettings(); binder = bindSettings; break;
       default: html = viewDashboard(); binder = bindDashboard; active = "dashboard";
