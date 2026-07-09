@@ -732,7 +732,7 @@
     }
     const { site, pages, domains, sessions, publishLog, profile, health } = detailCache;
     if (!site) return previewStrip() + pageHead("Site", "") + errorBlock("Site not found.");
-    const KNOWN = ["overview", "pages", "profile", "nav", "domains", "seo", "health", "analytics", "publish", "integrations", "settings"];
+    const KNOWN = ["overview", "pages", "profile", "nav", "domains", "seo", "health", "analytics", "publish", "versions", "integrations", "settings"];
     const tab = KNOWN.includes(state.tab) ? state.tab : "overview";
     const openBtn = `<button class="btn btn-primary btn-sm" data-openeditor="${esc(site.id)}">${svg("edit", 13)} Open editor</button>`;
     const head = pageHead(esc(site.name), `${statusPill(site.status)} <span class="mono" style="margin-left:8px">${esc(site.primary_domain || site.subdomain + ".aimindshare.site")}</span>`, openBtn);
@@ -746,6 +746,7 @@
       case "health": body = tabHealth(site, health); break;
       case "analytics": body = tabAnalytics(site, sessions, publishLog); break;
       case "publish": body = tabPublish(site, publishLog, health); break;
+      case "versions": body = tabVersions(site); break;
       case "integrations": body = tabIntegrations(site); break;
       case "settings": body = tabSettings(site); break;
       default: body = tabOverview(site, pages, health);
@@ -785,18 +786,29 @@
       </section>
     </div>`;
   }
+  // Shared by tabPublish() (inline, alongside the pre-flight quality gate) and
+  // tabVersions() (its own Website submodule tab, same rows) — one source of the
+  // version list so the two views can never drift apart.
+  function versionRowsHtml() {
+    const vsrc = !connected() ? MOCK.versions : [];
+    return vsrc.length ? vsrc.map((v, i) => `<div class="ov-row"><span class="pill ${v.kind === "publish" ? "success" : "plain"}">${v.kind === "publish" ? "v" + v.version_no : "save"}</span>
+      <div class="ov-main"><b>${esc(v.label || (v.kind === "publish" ? "Published v" + v.version_no : "Save point " + v.version_no))}</b><span>${fmtDate(v.published_at)}</span></div>
+      <span class="ov-right">${i === 0 ? `<span class="pill plain">current</span>` : `<button class="btn btn-ghost btn-sm" data-compare="${v.version_no}">Compare</button>`}${i > 0 && canManage() ? `<button class="btn btn-ghost btn-sm" data-restore="${v.version_no}">Restore</button>` : ""}</span></div>`).join("")
+      : emptyInline("No versions yet.");
+  }
+  function tabVersions(site) {
+    return `<div class="studio"><section class="st-sec reveal"><div class="panel">
+      <div class="panel-head"><span class="ph-ico">${svg("clock", 15)}</span><h3>Version history</h3></div>
+      <div class="ov-list">${versionRowsHtml()}</div>
+    </div></section></div>`;
+  }
   function tabPublish(site, publishLog, health) {
     const cats = (health && health.categories) || [];
     const fails = cats.filter((c) => c.status === "fail").length;
     const check = cats.length
       ? cats.map((c) => `<div class="pf-row"><span class="pf-ico pf-${c.status}">${svg(c.status === "pass" ? "check" : c.status === "fail" ? "x" : "gauge", 12)}</span><div class="pf-main"><b>${esc(c.label)}</b><span>${esc(c.detail)}</span></div><span class="pill ${c.status === "pass" ? "success" : c.status === "fail" ? "danger" : "warning"}">${c.status}</span></div>`).join("")
       : `<div class="empty-inline">Publish once to generate the quality report.</div>`;
-    const vsrc = !connected() ? MOCK.versions : [];
-    const latest = vsrc[0];
-    const vers = vsrc.length ? vsrc.map((v, i) => `<div class="ov-row"><span class="pill ${v.kind === "publish" ? "success" : "plain"}">${v.kind === "publish" ? "v" + v.version_no : "save"}</span>
-      <div class="ov-main"><b>${esc(v.label || (v.kind === "publish" ? "Published v" + v.version_no : "Save point " + v.version_no))}</b><span>${fmtDate(v.published_at)}</span></div>
-      <span class="ov-right">${i === 0 ? `<span class="pill plain">current</span>` : `<button class="btn btn-ghost btn-sm" data-compare="${v.version_no}">Compare</button>`}${i > 0 && canManage() ? `<button class="btn btn-ghost btn-sm" data-restore="${v.version_no}">Restore</button>` : ""}</span></div>`).join("")
-      : emptyInline("No versions yet.");
+    const vers = versionRowsHtml();
     // Client review & approval (Slice D)
     const rstatus = reviewStatus(site);
     const steps = [["draft", "Draft"], ["review", "In review"], ["approved", "Approved"], ["live", "Live"]];
@@ -2330,7 +2342,7 @@
         else if (act === "analytics") { state.tab = "analytics"; location.hash = "#/sites/" + id; }
         else if (act === "share") { try { navigator.clipboard.writeText(shareUrl); toast("Copied.", "success"); } catch (er) {} }
         else if (act === "clone") toast("Cloning duplicates this site as a new draft — runs with the AI provider, flagged, not faked.", "info");
-        else if (act === "versions") { state.tab = "publish"; location.hash = "#/sites/" + id; }
+        else if (act === "versions") { state.tab = "versions"; location.hash = "#/sites/" + id; }
         else if (act === "settings") { state.tab = "settings"; location.hash = "#/sites/" + id; }
       }));
     }));
