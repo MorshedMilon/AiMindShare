@@ -205,3 +205,11 @@ None — all product/UX/billing decisions above were confirmed during brainstorm
 The rate-limit safeguard and meter-on-generation timing were proposed by the
 assistant as engineering judgment calls consistent with existing platform
 conventions; flagged here for visibility, not blocking.
+
+## Operational note
+
+Phase 1 ships with no key configured — every generation runs on the
+deterministic fallback until this one-time step is run against the Supabase
+project: `select vault.create_secret('sk-ant-…', 'plat__anthropic__api_key');`.
+No code change is needed after that; `resolveAnthropicKey` picks it up
+automatically on the next request.

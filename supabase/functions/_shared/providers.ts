@@ -30,7 +30,7 @@ export const PROVIDERS: Provider[] = [
   { key: "resend",      name: "Resend",         category: "Email",        auth: "api_key", scope: "platform",  fields: ["api_key"],                          webhookIn: true,  usedBy: ["M04", "M16"] },
   { key: "sendgrid",    name: "SendGrid",       category: "Email",        auth: "api_key", scope: "platform",  fields: ["api_key", "event_webhook_verification_key"], webhookIn: true,  usedBy: ["M04", "M16"] },
   { key: "openai",      name: "OpenAI",         category: "AI",           auth: "api_key", scope: "platform",  fields: ["api_key"],                          usedBy: ["M08", "M13", "M16", "M22", "M33"] },
-  { key: "anthropic",   name: "Anthropic",      category: "AI",           auth: "api_key", scope: "platform",  fields: ["api_key"],                          usedBy: ["M08", "M33"] },
+  { key: "anthropic",   name: "Anthropic",      category: "AI",           auth: "api_key", scope: "platform",  fields: ["api_key"],                          usedBy: ["M08", "M20", "M33"] },
   { key: "dataforseo",  name: "DataForSEO",     category: "SEO data",     auth: "basic",   scope: "platform",  fields: ["login", "password"],                usedBy: ["M21"] },
   { key: "serpapi",     name: "SerpApi",        category: "SEO data",     auth: "api_key", scope: "platform",  fields: ["api_key"],                          usedBy: ["M21"] },
   { key: "pagespeed",   name: "PageSpeed Insights", category: "SEO data", auth: "api_key", scope: "platform",  fields: ["api_key"],                          usedBy: ["M21"] },
