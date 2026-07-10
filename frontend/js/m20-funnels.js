@@ -702,10 +702,6 @@
     product_launch: "Product Launch Funnel", quiz: "Quiz Funnel", challenge: "Challenge Funnel",
     affiliate_bridge: "Affiliate Bridge Funnel", affiliate_review: "Affiliate Review Funnel", affiliate_comparison: "Affiliate Comparison Funnel",
   };
-  // Traffic source → sensible audience-awareness default, used only by Instant mode
-  // (Smart Brief always asks this explicitly).
-  const INSTANT_AWARENESS_DEFAULT = { cold_paid: "problem_aware", warm_email: "solution_aware", organic_social: "solution_aware", referral: "product_aware" };
-
   // Coarse UI categories -> engine-answer seeds + which extra guided fields to
   // show. The engine/LLM still decides the exact one of 15 funnel_type values
   // within the category picked here (D-187 refinement) — selecting a card
@@ -1103,36 +1099,55 @@
     `;
     return shell("studio", previewStrip() + head + `<div class="panel studio-panel-wide">${body}</div>`);
   }
-  function readStudioStage() {
+  function readStudioAnswers() {
     const s = ensureStudio();
-    if (s.stage === "goal") { s.answers.objective = $("#stGoal")?.value; s.answers.niche = $("#stNiche")?.value.trim(); }
-    else if (s.stage === "offer") {
-      s.answers.offer_type = $("#stOfferType")?.value; s.answers.offer_price = Number($("#stPrice")?.value) || 0;
-      s.answers.has_lead_magnet = !!$("#stLeadMagnet")?.checked; s.answers.checkout_required = !!$("#stCheckout")?.checked;
-      readOfferSource();
-    } else if (s.stage === "audience") { s.answers.traffic_source = $("#stTraffic")?.value; s.answers.audience_awareness = $("#stAwareness")?.value; }
-    else if (s.stage === "instant") {
-      s.answers.objective = $("#stiGoal")?.value; s.answers.niche = $("#stiNiche")?.value.trim();
-      s.answers.offer_type = $("#stiOfferType")?.value; s.answers.offer_price = Number($("#stiPrice")?.value) || 0;
-      s.answers.traffic_source = $("#stiTraffic")?.value;
-      readOfferSource();
-      s.answers.has_lead_magnet = false;
-      s.answers.checkout_required = s.answers.offer_source === "affiliate" ? false : Number(s.answers.offer_price) > 0;
-      s.answers.audience_awareness = INSTANT_AWARENESS_DEFAULT[s.answers.traffic_source] || "solution_aware";
-    }
+    s.prompt = $("#stPrompt")?.value ?? s.prompt;
+    if ($("#sgNiche")) s.answers.niche = $("#sgNiche").value.trim();
+    if ($("#sgPrice")) { s.answers.offer_price = Number($("#sgPrice").value) || 0; s.answers.checkout_required = s.answers.offer_source === "affiliate" ? false : s.answers.offer_price > 0; }
+    if ($("#sgWebinarTopic")) s.answers.webinar_topic = $("#sgWebinarTopic").value.trim();
+    if ($("#sgQuizGoal")) s.answers.quiz_segmentation = $("#sgQuizGoal").value.trim();
+    if ($("#sgTraffic")) s.answers.traffic_source = $("#sgTraffic").value || undefined;
+    if ($("#sgAwareness")) s.answers.audience_awareness = $("#sgAwareness").value || undefined;
+    if ($("#sgLeadMagnet")) s.answers.has_lead_magnet = !!$("#sgLeadMagnet").checked;
+    readOfferSource();
   }
   async function generateStudioBlueprint() {
     const s = ensureStudio();
-    readStudioStage();
-    s.stage = "blueprint"; s.blueprint = null; render();
-    let bp;
-    if (!connected()) { bp = localRecommendBlueprint(s.answers); }
-    else { const c = ensureClient(); const { data, error } = await c.rpc("recommend_funnel_blueprint", { p_answers: s.answers }); if (error) { toast("Blueprint generation failed: " + error.message, "danger"); return; } bp = data; }
-    s.blueprint = bp;
-    if (!s.funnelName) s.funnelName = (s.answers.niche ? s.answers.niche + " " : "") + (FUNNEL_TYPE_LABEL[bp.funnel_type] || "Funnel");
+    readStudioAnswers();
+    const seed = TYPE_CARDS.find((c) => c.key === s.selectedType)?.seed || {};
+    const promptAnswers = s.prompt ? parsePromptToAnswers(s.prompt) : {};
+    const mergedAnswers = { ...promptAnswers, ...seed, ...s.answers };
+    s.clarifyQuestions = null;
+    s.generating = true;
+    render();
+    let result;
+    try {
+      if (!connected()) {
+        result = { kind: "blueprint", blueprint: localRecommendBlueprint(mergedAnswers), generation_source: "deterministic", model: null, tokens_used: null };
+      } else {
+        const c = ensureClient();
+        const { data, error } = await c.functions.invoke("funnel-ai-generate", {
+          body: { workspace_id: state.workspaceId, prompt: s.prompt || null, guided_answers: mergedAnswers, funnel_type_hint: s.selectedType && s.selectedType !== "auto" ? s.selectedType : null },
+        });
+        if (error) throw error;
+        result = data?.data || data;
+      }
+    } catch (e) { s.generating = false; toast("Blueprint generation failed: " + e.message, "danger"); render(); return; }
+    s.generating = false;
+    if (result.kind === "clarify") { s.clarifyQuestions = result.questions; render(); return; }
+    s.answers = mergedAnswers;
+    s.blueprint = result.blueprint;
+    s.generationSource = result.generation_source;
+    s.llmModel = result.model || null;
+    s.tokensUsed = result.tokens_used || null;
+    s.stage = "blueprint";
+    if (!s.funnelName) s.funnelName = (s.answers.niche ? s.answers.niche + " " : "") + (FUNNEL_TYPE_LABEL[result.blueprint.funnel_type] || "Funnel");
     if (connected()) {
       const c = ensureClient();
-      const { data, error } = await c.rpc("save_funnel_blueprint", { p_ws: state.workspaceId, p_answers: s.answers, p_blueprint: bp, p_blueprint_id: s.blueprintId });
+      const { data, error } = await c.rpc("save_funnel_blueprint", {
+        p_ws: state.workspaceId, p_answers: s.answers, p_blueprint: s.blueprint, p_blueprint_id: s.blueprintId,
+        p_generation_source: s.generationSource, p_llm_model: s.llmModel, p_tokens_used: s.tokensUsed,
+      });
       if (!error && data) s.blueprintId = data.id;
     }
     render();
@@ -1164,29 +1179,48 @@
   }
   function wireStudio() {
     const s = ensureStudio();
-    $$("[data-studiomode]").forEach((el) => el.addEventListener("click", () => {
-      s.mode = el.dataset.studiomode;
-      s.stage = s.mode === "instant" ? "instant" : "goal";
+    loadStudioRecent();
+    $$("[data-studiochip]").forEach((el) => el.addEventListener("click", () => { $("#stPrompt").value = el.dataset.studiochip; s.prompt = el.dataset.studiochip; }));
+    $$("[data-studiotype]").forEach((el) => el.addEventListener("click", () => {
+      readStudioAnswers();
+      s.selectedType = s.selectedType === el.dataset.studiotype ? null : el.dataset.studiotype;
+      const seed = TYPE_CARDS.find((c) => c.key === s.selectedType)?.seed || {};
+      s.answers = { ...s.answers, ...seed };
       render();
     }));
-    $("#studioAffiliateShortcut")?.addEventListener("click", () => {
-      s.mode = "instant"; s.answers.offer_source = "affiliate"; s.stage = "instant"; render();
-    });
-    $$("input[name='stOfferSource']").forEach((el) => el.addEventListener("change", () => { readStudioStage(); render(); }));
-    $("#studioBack")?.addEventListener("click", () => {
-      if (s.stage === "instant") { s.mode = null; s.stage = "mode"; render(); return; }
-      const idx = STUDIO_STAGES.indexOf(s.stage);
-      if (idx === 0) { s.mode = null; s.stage = "mode"; render(); return; }
-      if (idx > 0) { readStudioStage(); s.stage = STUDIO_STAGES[idx - 1]; render(); }
-    });
-    $("#studioNext")?.addEventListener("click", () => {
-      readStudioStage();
-      const idx = STUDIO_STAGES.indexOf(s.stage);
-      s.stage = STUDIO_STAGES[idx + 1]; render();
-    });
+    $$("input[name='stOfferSource']").forEach((el) => el.addEventListener("change", () => { readStudioAnswers(); render(); }));
+    $("#studioStartScratch")?.addEventListener("click", () => { state.studio = null; newFunnelModal(); });
+    $$("[data-clarifyanswer]").forEach((el) => el.addEventListener("click", () => {
+      const qi = Number(el.dataset.clarifyanswer);
+      s.clarifyAnswers[qi] = el.dataset.clarifyvalue;
+      if (s.clarifyQuestions.every((_, i) => s.clarifyAnswers[i])) {
+        s.prompt = (s.prompt || "") + " " + s.clarifyQuestions.map((q, i) => `${q.question} ${s.clarifyAnswers[i]}`).join(" ");
+        s.clarifyQuestions = null; s.clarifyAnswers = [];
+        generateStudioBlueprint();
+      } else render();
+    }));
+    $$("[data-clarifycustom]").forEach((el) => el.addEventListener("keydown", (ev) => {
+      if (ev.key !== "Enter" || !el.value.trim()) return;
+      const qi = Number(el.dataset.clarifycustom);
+      s.clarifyAnswers[qi] = el.value.trim();
+      if (s.clarifyQuestions.every((_, i) => s.clarifyAnswers[i])) {
+        s.prompt = (s.prompt || "") + " " + s.clarifyQuestions.map((q, i) => `${q.question} ${s.clarifyAnswers[i]}`).join(" ");
+        s.clarifyQuestions = null; s.clarifyAnswers = [];
+        generateStudioBlueprint();
+      } else render();
+    }));
     $("#studioGenerate")?.addEventListener("click", generateStudioBlueprint);
     $("#studioRegenerate")?.addEventListener("click", generateStudioBlueprint);
     $("#studioApprove")?.addEventListener("click", approveAndGenerateFunnel);
+    $("#studioBack")?.addEventListener("click", () => { s.stage = "landing"; render(); });
+    $("#studioChangeType")?.addEventListener("click", () => { s.stage = "landing"; s.blueprint = null; render(); });
+    $$("[data-studioreopen]").forEach((el) => el.addEventListener("click", () => {
+      const row = s.recent.find((r) => r.id === el.dataset.studioreopen);
+      if (!row) return;
+      s.answers = row.answers || {}; s.blueprint = row.blueprint; s.blueprintId = row.id;
+      s.generationSource = row.generation_source; s.llmModel = row.llm_model; s.tokensUsed = row.tokens_used;
+      s.stage = "blueprint"; render();
+    }));
   }
   function funnelCard(f) {
     const s = funnelStats(f);
