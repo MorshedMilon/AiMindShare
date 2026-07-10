@@ -705,6 +705,47 @@
   // Traffic source → sensible audience-awareness default, used only by Instant mode
   // (Smart Brief always asks this explicitly).
   const INSTANT_AWARENESS_DEFAULT = { cold_paid: "problem_aware", warm_email: "solution_aware", organic_social: "solution_aware", referral: "product_aware" };
+
+  // Coarse UI categories -> engine-answer seeds + which extra guided fields to
+  // show. The engine/LLM still decides the exact one of 15 funnel_type values
+  // within the category picked here (D-187 refinement) — selecting a card
+  // narrows the family, it doesn't hard-pick the type.
+  const TYPE_CARDS = [
+    { key: "lead_gen", label: "Lead Generation", ico: "mail", desc: "Capture leads with a free resource, quiz, or webinar.",
+      seed: { objective: "leads", checkout_required: false, offer_price: 0 } },
+    { key: "sales", label: "Sales", ico: "cart", desc: "Sell a product, service, or offer with a real checkout.",
+      seed: { objective: "sales", checkout_required: true } },
+    { key: "affiliate", label: "Affiliate", ico: "link", desc: "Promote someone else's offer and earn a commission.",
+      seed: { offer_source: "affiliate" } },
+    { key: "webinar", label: "Webinar", ico: "users", desc: "Fill a live or evergreen training, then pitch your offer.",
+      seed: { objective: "webinar_signups" } },
+    { key: "quiz", label: "Quiz", ico: "target", desc: "Segment visitors with a quiz, then show a matched offer.",
+      seed: { objective: "quiz_leads" } },
+    { key: "auto", label: "Let AI decide", ico: "zap", desc: "Not sure? Describe your funnel and we'll infer the best fit." },
+  ];
+
+  // Very small keyword parser: fills a few structured answers from free text so
+  // the deterministic fallback (and the guided fields underneath the prompt)
+  // has something sensible even before/without an LLM call. Real inference for
+  // ambiguous prompts is the LLM's job (funnel-ai-generate); this only
+  // recognizes unambiguous, common phrasing.
+  function parsePromptToAnswers(text) {
+    const t = (text || "").toLowerCase();
+    const a = {};
+    if (/\baffiliate\b|promote (someone|another)|commission/.test(t)) a.offer_source = "affiliate";
+    if (/\bwebinar\b|\btraining\b|\bmasterclass\b/.test(t)) a.objective = "webinar_signups";
+    else if (/\bquiz\b/.test(t)) a.objective = "quiz_leads";
+    else if (/\bbook(ing|ed)? (a )?call\b|\bconsult/.test(t)) a.objective = "bookings";
+    else if (/\bapplication\b|\bapply\b/.test(t)) a.objective = "applications";
+    else if (/\bchallenge\b/.test(t)) a.objective = "challenge_signups";
+    else if (/\bwaitlist\b|\blaunch\b/.test(t)) a.objective = "launch_waitlist";
+    else if (/\blead(s)?\b|\bfree (guide|resource|ebook|checklist)\b/.test(t)) a.objective = "leads";
+    else if (/\bsell\b|\bsale\b|\bbuy\b|\bcheckout\b/.test(t)) a.objective = "sales";
+    const priceMatch = t.match(/\$\s?(\d[\d,]*)/);
+    if (priceMatch) { a.offer_price = Number(priceMatch[1].replace(/,/g, "")); a.checkout_required = true; }
+    return a;
+  }
+
   const STUDIO_STAGES = ["goal", "offer", "audience", "blueprint"];
   const STUDIO_LABEL = { goal: "Goal", offer: "Offer", audience: "Audience & traffic", blueprint: "Blueprint" };
   // Plain JS mirror of funnel_compliance_scan (SQL, migration 0037) for mockup mode —
