@@ -26,7 +26,7 @@ Executing via `superpowers:subagent-driven-development` (fresh implementer subag
 - [x] **Task 4** — `funnel-ai-generate/index.ts` created verbatim; all four `_shared/` import signatures independently verified against real files, no mismatches. Commit: `23102b8`. Both reviews ✅ (one "Important" finding — rate-limit hard-fails vs. quota-exceeded falls back — confirmed intentional, matches the approved design spec's explicit distinction, no fix needed).
 - [x] **Task 5** — Anthropic `usedBy` now `["M08","M20","M33"]` in both provider registries; Operational note appended to the design spec. Commit: `2718d2f`. Both reviews ✅.
 - [x] **Task 6** — Phase 1 checkpoint: `bash scripts/verify.sh` full-green (174 passed), TASKS.md + DECISIONS D-186 appended. Commit: `b4df9b5`. Spec review ✅. Code-quality review flagged a "Critical" probe-baseline-count error (claimed 158→174 instead of 166→174) — **independently verified this was wrong**: ran the actual pre-Task-2 probe file at commit `129a605` and confirmed it output exactly 166 passed, so 166→174 (+8) as documented is correct. No fix applied; the reviewer's finding was itself mistaken. **Phase 1 complete.**
-- [ ] Task 7 — not started (Phase 2 starts here)
+- [x] **Task 7** — `TYPE_CARDS` + `parsePromptToAnswers` added verbatim. `INSTANT_AWARENESS_DEFAULT` deliberately NOT deleted (still referenced by `readStudioStage()`'s instant branch) — **Task 11 must delete it** when it removes that branch. Commit: `e2bb2c2`. Both reviews ✅.
 - [ ] Task 8 — not started
 - [ ] Task 9 — not started
 - [ ] Task 10 — not started
@@ -943,6 +943,8 @@ Insert these where `studioModePicker` used to be (keep `offerSourceToggle`/`read
 
 **Files:**
 - Modify: `frontend/js/m20-funnels.js` (`readStudioStage`, `generateStudioBlueprint`, `approveAndGenerateFunnel` stays, `wireStudio`; currently `m20-funnels.js:1038-1122`)
+
+- [ ] **Step 0 (added during execution):** Task 7 left `INSTANT_AWARENESS_DEFAULT` in place (deferred here since it was still referenced by `readStudioStage()`'s "instant" branch at the time). Since this task deletes `readStudioStage()` entirely, also delete the now-truly-dead `INSTANT_AWARENESS_DEFAULT` constant declaration in the same commit.
 
 - [ ] **Step 1: Replace `readStudioStage()` with `readStudioAnswers()`**
 
