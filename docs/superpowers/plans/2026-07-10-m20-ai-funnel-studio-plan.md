@@ -27,7 +27,9 @@ Executing via `superpowers:subagent-driven-development` (fresh implementer subag
 - [x] **Task 5** — Anthropic `usedBy` now `["M08","M20","M33"]` in both provider registries; Operational note appended to the design spec. Commit: `2718d2f`. Both reviews ✅.
 - [x] **Task 6** — Phase 1 checkpoint: `bash scripts/verify.sh` full-green (174 passed), TASKS.md + DECISIONS D-186 appended. Commit: `b4df9b5`. Spec review ✅. Code-quality review flagged a "Critical" probe-baseline-count error (claimed 158→174 instead of 166→174) — **independently verified this was wrong**: ran the actual pre-Task-2 probe file at commit `129a605` and confirmed it output exactly 166 passed, so 166→174 (+8) as documented is correct. No fix applied; the reviewer's finding was itself mistaken. **Phase 1 complete.**
 - [x] **Task 7** — `TYPE_CARDS` + `parsePromptToAnswers` added verbatim. `INSTANT_AWARENESS_DEFAULT` deliberately NOT deleted (still referenced by `readStudioStage()`'s instant branch) — **Task 11 must delete it** when it removes that branch. Commit: `e2bb2c2`. Both reviews ✅.
-- [ ] Task 8 — not started
+- [x] **Task 8** — `ensureStudio()` rewritten to new state shape verbatim. Commit: `aaa19af`. Both reviews ✅ (reviewer raised the expected intermediate-inconsistency point, accepted as by-design for this same-session sequence).
+- [x] **Task 9** — 5 wizard-only identifiers deleted (`STUDIO_STAGES`/`STUDIO_LABEL`/`studioModePicker`/`studioStepper`/`studioNav`), 8 new landing-helper functions added verbatim. Commit: `2aec676`. Both reviews ✅ (XSS/escaping specifically checked and confirmed correct, incl. attribute-context escaping of LLM-supplied chip values).
+- [ ] Task 10 — not started
 - [ ] Task 9 — not started
 - [ ] Task 10 — not started
 - [ ] Task 11 — not started
