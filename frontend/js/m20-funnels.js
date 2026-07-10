@@ -1039,6 +1039,11 @@
     }
   }
   function studioField(label, inner) { return `<div class="form-field">${label ? `<label>${label}</label>` : ""}${inner}</div>`; }
+  // Read the envelope message out of a Supabase FunctionsHttpError (non-2xx body).
+  async function readFnError(error) {
+    try { const body = await error.context.json(); return body?.message || body?.error || error.message; }
+    catch (e) { return error?.message || "Request failed"; }
+  }
   function viewStudio() {
     const s = ensureStudio();
     const head = moduleHead("AI Funnel <em>Studio</em>", "Describe your funnel in one sentence, or use guided fields — review the blueprint, then launch a working funnel.");
@@ -1049,7 +1054,7 @@
         <div class="studio-result">
           <div class="studio-badge">${svg("zap", 13)} ${esc(FUNNEL_TYPE_LABEL[bp.funnel_type] || bp.funnel_type)}</div>
           <span class="st ${s.generationSource === "llm" ? "st-active" : "st-testing"}" style="margin-left:8px">${s.generationSource === "llm" ? "AI-generated" : "Quick-match"}</span>
-          <button class="link" id="studioChangeType" style="margin-left:10px;font-size:12px">Change type</button>
+          <button class="link" id="studioChangeType" style="margin-left:10px;font-size:12px" ${s.generating ? "disabled" : ""}>Change type</button>
           ${String(bp.funnel_type || "").indexOf("affiliate_") === 0 ? `<div class="studio-affiliate-note">${svg("info", 13)} Affiliate offer — remember to add a compliant disclosure and never imply you own this product.</div>` : ""}
           <p class="muted" style="font-size:13px;margin:10px 0 16px">${esc(bp.reasoning)}</p>
           <div class="access-list">${bp.steps.map((st, i) => `<div class="access-row">
@@ -1069,10 +1074,10 @@
         </div>
         ${studioField("Name this funnel", `<input id="stFunnelName" placeholder="e.g. ${esc(s.answers.niche || "My")} Funnel" value="${esc(s.funnelName)}">`)}
         <div class="mc-foot" style="border-top:none;padding-top:14px">
-          <button class="btn btn-ghost" id="studioBack">${svg("back", 14)} Back</button>
+          <button class="btn btn-ghost" id="studioBack" ${s.generating ? "disabled" : ""}>${svg("back", 14)} Back</button>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-ghost" id="studioRegenerate">${svg("zap", 14)} Regenerate</button>
-            <button class="btn btn-primary" id="studioApprove">${svg("check", 15)} Approve &amp; generate funnel</button>
+            <button class="btn btn-ghost" id="studioRegenerate" ${s.generating ? "disabled" : ""}>${svg("zap", 14)} ${s.generating ? "Generating…" : "Regenerate"}</button>
+            <button class="btn btn-primary" id="studioApprove" ${s.generating ? "disabled" : ""}>${svg("check", 15)} Approve &amp; generate funnel</button>
           </div>
         </div>` : `<p class="muted">Generating your blueprint…</p>`;
       return shell("studio", previewStrip() + head + `<div class="panel studio-panel-wide">${body}</div>`);
@@ -1132,7 +1137,13 @@
         if (error) throw error;
         result = data?.data || data;
       }
-    } catch (e) { s.generating = false; toast("Blueprint generation failed: " + e.message, "danger"); render(); return; }
+    } catch (e) {
+      s.generating = false;
+      const msg = e?.context ? await readFnError(e) : (e?.message || "Blueprint generation failed");
+      toast(msg, "danger");
+      render();
+      return;
+    }
     s.generating = false;
     if (result.kind === "clarify") { s.clarifyQuestions = result.questions; render(); return; }
     s.answers = mergedAnswers;
@@ -1149,6 +1160,7 @@
         p_generation_source: s.generationSource, p_llm_model: s.llmModel, p_tokens_used: s.tokensUsed,
       });
       if (!error && data) s.blueprintId = data.id;
+      else if (error) toast("Blueprint generated but not saved — regenerate again before approving.", "danger");
     }
     render();
   }
