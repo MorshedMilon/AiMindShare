@@ -1,0 +1,64 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   m29-affiliate-hub.css — Module M29 · Affiliate Hub. Layers on tokens.css +
+   app.css + components.css (which own the reset, atmosphere, shell, .btn,
+   .pill, .panel, .empty-state, .access-list, .form-field, modal, states).
+   No raw brand hex (var() only); .5px hairlines; cards ≥ --r-xl.
+   Affiliate-Hub-specific surfaces: KPI strip, offer cards, compliance-
+   category badges. Mirrors m20-funnels.css's card/grid patterns for
+   visual consistency across the two bridged modules.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Page header row (same contract as every module) ──────────────────────── */
+.fn-head{display:flex;align-items:flex-start;gap:16px;margin:6px 0 22px}
+.fn-head .ph-title{font-family:var(--font-serif);font-size:clamp(26px,3.4vw,38px);font-weight:600;
+  letter-spacing:-.02em;line-height:1.04;color:var(--ink-900);margin-top:8px}
+.fn-head .ph-title em{font-style:italic;font-weight:500;
+  background:linear-gradient(125deg,var(--teal-700),var(--teal-500) 45%,var(--gold-700));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+:root[data-theme="dark"] .fn-head .ph-title em{background:linear-gradient(125deg,var(--teal-300),var(--teal-500) 45%,var(--gold-400));
+  -webkit-background-clip:text;background-clip:text}
+.fn-head .ph-sub{margin-top:8px;font-size:14px;color:var(--ink-400);max-width:62ch}
+.fn-head .spacer{flex:1}
+
+/* ── Overview KPI strip ───────────────────────────────────────────────────── */
+.ah-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+.ah-kpi{padding:16px 18px}
+.ah-kpi .kv{font-family:var(--font-mono);font-size:24px;font-weight:500;color:var(--ink-900);letter-spacing:-.01em}
+.ah-kpi .kl{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-400);margin-top:4px}
+
+/* ── Offer / disclosure cards (mirrors m20's .fn-card) ────────────────────── */
+.fn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
+.fn-card{position:relative;padding:22px 22px 18px;overflow:hidden;
+  transition:transform .35s var(--ease-reverent),box-shadow .35s var(--ease-reverent),border-color .35s var(--ease-reverent)}
+.fn-card::after{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:var(--grad-spine);opacity:.85}
+.fn-card:hover{transform:translateY(-5px);border-color:rgba(26,154,161,.38);
+  box-shadow:0 20px 52px rgba(0,105,110,.16),0 4px 14px rgba(0,105,110,.09)}
+.fn-card .fc-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:4px}
+.fn-card .fc-ico{width:40px;height:40px;flex:none;border-radius:var(--r-md);background:rgba(0,105,110,.10);
+  color:var(--teal-700);display:grid;place-items:center;font-size:19px}
+.fn-card .fc-name{font-family:var(--font-serif);font-size:18px;font-weight:600;color:var(--ink-900);line-height:1.2}
+.fn-card .fc-meta{font-size:12px;color:var(--ink-400);margin-top:3px}
+.fn-card .fc-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px;
+  padding-top:14px;border-top:.5px solid var(--line)}
+.fn-card .fc-stat .fs-val{font-family:var(--font-mono);font-size:17px;font-weight:500;color:var(--ink-900);letter-spacing:-.01em}
+.fn-card .fc-stat .fs-label{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-400);margin-top:3px}
+.fn-card .fc-rev{color:var(--gold-500)}
+.fc-menu-btn{width:28px;height:28px;font-size:16px;line-height:1;color:var(--ink-400)}
+.fc-menu{position:absolute;top:100%;right:0;z-index:5;min-width:200px;padding:6px;margin-top:4px;
+  background:var(--card-solid);border:.5px solid var(--line-strong);border-radius:var(--r-md);box-shadow:var(--shadow-lg)}
+.fc-menu button{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border:none;background:transparent;
+  color:var(--ink-700);font:inherit;font-size:12.5px;text-align:left;border-radius:var(--r-sm);cursor:pointer}
+.fc-menu button:hover{background:rgba(0,105,110,.08);color:var(--ink-900)}
+
+/* ── Compliance-category badges ───────────────────────────────────────────── */
+.cat-badge{display:inline-flex;align-items:center;font-size:10.5px;font-weight:600;letter-spacing:.03em;
+  padding:3px 9px;border-radius:999px;white-space:nowrap}
+.cat-general{color:var(--ink-400);background:rgba(109,121,122,.12)}
+.cat-health{color:var(--status-danger);background:rgba(196,97,78,.12)}
+.cat-finance{color:var(--gold-500);background:rgba(197,160,89,.14)}
+.cat-income{color:var(--gold-500);background:rgba(197,160,89,.14)}
+.cat-sensitive{color:var(--status-danger);background:rgba(196,97,78,.12)}
+
+/* ── Status pills reused from Networks (manual/connected) ─────────────────── */
+.st-active{color:var(--status-success);background:rgba(46,158,123,.14)}
+.st-draft{color:var(--status-idle);background:rgba(109,121,122,.14)}
