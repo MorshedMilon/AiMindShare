@@ -105,7 +105,8 @@ async function main() {
                    "0022_m19_sites.sql", "0023_m20_funnels.sql", "0028_m19_sites_v2.sql",
                    "0029_m20_funnels_v2.sql", "0030_m20_funnels_v2b.sql", "0031_m20_funnels_v2c.sql",
                    "0032_m20_funnels_v2d.sql", "0033_m20_funnels_v2e.sql", "0034_m20_funnels_v3a.sql",
-                   "0035_m20_funnels_v3b.sql", "0036_m20_funnels_v3c.sql", "0037_m29_affiliate_hub.sql"]) {
+                   "0035_m20_funnels_v3b.sql", "0036_m20_funnels_v3c.sql", "0037_m29_affiliate_hub.sql",
+                   "0038_m20_funnels_v3d.sql"]) {
     await pg.exec(load(m));
   }
   await pg.exec(`
@@ -847,6 +848,53 @@ async function main() {
   await pg.query(`select public.sweep_abandoned_funnels()`);
   const jobRunsAfter = await count(pg, `select count(*)::int n from public.funnel_job_runs where job_name = 'sweep_abandoned_funnels'`, []);
   assert(jobRunsAfter === jobRunsBefore + 1, "sweep_abandoned_funnels logs a funnel_job_runs row every time it runs");
+
+  // ── 23. AI Funnel Studio v1 — generation-source tracking + rate limit (D-186) ──
+  console.log("\nM20 v3d · funnel_ai_generation_log + funnel_ai_rate_limited:");
+  await reset(); await as(STAFF_A);
+  const genBp = await rec({ objective: "webinar_signups" });
+  const genSaved = (await pg.query(
+    `select b.* from public.save_funnel_blueprint($1,$2,$3,$4,$5,$6,$7) as b`,
+    [WSA, JSON.stringify({ objective: "webinar_signups" }), JSON.stringify(genBp), null, "llm", "claude-3-5-haiku", 842]
+  )).rows[0];
+  assert(genSaved.generation_source === "llm" && genSaved.llm_model === "claude-3-5-haiku" && genSaved.tokens_used === 842,
+    `save_funnel_blueprint persists generation_source/llm_model/tokens_used (got ${JSON.stringify({ s: genSaved.generation_source, m: genSaved.llm_model, t: genSaved.tokens_used })})`);
+
+  const legacySaved = (await pg.query(`select b.* from public.save_funnel_blueprint($1,$2,$3) as b`,
+    [WSA, JSON.stringify({}), JSON.stringify(genBp)])).rows[0];
+  assert(legacySaved.generation_source === null, "the old 3-arg call shape still works and leaves generation_source null (backward compatible)");
+
+  await reset();
+  await pg.exec(`insert into public.funnel_ai_generation_log (workspace_id, generation_source, model, tokens_used, prompt_length)
+    select '${WSA}', 'llm', 'claude-3-5-haiku', 500, 60 from generate_series(1,19);`);
+  await as(STAFF_A);
+  let limited = (await pg.query(`select public.funnel_ai_rate_limited($1) as r`, [WSA])).rows[0].r;
+  assert(limited === false, "19 llm calls in the last hour is under the 20/hour limit");
+  await reset();
+  await pg.exec(`insert into public.funnel_ai_generation_log (workspace_id, generation_source, model, tokens_used, prompt_length)
+    values ('${WSA}', 'llm_clarify', 'claude-3-5-haiku', 120, 40);`);
+  await as(STAFF_A);
+  limited = (await pg.query(`select public.funnel_ai_rate_limited($1) as r`, [WSA])).rows[0].r;
+  assert(limited === true, "the 20th llm/llm_clarify call in the hour trips the rate limit");
+
+  await reset();
+  await pg.exec(`insert into public.funnel_ai_generation_log (workspace_id, generation_source, prompt_length)
+    select '${WSB}', 'deterministic', 30 from generate_series(1,25);`);
+  await as(STAFF_B);
+  const wsbLimited = (await pg.query(`select public.funnel_ai_rate_limited($1) as r`, [WSB])).rows[0].r;
+  assert(wsbLimited === false, "deterministic-fallback calls never count toward the LLM rate limit, however many there are");
+
+  await reset(); await as(STAFF_B);
+  const logVisibleToB = await count(pg, `select count(*)::int n from public.funnel_ai_generation_log where workspace_id = $1`, [WSA]);
+  assert(logVisibleToB === 0, "RLS: a non-member (B) cannot SELECT A's generation log rows");
+
+  await reset(); await as(CLIENT_A);
+  const logVisibleToClient = await count(pg, `select count(*)::int n from public.funnel_ai_generation_log where workspace_id = $1`, [WSA]);
+  assert(logVisibleToClient >= 1, "a CLIENT (member, below staff) can still read the workspace's generation log");
+
+  await reset(); await as(STAFF_A);
+  assert(await denied(pg, `insert into public.funnel_ai_generation_log (workspace_id, generation_source) values ($1,'llm')`, [WSA]),
+    "even staff (authenticated, non-service-role) cannot INSERT a generation log row directly — Edge Function's admin client only");
 
   console.log(`\n${fail === 0 ? "\x1b[32m" : "\x1b[31m"}M20 probe: ${pass} passed, ${fail} failed\x1b[0m`);
   await pg.close();
