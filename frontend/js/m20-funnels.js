@@ -932,15 +932,26 @@
       "Make a webinar funnel for a Quran learning workshop",
       "Create a quiz funnel for travel deal personalization",
     ];
-    return `<div class="studio-chips">${examples.map((e) => `<button class="studio-chip" data-studiochip="${esc(e)}">${esc(e)}</button>`).join("")}</div>`;
+    return `<div class="st-suggest">${examples.map((e) => `<button class="st-chip" data-studiochip="${esc(e)}">${esc(e)}</button>`).join("")}</div>`;
   }
+  // Quick-start cards below the hero — same component as M19's sitesQuickCreate()
+  // (.st-quick/.qa-card), same 6-card slot: 5 funnel-type cards + a conditional
+  // "Continue recent funnel" card (omitted entirely when there's no recent
+  // blueprint yet, mirroring M19's own "Continue Recent" pattern). Clicking a
+  // type card still just toggles s.selectedType via the unchanged [data-studiotype]
+  // wiring in wireStudio(); the recent card reuses the existing [data-studioreopen]
+  // handler — no new event wiring needed for either.
   function studioTypeCards(s) {
-    return `<div class="studio-type-grid">${TYPE_CARDS.map((c) => `
-      <button class="studio-type-card ${s.selectedType === c.key ? "on" : ""}" data-studiotype="${c.key}">
-        <div class="stc-ico">${svg(c.ico, 17)}</div>
-        <div class="stc-title">${esc(c.label)}</div>
-        <div class="stc-desc">${esc(c.desc)}</div>
-      </button>`).join("")}</div>`;
+    const recent = s.recent && s.recent.length ? s.recent[0] : null;
+    const typeCards = TYPE_CARDS.filter((c) => c.key !== "auto").map((c) => `
+      <button class="qa-card ${s.selectedType === c.key ? "on" : ""}" data-studiotype="${c.key}">
+        <span class="qa-ico">${svg(c.ico, 18)}</span><b>${esc(c.label)} funnel</b><span>${esc(c.desc)}</span>
+      </button>`).join("");
+    const recentCard = recent ? `
+      <button class="qa-card" data-studioreopen="${recent.id}">
+        <span class="qa-ico">${svg("zap", 18)}</span><b>Continue recent funnel</b><span>Pick up "${esc(FUNNEL_TYPE_LABEL[recent.blueprint?.funnel_type] || "your last draft")}" where you left off.</span>
+      </button>` : "";
+    return `<div class="st-quick reveal">${typeCards}${recentCard}</div>`;
   }
   function studioGuidedFields(s) {
     const cat = s.selectedType && s.selectedType !== "auto" ? s.selectedType : null;
@@ -1046,9 +1057,9 @@
   }
   function viewStudio() {
     const s = ensureStudio();
-    const head = moduleHead("AI Funnel <em>Studio</em>", "Describe your funnel in one sentence, or use guided fields — review the blueprint, then launch a working funnel.");
     let body;
     if (s.stage === "blueprint") {
+      const head = moduleHead("AI Funnel <em>Studio</em>", "Describe your funnel in one sentence, or use guided fields — review the blueprint, then launch a working funnel.");
       const bp = s.blueprint;
       body = bp ? `
         <div class="studio-result">
@@ -1082,27 +1093,38 @@
         </div>` : `<p class="muted">Generating your blueprint…</p>`;
       return shell("studio", previewStrip() + head + `<div class="panel studio-panel-wide">${body}</div>`);
     }
-    // stage === "landing"
+    // stage === "landing" — hero mirrors M19's AI Website Studio hero (st-hero/
+    // st-composer/st-quick/qa-card, D-187 refinement): the hero is the page
+    // header itself, no separate moduleHead above it.
     body = `
-      <div class="studio-hero">
-        <h2 class="studio-hero-title">Describe the funnel you want</h2>
-        <p class="studio-hero-sub">One sentence is enough — AI Funnel Studio infers the type, structure, and copy direction. Prefer to choose everything yourself? Pick a type below.</p>
-        <textarea class="studio-prompt" id="stPrompt" rows="3" placeholder="e.g. Create a lead generation funnel for a roofing company in Toronto">${esc(s.prompt || "")}</textarea>
-        ${studioExampleChips()}
-        ${studioClarifyBlock(s)}
-        <div class="studio-hero-actions">
-          <button class="btn btn-primary" id="studioGenerate" ${s.generating ? "disabled" : ""}>${svg("zap", 15)} ${s.generating ? "Generating…" : "Generate Funnel"}</button>
-          <button class="btn btn-ghost" id="studioStartScratch">Start from scratch</button>
+      <div class="st-hero reveal">
+        <div class="st-hero-in">
+          <span class="st-eyebrow">${svg("zap", 12)} AI-powered funnel builder</span>
+          <h1>Build funnels <em>with AI</em></h1>
+          <p class="st-lead">One sentence is enough — AI Funnel Studio infers the type, structure, and copy direction.</p>
+          <div class="st-composer" data-composer id="stComposer">
+            <textarea id="stPrompt" placeholder="e.g. Create a lead generation funnel for a roofing company in Toronto">${esc(s.prompt || "")}</textarea>
+            <div class="st-comp-bar">
+              <span class="cb-hint">A detailed sentence gives the best result</span>
+              <span class="spacer"></span>
+              <button class="cb-send" id="studioGenerate" ${s.generating ? "disabled" : ""}>${svg("zap", 16)} ${s.generating ? "Generating…" : "Generate Funnel"}</button>
+            </div>
+          </div>
+          ${studioClarifyBlock(s)}
+          ${studioExampleChips()}
+          <button class="st-link" id="studioStartScratch" style="margin-top:14px">${svg("file", 13)} Prefer to start from scratch?</button>
         </div>
       </div>
-      <div class="panel-head" style="margin-top:24px"><h3>Or choose a funnel type</h3></div>
       ${studioTypeCards(s)}
-      ${studioGuidedFields(s)}
-      ${studioAdvancedFields(s)}
-      ${studioHowItWorks()}
-      ${studioRecentSection(s)}
+      <div class="panel studio-panel-wide">
+        <div class="panel-head"><h3>Guided setup</h3></div>
+        ${studioGuidedFields(s)}
+        ${studioAdvancedFields(s)}
+        ${studioHowItWorks()}
+        ${studioRecentSection(s)}
+      </div>
     `;
-    return shell("studio", previewStrip() + head + `<div class="panel studio-panel-wide">${body}</div>`);
+    return shell("studio", previewStrip() + body);
   }
   function readStudioAnswers() {
     const s = ensureStudio();
