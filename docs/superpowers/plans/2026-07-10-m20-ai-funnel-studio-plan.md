@@ -21,7 +21,7 @@
 Executing via `superpowers:subagent-driven-development` (fresh implementer subagent per task, then spec-compliance review, then code-quality review, committing directly to `main` — explicit user consent given for this session).
 
 - [x] **Task 1** — migration 0038 created, code-review comment fix applied. Commits: `3e5c4c1`, `dd3237a`.
-- [x] **Task 2** — m20probe.mjs extended (migration list + §23, 11 new assertions), verified green (174 passed, 0 failed) and `bash scripts/verify.sh` full-green. Commit: `d7a9367`. **Implemented and verified directly by the controller (not a subagent) to leave a clean state before a session pause — still needs its formal spec-compliance + code-quality subagent review before being fully "done" per this skill's process; do that first when resuming, it should be trivial since the content matches the plan verbatim and tests already pass.**
+- [x] **Task 2** — m20probe.mjs extended (migration list + §23, 8 new assertions — corrected from an earlier miscount of "11"), verified green (174 passed, 0 failed) and `bash scripts/verify.sh` full-green. Commit: `d7a9367`. Spec-compliance review: ✅ exact match, independently re-run and confirmed. Code-quality review: ✅ approved, no issues. Both two-stage reviews now complete — task fully done.
 - [ ] Task 3 — not started
 - [ ] Task 4 — not started
 - [ ] Task 5 — not started
