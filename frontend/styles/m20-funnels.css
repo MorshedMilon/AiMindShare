@@ -204,29 +204,53 @@
 .readiness-list.warnings{color:var(--gold-500)}
 
 /* ── AI Funnel Studio wizard ───────────────────────────────────────────────── */
-.studio-panel{max-width:640px}
-.studio-steps{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;padding-bottom:16px;border-bottom:.5px solid var(--line)}
-.studio-step{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-400);padding:4px 10px;border-radius:999px;background:rgba(109,121,122,.08)}
-.studio-step.on{color:var(--ink-900);background:rgba(197,160,89,.16);font-weight:600}
-.studio-step.done{color:var(--status-success)}
-.studio-step-n{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;font-size:10px}
+.studio-panel-wide{max-width:920px}
+.studio-hero{padding:24px 4px 8px}
+.studio-hero-title{font-size:20px;font-weight:650;color:var(--ink-900);margin:0 0 8px}
+.studio-hero-sub{font-size:13px;color:var(--ink-400);line-height:1.5;margin:0 0 16px;max-width:640px}
+.studio-prompt{width:100%;min-height:76px;padding:14px 16px;border-radius:12px;border:1px solid var(--line);
+  background:var(--surface-1);color:var(--ink-900);font-size:14px;font-family:inherit;resize:vertical}
+.studio-prompt:focus{outline:none;border-color:var(--gold-500)}
+.studio-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.studio-chip{font-size:11.5px;color:var(--ink-500);background:rgba(109,121,122,.08);border:none;border-radius:999px;
+  padding:6px 12px;cursor:pointer;text-align:left}
+.studio-chip:hover{background:rgba(197,160,89,.16);color:var(--ink-900)}
+.studio-hero-actions{display:flex;gap:10px;margin-top:16px}
+.studio-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0 20px}
+.studio-type-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:14px;
+  border-radius:12px;border:1px solid var(--line);background:var(--surface-1);cursor:pointer}
+.studio-type-card:hover{border-color:var(--gold-500)}
+.studio-type-card.on{border-color:var(--gold-500);background:rgba(197,160,89,.08)}
+.stc-ico{color:var(--gold-500)}
+.stc-title{font-size:13px;font-weight:600;color:var(--ink-900)}
+.stc-desc{font-size:11.5px;color:var(--ink-400);line-height:1.4}
+.studio-guided{margin-bottom:8px}
+.studio-offersource{display:flex;gap:16px;font-size:13px;color:var(--ink-700);margin-bottom:4px}
+.studio-offersource label{display:flex;align-items:center;gap:6px}
+.studio-advanced{margin:8px 0 20px;border-top:.5px solid var(--line);padding-top:12px}
+.studio-advanced summary{font-size:12.5px;color:var(--ink-500);cursor:pointer;font-weight:600}
+.studio-advanced-body{margin-top:12px}
+.studio-clarify{margin:14px 0;padding:14px;border-radius:12px;background:rgba(197,160,89,.06);border:1px solid rgba(197,160,89,.24)}
+.studio-clarify-q{margin-bottom:10px}
+.studio-clarify-q:last-child{margin-bottom:0}
+.scq-text{font-size:12.5px;color:var(--ink-900);margin-bottom:6px;font-weight:600}
+.scq-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.scq-custom{font-size:11.5px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface-1);
+  color:var(--ink-900);min-width:120px}
+.studio-how{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0;padding:18px 0;border-top:.5px solid var(--line)}
+.shw-n{width:22px;height:22px;border-radius:999px;background:rgba(197,160,89,.16);color:var(--gold-500);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-bottom:8px}
+.shw-title{font-size:12.5px;font-weight:600;color:var(--ink-900);margin-bottom:2px}
+.shw-sub{font-size:11.5px;color:var(--ink-400);line-height:1.4}
+.studio-recent{margin-top:8px}
+.studio-templates-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;margin-top:10px}
 .studio-result{padding-top:2px}
 .studio-badge{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--gold-500);
   background:rgba(197,160,89,.12);padding:6px 12px;border-radius:999px}
-.studio-modes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.studio-mode-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:16px;
-  border:.5px solid var(--line);border-radius:12px;background:var(--bg-elev);cursor:pointer}
-.studio-mode-card:hover{border-color:var(--gold-500)}
-.smc-ico{color:var(--gold-500)}
-.smc-title{font-size:13.5px;font-weight:600;color:var(--ink-900)}
-.smc-sub{font-size:12px;color:var(--ink-400);line-height:1.4}
-.studio-affiliate-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;margin-top:14px}
-.studio-instant-head{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:16px;border-bottom:.5px solid var(--line)}
-.studio-offersource{display:flex;gap:16px;font-size:13px;color:var(--ink-700);margin-bottom:4px}
-.studio-offersource label{display:flex;align-items:center;gap:6px}
 .studio-affiliate-note{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gold-500);
   background:rgba(197,160,89,.1);padding:8px 12px;border-radius:8px;margin-top:10px}
-@media (max-width:520px){.studio-modes{grid-template-columns:1fr}}
+@media (max-width:760px){.studio-type-grid{grid-template-columns:1fr 1fr}.studio-how{grid-template-columns:1fr}}
+@media (max-width:520px){.studio-type-grid{grid-template-columns:1fr}.studio-hero-actions{flex-direction:column}}
 
 /* ── Compliance-category badges (Offers/Compliance tabs, D-182) ──────────── */
 .cat-badge{display:inline-flex;align-items:center;font-size:10.5px;font-weight:600;letter-spacing:.03em;
