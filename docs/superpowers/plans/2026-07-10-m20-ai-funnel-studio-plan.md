@@ -29,9 +29,7 @@ Executing via `superpowers:subagent-driven-development` (fresh implementer subag
 - [x] **Task 7** — `TYPE_CARDS` + `parsePromptToAnswers` added verbatim. `INSTANT_AWARENESS_DEFAULT` deliberately NOT deleted (still referenced by `readStudioStage()`'s instant branch) — **Task 11 must delete it** when it removes that branch. Commit: `e2bb2c2`. Both reviews ✅.
 - [x] **Task 8** — `ensureStudio()` rewritten to new state shape verbatim. Commit: `aaa19af`. Both reviews ✅ (reviewer raised the expected intermediate-inconsistency point, accepted as by-design for this same-session sequence).
 - [x] **Task 9** — 5 wizard-only identifiers deleted (`STUDIO_STAGES`/`STUDIO_LABEL`/`studioModePicker`/`studioStepper`/`studioNav`), 8 new landing-helper functions added verbatim. Commit: `2aec676`. Both reviews ✅ (XSS/escaping specifically checked and confirmed correct, incl. attribute-context escaping of LLM-supplied chip values).
-- [ ] Task 10 — not started
-- [ ] Task 9 — not started
-- [ ] Task 10 — not started
+- [x] **Task 10** — `viewStudio()` fully rewritten to the two-state (landing/blueprint) hero layout, verbatim. Commit: `a412263`. Both reviews ✅ (all 8 critical element IDs for Task 11's wiring double-checked and correct; one minor no-fallback nitpick on `TYPE_LABEL[st.step_type]`, not blocking).
 - [ ] Task 11 — not started
 - [ ] Task 12 — not started
 - [ ] Task 13 — not started
