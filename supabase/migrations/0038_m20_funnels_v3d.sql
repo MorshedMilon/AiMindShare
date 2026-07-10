@@ -35,9 +35,11 @@ create table if not exists public.funnel_ai_generation_log (
 create index if not exists funnel_ai_generation_log_ws_idx on public.funnel_ai_generation_log (workspace_id, created_at desc);
 
 alter table public.funnel_ai_generation_log enable row level security;
--- Same shape as funnel_visits (D-094): members can read, only the service role
--- (the Edge Function's admin client, which bypasses RLS) can write — no insert
--- policy exists for `authenticated` at all, so even staff cannot write directly.
+-- Write side matches funnel_visits (D-094): no insert policy exists for
+-- `authenticated` at all, so only the service role (the Edge Function's admin
+-- client, which bypasses RLS) can write — even staff cannot insert directly.
+-- Read side is broader than funnel_visits: any member can read this usage
+-- log (is_member), not just staff+, since it's informational, not sensitive.
 create policy funnel_ai_generation_log_sel on public.funnel_ai_generation_log for select using ( public.is_member(workspace_id) );
 
 -- ── 3. funnel_ai_rate_limited — 20 real LLM calls / workspace / rolling hour ─
