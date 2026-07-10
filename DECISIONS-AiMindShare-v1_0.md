@@ -1459,6 +1459,13 @@ missing key, quota exhaustion, or timeout falls back automatically to the existi
 `recommend_funnel_blueprint` RPC, never a hard error. `ai_tokens` is metered on the LLM call itself (platform
 convention), not on blueprint approval.
 
+## D-187 · M20 AI Funnel Studio Phase 2 — prompt-first hero redesign · **LOCKED 2026-07-10**
+Frontend-only, no migration. M20 AI Funnel Studio's landing screen is prompt-first: a free-text prompt box is
+the primary path, with 6 funnel-type cards (5 categories + "Let AI decide") as an optional, equally-visible
+alternative that seeds guided-field defaults rather than hard-selecting one of the 15 internal `funnel_type`
+values — the deterministic engine / LLM still makes that final call. The old Instant/Smart-Brief wizard entry
+screen is retired; its field logic is reused inline.
+
 ---
 
 *AiMindShare.com · Decisions Log v1.0 · D-001…D-085 recorded (D-008 superseded by D-014; M09 added
@@ -1479,6 +1486,7 @@ per-funnel-workspace IA split, requested separately after the v2 brief closed)) 
 Funnel Studio + Operations Workspace depth + AI Optimization advisories, migrations 0034/0035) then D-181
 (M20 v3 Phase F: Instant mode + product/affiliate offer-source branch, migration `0036_m20_funnels_v3c.sql`) then
 D-182…D-185 (M29 Affiliate Hub Phase 1a + the Funnels↔Affiliate-Hub bridge, migration `0037_m29_affiliate_hub.sql`)
-then D-186 (M20 AI Funnel Studio Phase 1: real Anthropic provider layer, migration `0038_m20_funnels_v3d.sql`),
+then D-186 (M20 AI Funnel Studio Phase 1: real Anthropic provider layer, migration `0038_m20_funnels_v3d.sql`)
+then D-187 (M20 AI Funnel Studio Phase 2: prompt-first hero redesign, frontend-only, no migration),
 5 OPEN. Append-only.
 LOCKED entries bind Claude Code; OPEN entries are human calls to be flagged, not resolved, in build sessions.*

@@ -1815,6 +1815,39 @@ the design spec's Operational note). Probe: 166 → 174 assertions.
 Deferred (per the approved spec): BYOK UI, credit purchases, non-Anthropic
 providers, other modules consuming `_shared/llm.ts`.
 
+## M20 AI Funnel Studio — Phase 2: prompt-first hero redesign *(2026-07-10, D-187, frontend-only)*
+
+Rebuilt the Studio landing (`viewStudio()`) into the hero/prompt/type-cards/
+guided-fields/advanced/how-it-works/recent layout the master prompt asked for,
+retiring the old Instant/Smart-Brief mode-picker wizard. Free-text prompt +
+optional funnel-type cards (5 categories + "Let AI decide") both feed the same
+`funnel-ai-generate` call from Phase 1; selecting a card seeds sensible answer
+defaults and reveals category-specific fields without hard-forcing one of the
+15 internal funnel types. Inline clarification chips render beneath the prompt
+box when the LLM asks up to 3 follow-ups; answering all of them auto-resubmits
+on the same screen. Blueprint review gained a generation-source badge
+(AI-generated vs. quick-match) and a "Change type" control. M29's affiliate
+bridge required zero code changes — its existing prefill payload already
+supplies everything the new hero needs. Preview-verified: 0 console errors,
+mockup-mode generation works end to end (prompt-first and type-card-first both
+tested), M29 deep-link confirmed (affiliate card pre-selected, all fields
+populated). 0 h-scroll at 1280px; 375px has a pre-existing ~57px h-scroll
+traced to the app-shell's `.bg-canvas`/`.orb-*` decorative background
+elements — confirmed present identically on the unrelated `#/funnels/overview`
+route, so it predates this work and is not a regression; not fixed here.
+
+Two real bugs found and fixed during code review before this shipped: the
+Studio CSS's own spec text referenced `var(--surface-1))`, a token that
+doesn't exist anywhere in `tokens.css`, leaving the prompt box/type-cards with
+a transparent background (fixed to `var(--bg-card)` + token-aligned
+radii/borders/focus state); and the Regenerate button had no busy-state,
+allowing a double-click to fire two concurrent LLM calls against the
+rate-limited endpoint (fixed by disabling all four blueprint-stage buttons
+during generation). Also fixed in the same pass: a generic error message that
+discarded the Edge Function's purpose-built messages (including the 429
+rate-limit text), and a silent `save_funnel_blueprint` failure on regenerate
+that could leave a stale blueprint ID. See DECISIONS D-187.
+
 ## M29 — Affiliate Hub, Phase 1a foundation + Funnels bridge *(2026-07-10, migration 0037, D-182…D-185)*
 
 A third master prompt asked for the same "AI Funnel Studio" vision plus a clean architectural split: **Funnels**
