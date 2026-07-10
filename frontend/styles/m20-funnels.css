@@ -203,7 +203,7 @@
 .readiness-list.blockers{color:var(--status-danger)}
 .readiness-list.warnings{color:var(--gold-500)}
 
-/* ── AI Funnel Studio wizard ───────────────────────────────────────────────── */
+/* ── AI Funnel Studio ──────────────────────────────────────────────────────── */
 .studio-panel-wide{max-width:920px}
 .studio-hero{padding:24px 4px 8px;text-align:center}
 .studio-hero-title{font-size:20px;font-weight:600;color:var(--ink-900);margin:0 0 8px}
