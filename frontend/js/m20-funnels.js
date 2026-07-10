@@ -912,13 +912,20 @@
   }
   function ensureStudio() {
     if (!state.studio) {
-      state.studio = { stage: "mode", mode: null, answers: {}, blueprint: null, blueprintId: null, funnelName: "" };
+      state.studio = {
+        stage: "landing", prompt: "", selectedType: null, answers: {},
+        clarifyQuestions: null, clarifyAnswers: [], generating: false,
+        blueprint: null, blueprintId: null,
+        generationSource: null, llmModel: null, tokensUsed: null,
+        funnelName: "", recent: [], recentLoaded: false,
+      };
       const prefill = consumeOfferPrefill();
       if (prefill) {
         state.studio.answers = { niche: prefill.niche || "", offer_source: "affiliate", affiliate_vendor: prefill.affiliate_vendor || "",
           affiliate_url: prefill.affiliate_url || "", commission_note: prefill.commission_note || "", disclosure_required: true,
           offer_id: prefill.offer_id, offer_name: prefill.offer_name };
-        state.studio.mode = "instant"; state.studio.stage = "instant";
+        state.studio.selectedType = "affiliate";
+        state.studio.prompt = `Build an affiliate funnel promoting ${prefill.offer_name}${prefill.affiliate_vendor ? " via " + prefill.affiliate_vendor : ""}.`;
         toast(`Pre-filled from "${prefill.offer_name}" — review and generate.`, "info");
       }
     }
