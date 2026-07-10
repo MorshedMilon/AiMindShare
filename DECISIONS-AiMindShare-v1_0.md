@@ -1451,6 +1451,14 @@ green. Deferred, not forgotten: Tracking Links/redirect/click-logging, Networks 
 reverse bridge (**Phase 1b**); Campaigns, Creatives, Library, angle generation, quiz branching (M15), email
 sequence generation (M16), the fuller 13-tab collapse, Amazon PA-API / live network integrations (**Phase 2**).
 
+## D-186 · M20 AI Funnel Studio Phase 1 — real Anthropic provider layer · **LOCKED 2026-07-10**
+Migration `0038_m20_funnels_v3d.sql`. M20 AI Funnel Studio's `funnel-ai-generate` Edge Function calls a real
+Anthropic provider (via a new `_shared/llm.ts` adapter) gated by the existing M03 `ai_tokens` meter and a new
+M20-owned `funnel_ai_generation_log`/`funnel_ai_rate_limited` (20/workspace/hour, LLM calls only) — any failure,
+missing key, quota exhaustion, or timeout falls back automatically to the existing deterministic
+`recommend_funnel_blueprint` RPC, never a hard error. `ai_tokens` is metered on the LLM call itself (platform
+convention), not on blueprint approval.
+
 ---
 
 *AiMindShare.com · Decisions Log v1.0 · D-001…D-085 recorded (D-008 superseded by D-014; M09 added
@@ -1470,6 +1478,7 @@ Priority 9 Step 2 — closes the M20 v2 upgrade brief) then D-170 (frontend-only
 per-funnel-workspace IA split, requested separately after the v2 brief closed)) then D-171…D-180 (M20 v3: AI
 Funnel Studio + Operations Workspace depth + AI Optimization advisories, migrations 0034/0035) then D-181
 (M20 v3 Phase F: Instant mode + product/affiliate offer-source branch, migration `0036_m20_funnels_v3c.sql`) then
-D-182…D-185 (M29 Affiliate Hub Phase 1a + the Funnels↔Affiliate-Hub bridge, migration `0037_m29_affiliate_hub.sql`),
+D-182…D-185 (M29 Affiliate Hub Phase 1a + the Funnels↔Affiliate-Hub bridge, migration `0037_m29_affiliate_hub.sql`)
+then D-186 (M20 AI Funnel Studio Phase 1: real Anthropic provider layer, migration `0038_m20_funnels_v3d.sql`),
 5 OPEN. Append-only.
 LOCKED entries bind Claude Code; OPEN entries are human calls to be flagged, not resolved, in build sessions.*

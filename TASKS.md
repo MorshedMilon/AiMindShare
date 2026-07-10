@@ -1799,6 +1799,22 @@ this module's own rule forbids); a real product/course/offer catalog (its own mo
 upsell/downsell charging and full RBAC enforcement (unchanged, already correctly deferred above). DECISIONS added:
 **D-181**.
 
+## M20 AI Funnel Studio — Phase 1: real LLM provider layer *(2026-07-10, migration 0038, D-186)*
+
+Wired a real Anthropic provider behind the existing ai_tokens meter/Vault-secret
+infrastructure: new `funnel-ai-generate` Edge Function (auth+role gate → rate
+limit → ai_tokens quota gate → LLM call → deterministic
+`recommend_funnel_blueprint` fallback on any failure/unavailability), new
+`_shared/llm.ts` provider adapter, new `funnel_ai_generation_log` table +
+`funnel_ai_rate_limited()` (20 calls/workspace/hour, LLM calls only), widened
+`save_funnel_blueprint` to persist `generation_source`/`llm_model`/
+`tokens_used`. Ships with no Anthropic key configured — every call runs on the
+deterministic fallback until the one-time Vault secret is set (documented in
+the design spec's Operational note). Probe: 166 → 174 assertions.
+
+Deferred (per the approved spec): BYOK UI, credit purchases, non-Anthropic
+providers, other modules consuming `_shared/llm.ts`.
+
 ## M29 — Affiliate Hub, Phase 1a foundation + Funnels bridge *(2026-07-10, migration 0037, D-182…D-185)*
 
 A third master prompt asked for the same "AI Funnel Studio" vision plus a clean architectural split: **Funnels**
