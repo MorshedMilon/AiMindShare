@@ -205,22 +205,23 @@
 
 /* ── AI Funnel Studio wizard ───────────────────────────────────────────────── */
 .studio-panel-wide{max-width:920px}
-.studio-hero{padding:24px 4px 8px}
-.studio-hero-title{font-size:20px;font-weight:650;color:var(--ink-900);margin:0 0 8px}
-.studio-hero-sub{font-size:13px;color:var(--ink-400);line-height:1.5;margin:0 0 16px;max-width:640px}
-.studio-prompt{width:100%;min-height:76px;padding:14px 16px;border-radius:12px;border:1px solid var(--line);
-  background:var(--surface-1);color:var(--ink-900);font-size:14px;font-family:inherit;resize:vertical}
-.studio-prompt:focus{outline:none;border-color:var(--gold-500)}
-.studio-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.studio-chip{font-size:11.5px;color:var(--ink-500);background:rgba(109,121,122,.08);border:none;border-radius:999px;
+.studio-hero{padding:24px 4px 8px;text-align:center}
+.studio-hero-title{font-size:20px;font-weight:600;color:var(--ink-900);margin:0 0 8px}
+.studio-hero-sub{font-size:13px;color:var(--ink-400);line-height:1.5;margin:0 auto 16px;max-width:640px}
+.studio-prompt{width:100%;min-height:76px;padding:14px 16px;border-radius:var(--r-md);border:.5px solid var(--line-strong);
+  background:var(--bg-card);color:var(--ink-900);font-family:var(--font-sans);font-size:14px;text-align:left;resize:vertical}
+.studio-prompt:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px rgba(44,164,171,.15)}
+.studio-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:10px}
+.studio-chip{font-size:11.5px;color:var(--ink-500);background:rgba(109,121,122,.08);border:none;border-radius:var(--r-pill);
   padding:6px 12px;cursor:pointer;text-align:left}
 .studio-chip:hover{background:rgba(197,160,89,.16);color:var(--ink-900)}
-.studio-hero-actions{display:flex;gap:10px;margin-top:16px}
+.studio-hero-actions{display:flex;justify-content:center;gap:10px;margin-top:16px}
 .studio-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0 20px}
-.studio-type-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:14px;
-  border-radius:12px;border:1px solid var(--line);background:var(--surface-1);cursor:pointer}
+.studio-type-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:16px;
+  border-radius:var(--r-lg);border:.5px solid var(--line-strong);background:var(--bg-card);cursor:pointer;
+  transition:border-color .2s,box-shadow .2s}
 .studio-type-card:hover{border-color:var(--gold-500)}
-.studio-type-card.on{border-color:var(--gold-500);background:rgba(197,160,89,.08)}
+.studio-type-card.on{border-color:var(--gold-500);background:rgba(197,160,89,.08);box-shadow:0 0 0 1px rgba(197,160,89,.25)}
 .stc-ico{color:var(--gold-500)}
 .stc-title{font-size:13px;font-weight:600;color:var(--ink-900)}
 .stc-desc{font-size:11.5px;color:var(--ink-400);line-height:1.4}
@@ -230,12 +231,12 @@
 .studio-advanced{margin:8px 0 20px;border-top:.5px solid var(--line);padding-top:12px}
 .studio-advanced summary{font-size:12.5px;color:var(--ink-500);cursor:pointer;font-weight:600}
 .studio-advanced-body{margin-top:12px}
-.studio-clarify{margin:14px 0;padding:14px;border-radius:12px;background:rgba(197,160,89,.06);border:1px solid rgba(197,160,89,.24)}
+.studio-clarify{margin:14px 0;padding:14px;border-radius:var(--r-md);background:rgba(197,160,89,.06);border:.5px solid rgba(197,160,89,.24)}
 .studio-clarify-q{margin-bottom:10px}
 .studio-clarify-q:last-child{margin-bottom:0}
 .scq-text{font-size:12.5px;color:var(--ink-900);margin-bottom:6px;font-weight:600}
 .scq-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.scq-custom{font-size:11.5px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface-1);
+.scq-custom{font-size:11.5px;padding:5px 10px;border-radius:var(--r-pill);border:.5px solid var(--line-strong);background:var(--bg-card);
   color:var(--ink-900);min-width:120px}
 .studio-how{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0;padding:18px 0;border-top:.5px solid var(--line)}
 .shw-n{width:22px;height:22px;border-radius:999px;background:rgba(197,160,89,.16);color:var(--gold-500);
