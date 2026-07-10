@@ -16,6 +16,29 @@
 
 ---
 
+## Progress log (update this as tasks land — source of truth across sessions)
+
+Executing via `superpowers:subagent-driven-development` (fresh implementer subagent per task, then spec-compliance review, then code-quality review, committing directly to `main` — explicit user consent given for this session).
+
+- [x] **Task 1** — migration 0038 created, code-review comment fix applied. Commits: `3e5c4c1`, `dd3237a`.
+- [x] **Task 2** — m20probe.mjs extended (migration list + §23, 11 new assertions), verified green (174 passed, 0 failed) and `bash scripts/verify.sh` full-green. Commit: `d7a9367`. **Implemented and verified directly by the controller (not a subagent) to leave a clean state before a session pause — still needs its formal spec-compliance + code-quality subagent review before being fully "done" per this skill's process; do that first when resuming, it should be trivial since the content matches the plan verbatim and tests already pass.**
+- [ ] Task 3 — not started
+- [ ] Task 4 — not started
+- [ ] Task 5 — not started
+- [ ] Task 6 — not started (Phase 1 checkpoint)
+- [ ] Task 7 — not started
+- [ ] Task 8 — not started
+- [ ] Task 9 — not started
+- [ ] Task 10 — not started
+- [ ] Task 11 — not started
+- [ ] Task 12 — not started
+- [ ] Task 13 — not started
+- [ ] Task 14 — not started (Phase 2 checkpoint)
+
+**To resume:** re-invoke `superpowers:subagent-driven-development`, do Task 2's two-stage review, then continue sequentially from Task 3. Full task text for every task is already in this file below — no other context file is needed.
+
+---
+
 ## Phase 1 — LLM Provider Layer
 
 ### Task 1: Migration 0038 — generation tracking + rate limit (SQL, TDD)
