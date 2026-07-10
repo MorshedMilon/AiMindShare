@@ -22,11 +22,11 @@ Executing via `superpowers:subagent-driven-development` (fresh implementer subag
 
 - [x] **Task 1** — migration 0038 created, code-review comment fix applied. Commits: `3e5c4c1`, `dd3237a`.
 - [x] **Task 2** — m20probe.mjs extended (migration list + §23, 8 new assertions — corrected from an earlier miscount of "11"), verified green (174 passed, 0 failed) and `bash scripts/verify.sh` full-green. Commit: `d7a9367`. Spec-compliance review: ✅ exact match, independently re-run and confirmed. Code-quality review: ✅ approved, no issues. Both two-stage reviews now complete — task fully done.
-- [ ] Task 3 — not started
-- [ ] Task 4 — not started
-- [ ] Task 5 — not started
-- [ ] Task 6 — not started (Phase 1 checkpoint)
-- [ ] Task 7 — not started
+- [x] **Task 3** — `_shared/llm.ts` created verbatim. Commit: `bbd87be`. Both reviews ✅ (minor "provider-agnostic naming" nitpick noted, not blocking).
+- [x] **Task 4** — `funnel-ai-generate/index.ts` created verbatim; all four `_shared/` import signatures independently verified against real files, no mismatches. Commit: `23102b8`. Both reviews ✅ (one "Important" finding — rate-limit hard-fails vs. quota-exceeded falls back — confirmed intentional, matches the approved design spec's explicit distinction, no fix needed).
+- [x] **Task 5** — Anthropic `usedBy` now `["M08","M20","M33"]` in both provider registries; Operational note appended to the design spec. Commit: `2718d2f`. Both reviews ✅.
+- [x] **Task 6** — Phase 1 checkpoint: `bash scripts/verify.sh` full-green (174 passed), TASKS.md + DECISIONS D-186 appended. Commit: `b4df9b5`. Spec review ✅. Code-quality review flagged a "Critical" probe-baseline-count error (claimed 158→174 instead of 166→174) — **independently verified this was wrong**: ran the actual pre-Task-2 probe file at commit `129a605` and confirmed it output exactly 166 passed, so 166→174 (+8) as documented is correct. No fix applied; the reviewer's finding was itself mistaken. **Phase 1 complete.**
+- [ ] Task 7 — not started (Phase 2 starts here)
 - [ ] Task 8 — not started
 - [ ] Task 9 — not started
 - [ ] Task 10 — not started
