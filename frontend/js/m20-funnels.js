@@ -1045,72 +1045,15 @@
   function studioField(label, inner) { return `<div class="form-field">${label ? `<label>${label}</label>` : ""}${inner}</div>`; }
   function viewStudio() {
     const s = ensureStudio();
-    const head = moduleHead("AI Funnel <em>Studio</em>", "Answer a few questions, review the blueprint, and generate a working funnel — no funnel experience required.");
+    const head = moduleHead("AI Funnel <em>Studio</em>", "Describe your funnel in one sentence, or use guided fields — review the blueprint, then launch a working funnel.");
     let body;
-    if (s.stage === "mode") body = studioModePicker();
-    else if (s.stage === "instant") body = `
-      <div class="studio-instant-head"><div class="smc-ico">${svg("zap", 16)}</div>
-        <div><div class="ph-title" style="font-size:15px">Instant Funnel</div>
-        <div class="muted" style="font-size:12.5px">One screen, sensible defaults — generate right away.</div></div></div>
-      ${studioField("What's this funnel for?", `<select id="stiGoal">
-        ${[["leads", "Build a list (leads)"], ["sales", "Sell a product or offer"], ["bookings", "Get booked calls"],
-           ["applications", "Get qualified applications"], ["webinar_signups", "Fill a webinar"], ["quiz_leads", "Capture leads via a quiz"],
-           ["challenge_signups", "Run a challenge"], ["launch_waitlist", "Build a launch waitlist"]]
-          .map(([v, l]) => `<option value="${v}" ${s.answers.objective === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)}
-      ${studioField("Your niche / business (optional)", `<input id="stiNiche" placeholder="e.g. Ramadan meal-prep coaching" value="${esc(s.answers.niche || "")}">`)}
-      ${studioField("What are you offering?", `<select id="stiOfferType">
-        ${[["lead_magnet", "Free lead magnet"], ["low_ticket", "Low-ticket product"], ["core_offer", "Core offer"],
-           ["high_ticket", "High-ticket offer"], ["course", "Course"], ["membership", "Membership"], ["service_booking", "A booked service"]]
-          .map(([v, l]) => `<option value="${v}" ${s.answers.offer_type === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)}
-      ${studioField("Price (0 if free)", `<input id="stiPrice" class="num" type="number" min="0" step="1" value="${esc(s.answers.offer_price ?? 0)}" style="max-width:140px">`)}
-      ${offerSourceToggle(s)}
-      ${studioField("Main traffic source", `<select id="stiTraffic">
-        ${[["cold_paid", "Cold paid traffic"], ["warm_email", "Warm email list"], ["organic_social", "Organic social"], ["referral", "Referral / word of mouth"]]
-          .map(([v, l]) => `<option value="${v}" ${s.answers.traffic_source === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)}
-      <div class="mc-foot" style="border-top:none;padding-top:18px">
-        <button class="btn btn-ghost" id="studioBack">${svg("back", 14)} Back</button>
-        <button class="btn btn-primary" id="studioGenerate">${svg("zap", 15)} Generate blueprint</button>
-      </div>`;
-    else if (s.stage === "goal") body = `
-      ${studioStepper(s)}
-      ${studioField("What's this funnel for?", `<select id="stGoal">
-        ${[["leads", "Build a list (leads)"], ["sales", "Sell a product or offer"], ["bookings", "Get booked calls"],
-           ["applications", "Get qualified applications"], ["webinar_signups", "Fill a webinar"], ["quiz_leads", "Capture leads via a quiz"],
-           ["challenge_signups", "Run a challenge"], ["launch_waitlist", "Build a launch waitlist"]]
-          .map(([v, l]) => `<option value="${v}" ${s.answers.objective === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)}
-      ${studioField("Your niche / business (optional)", `<input id="stNiche" placeholder="e.g. Ramadan meal-prep coaching" value="${esc(s.answers.niche || "")}">`)}
-      ${studioNav(true, "Next: Offer", "studioNext")}`;
-    else if (s.stage === "offer") body = `
-      ${studioStepper(s)}
-      ${studioField("What are you offering?", `<select id="stOfferType">
-        ${[["lead_magnet", "Free lead magnet"], ["low_ticket", "Low-ticket product"], ["core_offer", "Core offer"],
-           ["high_ticket", "High-ticket offer"], ["course", "Course"], ["membership", "Membership"], ["service_booking", "A booked service"]]
-          .map(([v, l]) => `<option value="${v}" ${s.answers.offer_type === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)}
-      ${studioField("Price (0 if free)", `<input id="stPrice" class="num" type="number" min="0" step="1" value="${esc(s.answers.offer_price ?? 0)}" style="max-width:140px">`)}
-      <div class="bump-toggle"><span style="color:var(--gold-500)">${svg("gift", 16)}</span>
-        <div style="flex:1"><div style="font-size:13px;color:var(--ink-900)">I already have a free lead magnet</div></div>
-        <label><input type="checkbox" id="stLeadMagnet" ${s.answers.has_lead_magnet ? "checked" : ""}></label></div>
-      <div class="bump-toggle" style="margin-top:8px"><span style="color:var(--gold-500)">${svg("cart", 16)}</span>
-        <div style="flex:1"><div style="font-size:13px;color:var(--ink-900)">This funnel needs a checkout</div></div>
-        <label><input type="checkbox" id="stCheckout" ${(s.answers.checkout_required ?? (Number(s.answers.offer_price) > 0)) ? "checked" : ""}></label></div>
-      <div style="margin-top:10px">${offerSourceToggle(s)}</div>
-      ${studioNav(true, "Next: Audience", "studioNext")}`;
-    else if (s.stage === "audience") body = `
-      ${studioStepper(s)}
-      ${studioField("Main traffic source", `<select id="stTraffic">
-        ${[["cold_paid", "Cold paid traffic"], ["warm_email", "Warm email list"], ["organic_social", "Organic social"], ["referral", "Referral / word of mouth"]]
-          .map(([v, l]) => `<option value="${v}" ${s.answers.traffic_source === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)}
-      ${studioField("How aware is your audience of your solution?", `<select id="stAwareness">
-        ${[["unaware", "Unaware they have this problem"], ["problem_aware", "Aware of the problem, not the solution"],
-           ["solution_aware", "Aware solutions exist"], ["product_aware", "Aware of your product specifically"], ["most_aware", "Ready to buy, just needs the offer"]]
-          .map(([v, l]) => `<option value="${v}" ${s.answers.audience_awareness === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)}
-      ${studioNav(true, "Generate blueprint", "studioGenerate")}`;
-    else {
+    if (s.stage === "blueprint") {
       const bp = s.blueprint;
       body = bp ? `
-        ${studioStepper(s)}
         <div class="studio-result">
           <div class="studio-badge">${svg("zap", 13)} ${esc(FUNNEL_TYPE_LABEL[bp.funnel_type] || bp.funnel_type)}</div>
+          <span class="st ${s.generationSource === "llm" ? "st-active" : "st-testing"}" style="margin-left:8px">${s.generationSource === "llm" ? "AI-generated" : "Quick-match"}</span>
+          <button class="link" id="studioChangeType" style="margin-left:10px;font-size:12px">Change type</button>
           ${String(bp.funnel_type || "").indexOf("affiliate_") === 0 ? `<div class="studio-affiliate-note">${svg("info", 13)} Affiliate offer — remember to add a compliant disclosure and never imply you own this product.</div>` : ""}
           <p class="muted" style="font-size:13px;margin:10px 0 16px">${esc(bp.reasoning)}</p>
           <div class="access-list">${bp.steps.map((st, i) => `<div class="access-row">
@@ -1135,9 +1078,30 @@
             <button class="btn btn-ghost" id="studioRegenerate">${svg("zap", 14)} Regenerate</button>
             <button class="btn btn-primary" id="studioApprove">${svg("check", 15)} Approve &amp; generate funnel</button>
           </div>
-        </div>` : `${studioStepper(s)}<p class="muted">Generating your blueprint…</p>`;
+        </div>` : `<p class="muted">Generating your blueprint…</p>`;
+      return shell("studio", previewStrip() + head + `<div class="panel studio-panel-wide">${body}</div>`);
     }
-    return shell("studio", previewStrip() + head + `<div class="panel studio-panel">${body}</div>`);
+    // stage === "landing"
+    body = `
+      <div class="studio-hero">
+        <h2 class="studio-hero-title">Describe the funnel you want</h2>
+        <p class="studio-hero-sub">One sentence is enough — AI Funnel Studio infers the type, structure, and copy direction. Prefer to choose everything yourself? Pick a type below.</p>
+        <textarea class="studio-prompt" id="stPrompt" rows="3" placeholder="e.g. Create a lead generation funnel for a roofing company in Toronto">${esc(s.prompt || "")}</textarea>
+        ${studioExampleChips()}
+        ${studioClarifyBlock(s)}
+        <div class="studio-hero-actions">
+          <button class="btn btn-primary" id="studioGenerate" ${s.generating ? "disabled" : ""}>${svg("zap", 15)} ${s.generating ? "Generating…" : "Generate Funnel"}</button>
+          <button class="btn btn-ghost" id="studioStartScratch">Start from scratch</button>
+        </div>
+      </div>
+      <div class="panel-head" style="margin-top:24px"><h3>Or choose a funnel type</h3></div>
+      ${studioTypeCards(s)}
+      ${studioGuidedFields(s)}
+      ${studioAdvancedFields(s)}
+      ${studioHowItWorks()}
+      ${studioRecentSection(s)}
+    `;
+    return shell("studio", previewStrip() + head + `<div class="panel studio-panel-wide">${body}</div>`);
   }
   function readStudioStage() {
     const s = ensureStudio();
