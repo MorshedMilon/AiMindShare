@@ -746,8 +746,6 @@
     return a;
   }
 
-  const STUDIO_STAGES = ["goal", "offer", "audience", "blueprint"];
-  const STUDIO_LABEL = { goal: "Goal", offer: "Offer", audience: "Audience & traffic", blueprint: "Blueprint" };
   // Plain JS mirror of funnel_compliance_scan (SQL, migration 0037) for mockup mode —
   // same fixed rule table, same categories/severities. See that function's header
   // comment for why this is deterministic pattern-matching, not NLP claim understanding.
@@ -931,20 +929,89 @@
     }
     return state.studio;
   }
-  function studioModePicker() {
-    return `<div class="studio-modes">
-      <button class="studio-mode-card" data-studiomode="instant">
-        <div class="smc-ico">${svg("zap", 18)}</div>
-        <div class="smc-title">Instant Funnel</div>
-        <div class="smc-sub">One screen, sensible defaults — generate a blueprint right away.</div>
-      </button>
-      <button class="studio-mode-card" data-studiomode="brief">
-        <div class="smc-ico">${svg("layers", 18)}</div>
-        <div class="smc-title">Smart Brief</div>
-        <div class="smc-sub">Answer a short guided brief for the most tailored blueprint. Recommended.</div>
-      </button>
-    </div>
-    <button class="link studio-affiliate-link" id="studioAffiliateShortcut">${svg("link", 13)} Promoting someone else's product? Start an Affiliate Funnel →</button>`;
+  function studioExampleChips() {
+    const examples = [
+      "Create a lead generation funnel for a roofing company in Toronto",
+      "Build an affiliate funnel for a keto meal offer aimed at busy moms",
+      "Make a webinar funnel for a Quran learning workshop",
+      "Create a quiz funnel for travel deal personalization",
+    ];
+    return `<div class="studio-chips">${examples.map((e) => `<button class="studio-chip" data-studiochip="${esc(e)}">${esc(e)}</button>`).join("")}</div>`;
+  }
+  function studioTypeCards(s) {
+    return `<div class="studio-type-grid">${TYPE_CARDS.map((c) => `
+      <button class="studio-type-card ${s.selectedType === c.key ? "on" : ""}" data-studiotype="${c.key}">
+        <div class="stc-ico">${svg(c.ico, 17)}</div>
+        <div class="stc-title">${esc(c.label)}</div>
+        <div class="stc-desc">${esc(c.desc)}</div>
+      </button>`).join("")}</div>`;
+  }
+  function studioGuidedFields(s) {
+    const cat = s.selectedType && s.selectedType !== "auto" ? s.selectedType : null;
+    return `<div class="studio-guided">
+      ${studioField("Your niche / business", `<input id="sgNiche" placeholder="e.g. Ramadan meal-prep coaching" value="${esc(s.answers.niche || "")}">`)}
+      ${cat === "sales" || cat === "affiliate" ? studioField("Price (0 if free)", `<input id="sgPrice" class="num" type="number" min="0" step="1" value="${esc(s.answers.offer_price ?? "")}" style="max-width:140px">`) : ""}
+      ${cat === "webinar" ? studioField("Webinar topic", `<input id="sgWebinarTopic" placeholder="e.g. 5-day Quran reading fundamentals" value="${esc(s.answers.webinar_topic || "")}">`) : ""}
+      ${cat === "quiz" ? studioField("What should the quiz segment on?", `<input id="sgQuizGoal" placeholder="e.g. travel style, budget, destination type" value="${esc(s.answers.quiz_segmentation || "")}">`) : ""}
+      ${cat === "affiliate" ? offerSourceToggle({ answers: { ...s.answers, offer_source: "affiliate" } }) : ""}
+    </div>`;
+  }
+  function studioAdvancedFields(s) {
+    return `<details class="studio-advanced">
+      <summary>Advanced options</summary>
+      <div class="studio-advanced-body">
+        ${studioField("Main traffic source", `<select id="sgTraffic">
+          <option value="">Not sure yet</option>
+          ${[["cold_paid", "Cold paid traffic"], ["warm_email", "Warm email list"], ["organic_social", "Organic social"], ["referral", "Referral / word of mouth"]]
+            .map(([v, l]) => `<option value="${v}" ${s.answers.traffic_source === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)}
+        ${studioField("How aware is your audience?", `<select id="sgAwareness">
+          <option value="">Not sure yet</option>
+          ${[["unaware", "Unaware they have this problem"], ["problem_aware", "Aware of the problem, not the solution"],
+             ["solution_aware", "Aware solutions exist"], ["product_aware", "Aware of your product specifically"], ["most_aware", "Ready to buy"]]
+            .map(([v, l]) => `<option value="${v}" ${s.answers.audience_awareness === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)}
+        ${studioField("I already have a free lead magnet", `<input type="checkbox" id="sgLeadMagnet" ${s.answers.has_lead_magnet ? "checked" : ""}>`)}
+        ${s.selectedType !== "affiliate" ? offerSourceToggle(s) : ""}
+      </div>
+    </details>`;
+  }
+  function studioClarifyBlock(s) {
+    if (!s.clarifyQuestions || !s.clarifyQuestions.length) return "";
+    return `<div class="studio-clarify">${s.clarifyQuestions.map((q, qi) => `
+      <div class="studio-clarify-q">
+        <div class="scq-text">${esc(q.question)}</div>
+        <div class="scq-chips">${q.chips.map((c) => `<button class="studio-chip" data-clarifyanswer="${qi}" data-clarifyvalue="${esc(c)}">${esc(c)}</button>`).join("")}
+          <input class="scq-custom" data-clarifycustom="${qi}" placeholder="Type your own…">
+        </div>
+      </div>`).join("")}</div>`;
+  }
+  function studioHowItWorks() {
+    return `<div class="studio-how">
+      <div class="studio-how-step"><div class="shw-n">1</div><div class="shw-title">Describe your funnel</div><div class="shw-sub">Type a sentence or pick guided fields.</div></div>
+      <div class="studio-how-step"><div class="shw-n">2</div><div class="shw-title">AI generates the structure</div><div class="shw-sub">Steps, copy direction, and CTAs, mapped to your goal.</div></div>
+      <div class="studio-how-step"><div class="shw-n">3</div><div class="shw-title">Review, edit, and launch</div><div class="shw-sub">Approve the blueprint, then edit it like any funnel.</div></div>
+    </div>`;
+  }
+  function studioRecentSection(s) {
+    const recentBlock = s.recent.length ? `
+      <div class="panel-head"><h3>Recent generations</h3></div>
+      <div class="access-list">${s.recent.map((r) => `<div class="access-row" data-studioreopen="${r.id}">
+        <div class="fc-ico" style="width:28px;height:28px;font-size:12px">${svg("zap", 13)}</div>
+        <div style="flex:1;min-width:0"><div style="font-size:12.5px;color:var(--ink-900)">${esc(FUNNEL_TYPE_LABEL[r.blueprint?.funnel_type] || "Draft")}</div>
+          <div style="font-size:11px;color:var(--ink-400)">${esc(r.status)} · ${new Date(r.created_at).toLocaleDateString()}</div></div>
+      </div>`).join("")}</div>` : "";
+    return `<div class="studio-recent">
+      ${recentBlock}
+      <a class="link studio-templates-link" href="#/funnels/templates">${svg("layers", 13)} Browse funnel templates instead →</a>
+    </div>`;
+  }
+  async function loadStudioRecent() {
+    const s = ensureStudio();
+    if (s.recentLoaded || !connected()) return;
+    s.recentLoaded = true;
+    const c = ensureClient();
+    const { data } = await c.from("funnel_blueprints").select("id,status,blueprint,answers,generation_source,llm_model,tokens_used,created_at")
+      .eq("workspace_id", state.workspaceId).order("created_at", { ascending: false }).limit(5);
+    if (data) { s.recent = data; render(); }
   }
   function offerSourceToggle(s) {
     const src = s.answers.offer_source || "own_product";
@@ -975,18 +1042,7 @@
       s.answers.disclosure_required = !!$("#stAffDisclosure")?.checked;
     }
   }
-  function studioStepper(s) {
-    const idx = STUDIO_STAGES.indexOf(s.stage);
-    return `<div class="studio-steps">${STUDIO_STAGES.map((k, i) => `<div class="studio-step ${k === s.stage ? "on" : ""} ${idx > i ? "done" : ""}">
-      <span class="studio-step-n">${idx > i ? svg("check", 11) : i + 1}</span>${STUDIO_LABEL[k]}</div>`).join("")}</div>`;
-  }
   function studioField(label, inner) { return `<div class="form-field">${label ? `<label>${label}</label>` : ""}${inner}</div>`; }
-  function studioNav(back, nextLabel, nextId) {
-    return `<div class="mc-foot" style="border-top:none;padding-top:18px">
-      ${back ? `<button class="btn btn-ghost" id="studioBack">${svg("back", 14)} Back</button>` : "<span></span>"}
-      <button class="btn btn-primary" id="${nextId}">${nextLabel} ${svg("chev", 14)}</button>
-    </div>`;
-  }
   function viewStudio() {
     const s = ensureStudio();
     const head = moduleHead("AI Funnel <em>Studio</em>", "Answer a few questions, review the blueprint, and generate a working funnel — no funnel experience required.");
