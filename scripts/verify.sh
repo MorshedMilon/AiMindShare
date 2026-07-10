@@ -72,8 +72,11 @@ echo; echo "══ +  M06 Media: media_folders/media_assets leak + bucket role m
 echo; echo "══ +  M16 Campaigns: tenancy + role matrix + audience/suppression + unsubscribe dual-write + fan-out enqueue + stats trigger (PGlite) ══"
 ( cd workers && node verify/m16probe.mjs ) || fails=$((fails+1))
 
-echo; echo "══ +  M20 Funnels: tenancy + role matrix (staff edit/manager delete/client ceiling) + funnel_map conversion math + A/B z-test winner + order→M28 invoice + funnel_visits service-role-only + abandoned sweep (PGlite) ══"
+echo; echo "══ +  M20 Funnels: tenancy + role matrix (staff edit/manager delete/client ceiling) + funnel_map conversion math + A/B z-test winner + order→M28 invoice + funnel_visits service-role-only + abandoned sweep + AI Funnel Studio blueprint engine + Affiliate Hub bridge + compliance scan (PGlite) ══"
 ( cd workers && node verify/m20probe.mjs ) || fails=$((fails+1))
+
+echo; echo "══ +  M29 Affiliate Hub: offer vault / networks / disclosure templates — tenancy + role matrix (staff write/client ceiling) (PGlite) ══"
+( cd workers && node verify/m29probe.mjs ) || fails=$((fails+1))
 
 echo; echo "══ +  M19 Sites: tenancy on 6 tables + role matrix (staff edit/manager publish+delete/admin domains/client ceiling) + publish_page snapshot+prune-to-10 + revert + duplicate + renderer draft-hiding + visitor_sessions service-role-only + page.visited bus (PGlite) ══"
 ( cd workers && node verify/m19probe.mjs ) || fails=$((fails+1))

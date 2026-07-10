@@ -7,7 +7,15 @@
 // stripe_events dedupe table (same shape) so we do not re-invent idempotency.
 //
 // Handles: checkout.session.completed / payment_intent.succeeded (invoice payments),
-// invoice.paid / invoice.payment_failed / customer.subscription.* (client subscriptions).
+// invoice.paid / invoice.payment_failed / customer.subscription.* (client subscriptions),
+// payment_intent.payment_failed (M20 funnel-order decline → funnel.order_failed, D-175).
+//
+// M20 note (D-175): funnel checkout only ever creates a PaymentIntent (public-invoice's
+// "intent" action), never a Checkout Session, so recordFunnelPurchaseIfOrder() is only
+// called from payment_intent.succeeded — calling it from checkout.session.completed too
+// would double-record the same purchase for a session/PI pair that both fire for one
+// buy. It's additionally guarded by an existence check against funnel_visits, so even a
+// redelivered/duplicate event can't double-count a conversion.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { ok } from "../_shared/envelope.ts";
 import { serviceClient } from "../_shared/auth.ts";
@@ -63,6 +71,13 @@ serve(async (req: Request) => {
         if (obj.metadata?.invoice_id) {
           await recordPayment(svc, workspace_id, obj.metadata.invoice_id,
             obj.amount_received ?? obj.amount, obj.id);
+          await recordFunnelPurchaseIfOrder(svc, workspace_id, obj.metadata.invoice_id);
+        }
+        break;
+      }
+      case "payment_intent.payment_failed": {
+        if (obj.metadata?.invoice_id) {
+          await recordFunnelOrderFailed(svc, workspace_id, obj.metadata.invoice_id);
         }
         break;
       }
@@ -111,6 +126,47 @@ async function recordPayment(svc: any, ws: string | null, invoice_id: string, am
     p_ws: ws, p_invoice: invoice_id, p_amount: Math.round(amount), p_method: "card", p_pi: pi ?? null,
   });
   if (error) console.error("record_invoice_payment", error.message);
+}
+
+// D-175: a funnel order's invoice never had its own success signal reach M20's event
+// stream — record_invoice_payment above credits the invoice, but nothing told
+// funnel_visits a purchase happened, so Funnel Map's order-step "conversions" showed 0
+// even for real, paid orders. Fixed here, at the one place a real payment success is
+// confirmed. Idempotent by construction: guarded by an existence check, and this is the
+// only caller (checkout.session.completed never fires for M20 orders — see file header).
+async function recordFunnelPurchaseIfOrder(svc: any, ws: string | null, invoice_id: string) {
+  if (!ws || !invoice_id) return;
+  const { data: inv } = await svc.from("invoices")
+    .select("source_type,source_id,contact_id").eq("id", invoice_id).maybeSingle();
+  if (!inv || inv.source_type !== "order") return;
+  const marker = "order:" + invoice_id;
+  const { data: existing } = await svc.from("funnel_visits")
+    .select("id").eq("visitor_id", marker).eq("event", "purchase").maybeSingle();
+  if (existing) return;
+  const { data: step } = await svc.from("funnel_steps").select("funnel_id").eq("id", inv.source_id).maybeSingle();
+  if (!step) return;
+  const { error } = await svc.rpc("record_funnel_event", {
+    p_ws: ws, p_funnel: step.funnel_id, p_step: inv.source_id, p_visitor: marker,
+    p_event: "purchase", p_contact: inv.contact_id ?? null,
+  });
+  if (error) console.error("record_funnel_event(purchase)", error.message);
+}
+
+// D-175: the counterpart for a declined/failed charge on a funnel order. Unlike the
+// purchase case, every failed attempt is its own event (a customer can retry and fail
+// more than once) — no existence guard here by design.
+async function recordFunnelOrderFailed(svc: any, ws: string | null, invoice_id: string) {
+  if (!ws || !invoice_id) return;
+  const { data: inv } = await svc.from("invoices")
+    .select("source_type,source_id,contact_id").eq("id", invoice_id).maybeSingle();
+  if (!inv || inv.source_type !== "order") return;
+  const { data: step } = await svc.from("funnel_steps").select("funnel_id").eq("id", inv.source_id).maybeSingle();
+  if (!step) return;
+  const { error } = await svc.rpc("record_funnel_event", {
+    p_ws: ws, p_funnel: step.funnel_id, p_step: inv.source_id, p_visitor: "order:" + invoice_id,
+    p_event: "order_failed", p_contact: inv.contact_id ?? null,
+  });
+  if (error) console.error("record_funnel_event(order_failed)", error.message);
 }
 
 async function patchClientSub(svc: any, stripe_sub_id: string | undefined, patch: Record<string, unknown>) {

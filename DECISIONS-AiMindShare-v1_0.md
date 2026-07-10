@@ -1136,6 +1136,321 @@ from the `data-form-id` trait (treated as the M15 `public_token`) with postMessa
 calendar embed. The **chat embed remains an honest scaffold** until M12 web-chat lands. No editor placeholder or
 trait was renamed (D-102 data-* contract unchanged) — existing published pages upgrade on next render.
 
+## D-153 · M20 v2 — `funnel_status` widened with `testing`/`paused` (additive enum values) · **LOCKED 2026-07-09**
+`draft|active|archived` rows are untouched; `active` keeps meaning "live" in storage — the UI relabels it "Live"
+for display only. No data migration needed. Mirrors the D-083 (`ws_status` + `suspended`) precedent for adding an
+enum value inside the same migration that also ships functions, guarded by comparing `::text` rather than the bare
+new literal where relevant.
+
+## D-154 · M20 v2 — test-mode segregation via `funnels.test_mode` → `funnel_visits.is_test` / `invoices.is_test` · **LOCKED 2026-07-09**
+A funnel flagged `test_mode=true` has every row it writes (via `record_funnel_event`/`create_funnel_order`) stamped
+`is_test=true`, cross-module onto M28's `invoices` (additive column, default `false`, zero behavior change for any
+existing invoice). `funnel_revenue_summary` and `sweep_abandoned_funnels` exclude `is_test` rows unconditionally —
+test traffic must never pollute real revenue, EPC, or the abandonment automation.
+
+## D-155 · M20 v2 — variant governance: optional variant C + configurable sample size/confidence · **LOCKED 2026-07-09**
+`funnel_splits` gains `variant_c_page_id`/`split_c` (both nullable — no C = no behavior change) and
+`min_sample_size`/`confidence` (default 30/`0.95`, the values the original z-test hardcoded). `funnel_split_stats`
+is generalized to an optional 3rd arm: the leader must clear every other arm with traffic via a pairwise
+two-proportion z-test at the split's own thresholds; with no C configured this is bit-for-bit the original 2-arm
+test. Confidence maps to a z-threshold via a fixed lookup over 90/95/99/99.5% (not a full inverse-normal
+implementation) — documented as an approximation. `promote_split_winner`'s `winner` check constraint widened to
+allow `'C'`.
+
+## D-156 · M20 v2 — `stop_split` (archive without a winner) + `auto_promote_split_winners` sweep · **LOCKED 2026-07-09**
+`stop_split` (manager+) sets a running split to `stopped` without declaring a winner — historical `funnel_visits`
+rows are never deleted, so losing-variant reporting stays queryable with no new storage. `auto_promote_split_winners`
+is an hourly service-role sweep (`m20-auto-promote-sweep` `pg_cron`) that promotes any `running` split with its own
+`auto_promote=true` once `funnel_split_stats` reports significance; idempotent by construction (status flips to
+`promoted`). This required relaxing `funnel_split_stats`'s membership guard to `auth.uid() is not null and not
+is_member(...)` (mirrors `promote_split_winner`'s existing pattern) so a service-role caller — already granted
+execute — can actually call it; no authenticated-caller behavior changes.
+
+## D-157 · M20 v2 — `funnel_publish_readiness` reads M19's `site_publish_log`, no new site columns · **LOCKED 2026-07-09**
+Go-live blockers (no steps / a step missing its page / an order-type step with no priced product) vs. warnings (no
+order step; the M19 site's domain/SSL, read from `site_publish_log.kind in ('domain.verify','ssl.provision')`
+rather than inventing new `sites` columns). Read-only, additive, no M19 schema touched.
+
+## D-158 · M20 v2 — `funnel_revenue_summary` computes attribution on read, no rollup tables · **LOCKED 2026-07-09**
+Per-step revenue/orders (via `invoices.source_id`) and per-source revenue (a paid order's contact is matched to that
+contact's EARLIEST `funnel_visits` row carrying a non-empty `utm` within the funnel — "first touch"; no match buckets
+to `direct`) are both computed on read from existing tables, mirroring M20's existing `funnel_map`/`M28
+revenue_rollup` "compute on read" convention rather than adding new aggregate storage. Test-mode rows excluded
+unconditionally (D-154).
+
+> **Numbering note:** M20 v2 claimed **D-153…D-158**, the clean block directly above the observed max (D-152) at
+> build time. Migration `0029_m20_funnels_v2.sql` ships this pass; scope was Priorities 1–3 of the v2 upgrade brief
+> only (statuses/test-mode/go-live, variant governance, revenue attribution) — order bumps/one-click upsell
+> charging, the 10-event automation-hook wiring, duplicate/template funnels, per-funnel permissions, and the full
+> sidebar IA rebuild are explicitly deferred (see `docs/superpowers/plans/2026-07-09-m20-funnels-v2-upgrade.md`).
+
+## D-159 · M20 v2 — `funnel_visits.event` widened for upsell/downsell responses · **LOCKED 2026-07-09**
+Added `upsell_accepted|upsell_declined|downsell_accepted|downsell_declined` to the event check constraint (was
+`view|optin|purchase|abandoned`). Additive — only `record_funnel_event` ever writes the 4 new values; every
+pre-existing row keeps its original event untouched.
+
+## D-160 · M20 v2 — automation hooks wired into the existing funnel write paths via M13 `emit_trigger` · **LOCKED 2026-07-09**
+`record_funnel_event` now emits `funnel.entered` (a visitor's first `view` on the entry step, `step_order=0`),
+`step.completed` (a `view` on any later step), `form.submitted` (an `optin`), and `upsell.accepted`/`upsell.declined`/
+`downsell.accepted`/`downsell.declined` (the 4 new D-159 events, trigger name = the event with `_`→`.`).
+`create_funnel_order` emits `checkout.started`. `promote_split_winner` emits `test.winner_selected`. All emits are
+best-effort (`exception when undefined_function then null; when others then null;`), identical to the existing
+`payment.received`/`cart.abandoned` pattern — no automation engine was built, M13's `emit_trigger`/`workflows`
+already IS this repo's automation system. Function signatures unchanged.
+
+## D-161 · M20 v2 — `set_funnel_status` (staff+) emits `funnel.published` on the transition INTO `active` · **LOCKED 2026-07-09**
+A dedicated RPC (rather than a table trigger on every `funnels` UPDATE) so the emit only fires on a real publish
+event — `status <> 'active'` → `status = 'active'` — not on every unrelated column write or a same-status no-op.
+The frontend routes its status-pill clicks through this RPC; a direct `UPDATE funnels` still works via the
+existing staff+ RLS policy, it just won't emit the trigger.
+
+## D-162 · M20 v2 — order bumps become `config.bumps[]` (array); step routing added; upsell/downsell UI stays honest · **LOCKED 2026-07-09**
+Frontend-only, no schema change (`funnel_steps.config` is already jsonb). The old singular `config.bump` is read
+as a 1-element array for back-compat and normalized to `config.bumps` on next save — never silently dropped.
+Added `config.next_step_id` (order/upsell/downsell: "on purchase/accept, go to") and `config.decline_step_id`
+(upsell/downsell only: "if declined, go to") step pickers, satisfying the PRD's flow-logic bullet without a
+migration. The upsell/downsell config tab states plainly that one-click charging on a saved card isn't wired yet
+(per the user's explicit choice over building M28 saved-PM plumbing this pass) instead of offering a toggle that
+does nothing real.
+
+> **Numbering note:** this second M20 v2 pass claimed **D-159…D-162** and migration `0030_m20_funnels_v2b.sql`
+> (`0029` was the first M20 v2 migration). Scope was Priority 4 (order-bump/upsell UI honesty + routing, frontend-
+> only) and Priority 5 (automation hooks) of the v2 brief. `m20probe.mjs` 71→85 assertions, full `verify.sh` green.
+
+## D-163 · M20 v2 — `duplicate_funnel` copies steps, never splits/visits; a template is a funnel row with no site · **LOCKED 2026-07-09**
+One function (`duplicate_funnel(p_funnel, p_as_template, p_name, p_site_id)`) serves plain duplicate, save-as-
+template, and create-from-template — a template is just `funnels.is_template=true` with `site_id`/every step's
+`page_id` stripped (it isn't tied to a site until instantiated). `template_of_id` records lineage in all three
+directions. Never copies `funnel_splits`/`funnel_visits` — a duplicate or template always starts with a clean
+analytics slate; historical reporting on the source is untouched (append-only, nothing is moved).
+
+## D-164 · M20 v2 — `duplicate_funnel` remaps in-funnel step routing to the copied steps · **LOCKED 2026-07-09**
+D-162's `config.next_step_id`/`config.decline_step_id` point at a step id within the SAME funnel. A naive copy
+would leave them pointing at the ORIGINAL funnel's steps. `duplicate_funnel` builds an old→new step-id map while
+copying and rewrites both keys against it (dropping either key if its target somehow didn't get copied) — routing
+survives a duplicate/template-instantiation correctly instead of dangling.
+
+## D-165 · M20 v2 — `funnel_access` is narrow-only; `can_view_analytics` is enforced SERVER-SIDE · **LOCKED 2026-07-09**
+A `funnel_access` row for (funnel, user) can only take something AWAY from what the user's workspace role already
+grants — its absence (the entire user base today) means zero behavior change. `can_view_analytics=false` is
+checked inside `funnel_map`/`funnel_split_stats`/`funnel_revenue_summary` themselves (a new `funnel_analytics_denied()`
+helper), not just hidden in the UI — a restricted staff member is actually denied by the RPC, proven in
+`m20probe.mjs`. staff+ can read `funnel_access` rows; only manager+ can create/update/delete them (`set_funnel_access`/
+`remove_funnel_access`), matching D-109's operator-ceiling posture (this can only narrow, never grant beyond it).
+
+## D-166 · M20 v2 — `funnel_access.can_edit` is UI-level ONLY this pass, not RLS-enforced · **LOCKED 2026-07-09**
+Enforcing `can_edit` for real would mean retrofitting the `funnels`/`funnel_steps` UPDATE/INSERT RLS policies —
+CLAUDE.md's access-control review bar applies to that specifically, and it wasn't the subject of its own review in
+this pass. `can_edit` is stored, surfaced, and toggle-able in the Team panel, but a direct `.from('funnel_steps')
+.update(...)` from a "restricted" staff member's browser still succeeds today (their workspace role still allows
+it). Flagged explicitly rather than left as a silent gap — enforcing it is the natural next step before this
+panel is called a complete permissions system.
+
+> **Numbering note:** this third M20 v2 pass claimed **D-163…D-166** and migration `0031_m20_funnels_v2c.sql`.
+> Scope was Priority 6 (duplicate/save-as-template/create-from-template) and Priority 7 (funnel_access, analytics-
+> visibility narrowing) of the v2 brief. `m20probe.mjs` 85→103 assertions, full `verify.sh` green. Priorities 8-9
+> (operations/logs surface, full 15-section sidebar IA rebuild) remain deferred.
+
+## D-167 · M20 v2 — `funnel_operations_log` derives observability from existing data, no new tables · **LOCKED 2026-07-09**
+The "Logs/Jobs" brief bullet is served by filtering M13's `workflow_executions` on `trigger_payload->>'funnel_id'`
+(every 0030 `emit_trigger` call already stamps it there) joined to `workflows.trigger_type`, plus counts derived
+from `funnel_visits`/`funnel_splits` (abandoned orders, promoted splits) — the same "compute on read" convention
+as `funnel_map`/`funnel_revenue_summary` (D-108/D-158). Respects the same `funnel_analytics_denied()` narrowing as
+the other analytics RPCs (D-165). No sweep-run log table was added — `sweep_abandoned_funnels`/
+`auto_promote_split_winners` still have no execution history of their own beyond their side effects; that would be
+a genuinely new capability, not a read over what already exists, and is out of scope for this pass.
+
+> **Numbering note:** this fourth M20 v2 pass claimed **D-167** and migration `0032_m20_funnels_v2d.sql`. Scope
+> was Priority 8 (observability) only — Priority 9 (the full 15-section sidebar IA rebuild) is being scoped
+> separately given its size. `m20probe.mjs` 103→107 assertions, full `verify.sh` green.
+
+## D-168 · M20 v2 — Priority 9 Step 1: per-funnel rail nav replaces the 3-tab bar, no schema change · **LOCKED 2026-07-09**
+Funnel-detail navigation moved from a 3-item horizontal `.fn-tabs` bar to a 13-item left rail that swaps in when
+viewing a funnel — mirrors M19's existing per-site rail swap (12-item nav inside a site), not a new pattern.
+Routing widened from `#/funnels/:id/map|analytics|settings` to 13 keys (`overview/map/variants/checkout/analytics/
+attribution/crm/automations/templates/operations/team/logs/settings`), defaulting to `overview` (was `map`).
+"Steps" (brief bullet) stays folded into Funnel Map rather than a redundant separate list — the visual map already
+supports add/reorder/edit via the existing step drawer. Every relocated panel (Operations/Team/Logs, previously
+stacked inside one Settings tab; the UTM-by-source split out of Analytics into Attribution; pipeline mapping split
+into CRM & Revenue) is the SAME code, just addressed by its own hash instead of being stacked — zero new RPCs,
+zero schema change. **Variants** and **Checkout** are new thin list views over already-loaded step data whose
+row actions delegate to the existing step drawer (`openStep(id, tab)`, generalized to accept a target tab) rather
+than duplicating its logic. **Automations** derives its trigger-status list from the same `funnel_operations_log`
+data Logs already fetches (grouped by trigger_type, first-seen wins) — no second query. **Templates**' "derived
+from this funnel" list filters the ALREADY-loaded `state.funnels` array (which includes templates) by
+`template_of_id` — no new query either. Contacts/Entries (the one section needing genuinely new backend — an
+entrant-list RPC over `funnel_visits`+`contacts`) is deferred to a Step 2, scoped separately.
+
+## D-169 · M20 v2 — `funnel_entrants` aggregates the entrant list from `funnel_visits`, order-marker excluded · **LOCKED 2026-07-09**
+Priority 9 Step 2, the last item on the v2 brief. One row per real `visitor_id` (aggregated from the existing
+event stream: first/last seen, contact link, variant, first-touch UTM source, furthest step reached, latest order
+status) — `visitor_id LIKE 'order:%'` rows (D-110/D-112's own bookkeeping marker) are excluded, same as
+`funnel_map`'s visitor counts. Deliberately does NOT exclude `is_test` entrants like the revenue/analytics RPCs
+(D-154) do — an operator testing their own funnel needs to see themselves here to confirm tracking works; each
+row carries `is_test` so the UI can badge it instead. Paginated (`p_limit`/`p_offset`, returns `{entrants, total}`),
+respects the same `funnel_analytics_denied()` narrowing as the other analytics RPCs. Migration
+`0033_m20_funnels_v2e.sql`; `m20probe.mjs` 107→116 assertions; full `verify.sh` green. Frontend: 14th rail section
+("Contacts / Entries"). **This closes every item in the M20 v2 upgrade brief — Priorities 1–9 all shipped.**
+
+## D-170 · M20 — landing-page IA split from the per-funnel workspace; "Acquisition" label kept · **LOCKED 2026-07-09**
+Frontend-only navigation refactor, no schema change. Two previously-blurred nav contexts are now distinct:
+**module landing** (`#/funnels`, `#/funnels/<section>`) gets a shallow 7-item rail — Overview, Funnels, Templates,
+Analytics, Attribution, Automations, Settings — vs. the **per-funnel workspace** (`#/funnels/<id>/<tab>`) keeping
+its full 14-item deep-operating rail from D-168/D-169, now with **Steps** split out from **Funnel Map** (Steps =
+structure/build, no numbers; Funnel Map = the visual node-map with live conversion/drop-off) and **Templates**
+removed (templates are workspace-wide, not a per-funnel concept — duplicate/save-as-template actions stay
+reachable from inside a funnel via a "Duplication & templates" panel folded into Operations). `parseRoute()` now
+disambiguates the shared `#/funnels/...` prefix via a `MODULE_SECTIONS` reserved-word list — a path segment is a
+module section if it matches one of the 6 names, otherwise it's treated as a funnel id (real ids never collide
+with these words). **"Acquisition" was NOT renamed** — grep confirms M15 Forms/M16 Campaigns/M19 Sites/M20 Funnels
+all share it as their sidebar suite label, and `Master_Module_List_v3.md`'s Phase 2 is literally titled
+"Acquisition & Sites" grouping exactly these modules; renaming it inside M20 alone would desync from every sibling
+module using the same word. Overview/Analytics/Attribution/Automations are deliberately kept as light index/
+launchpad pages — Overview derives its "attention needed" panel client-side from already-loaded `state.funnels`
+fields only (no new query); Analytics/Attribution/Automations show the workspace KPI strip (already-fetched
+`state.glance`) plus a per-funnel table linking into that funnel's own (already-built, full-depth) tab, rather
+than standing up a new cross-funnel aggregation RPC — avoids inventing backend scope for what was requested as a
+navigation change. Settings is genuinely new but schema-free: "new-funnel defaults" (currency, test-mode-on-create)
+persisted to `localStorage` (same pattern as the theme toggle), read by `newFunnelModal()`'s `create()`. Frontend
+only — `frontend/js/m20-funnels.js` + no CSS additions needed (100% reuse of existing `.panel`/`.access-row`/
+`.fn-grid`/`.kpi` classes). Preview-verified: all 7 landing + 14 funnel-detail sections render, 0 console errors,
+0 h-scroll at 375px, settings-save/use-template/new-funnel-defaults flows all functionally confirmed.
+
+## D-171…D-174 · M20 v3 Phase A+B — AI Funnel Studio foundations · **LOCKED 2026-07-10**
+Migration `0034_m20_funnels_v3a.sql`. **D-171**: `funnels.funnel_type` (nullable text, checked against the 12
+master-PRD funnel types) — every pre-existing funnel keeps it `null`. **D-172**: `funnel_blueprints` table
+(workspace-scoped wizard sessions: `answers`/`blueprint` jsonb, `status` draft→approved→converted, links to the
+funnel it becomes). **D-173**: `recommend_funnel_blueprint(answers jsonb) → jsonb` — the Studio's recommendation
+engine, a **deterministic decision matrix today, not a live model call**. Verified directly: no LLM provider is
+wired anywhere in AiMindShare (no API-key usage, no Edge Fn that calls a model); every existing "AI" feature
+(M13 automation builder D-063, M16 copywriter D-092, M22 content D-103) ships the same way — a real, working
+rules engine with the provider choice explicitly deferred. This is that same posture, not a new one: the function
+takes structured answers (goal/offer/price/audience/traffic) and returns a funnel type + step sequence (using only
+`funnel_step_type`'s existing 6 values, no enum change) + CTA direction + bump/upsell/downsell suggestions + test
+ideas + launch checklist. Single seam for a future LLM swap: only this function's body would change, not its
+signature or any caller. **D-174**: `save_funnel_blueprint`/`approve_funnel_blueprint`/`convert_blueprint_to_funnel`
+— the wizard's write path; convert materializes the blueprint's steps as real `funnel_steps` rows (same pattern
+`duplicate_funnel` already uses). Frontend: new "AI Funnel Studio" nav item + a 4-stage wizard (Goal → Offer →
+Audience → Blueprint), `localRecommendBlueprint()` is a JS port of the SQL matrix so mockup mode works identically.
+`m20probe.mjs` 116→135 assertions, `scripts/verify.sh` green, preview-verified end to end (mockup wizard run
+generated a real funnel with materialized steps).
+
+## D-175 · M20 v3 — funnel.order_failed wired + a real pre-existing gap fixed in the payments webhook · **LOCKED 2026-07-10**
+Investigated before wiring "order failed" tracking and found a bigger, real, pre-existing gap: `record_funnel_event
+(p_event='purchase')` was **never actually called by a real Stripe payment** — `payments-webhook/index.ts`'s
+`payment_intent.succeeded` handler only ever credited the invoice (`record_invoice_payment`), it never told M20's
+own event stream a purchase happened. The migration-comment in `create_funnel_order` ("purchase is recorded later,
+on the payment webhook") described an *intended* wiring that was never implemented. Practical effect: Funnel Map's
+order-step "conversions" showed 0 even for funnels with real, paid revenue (revenue/AOV/EPC were unaffected — those
+read `invoices.amount_paid` directly, not `funnel_visits`). Fixed at the source: `payment_intent.succeeded` now also
+calls a new `recordFunnelPurchaseIfOrder()` helper (resolves the invoice → funnel step → funnel, calls
+`record_funnel_event`), guarded by an existence check so a redelivered webhook can't double-count. Added
+`payment_intent.payment_failed` → `recordFunnelOrderFailed()` the same way, emitting the new `order_failed`
+`funnel_visits` event (constraint widened, no `invoices.status` change — 'failed' was deliberately NOT added to the
+shared M28 status enum; the funnel event stream alone is sufficient for M20's tracking need and touching a
+core M28 column for an M20-only need was judged the wrong tradeoff). `record_funnel_event` accepts `order_failed`
+and emits `order.failed` via the same `replace(p_event,'_','.')` pattern as the upsell/downsell responses (D-160).
+Edge Function change is **ready, not run** (no Docker/Deno locally, same posture as every other Edge Fn in this
+repo) — reviewed line by line for syntax/logic instead. `m20probe.mjs` covers the SQL side (event constraint +
+trigger emission); the webhook's own logic isn't independently testable here.
+
+## D-176…D-180 · M20 v3 Phase C+D — Operations Workspace depth + AI Optimization advisories · **LOCKED 2026-07-10**
+Migration `0035_m20_funnels_v3b.sql`, all backward compatible (`CREATE OR REPLACE` on existing signatures, only new
+jsonb fields added). **D-176**: `funnel_map` gains per-step `revenue`, `has_bump`, `warning_no_page`. **D-177**:
+`funnel_publish_readiness` gains a 0–100 `score` derived from the same blockers/warnings it already computed — no
+new checks invented (a real "payment provider connected" or "form" check would need M28/M15 data this function
+doesn't have; not faked). **D-178**: `funnel_revenue_summary` gains a daily `trend` (defaults to the last 30 days),
+`by_medium`/`by_campaign` visitor breakdowns, and a `reconciled` flag — a genuine integrity check (top-level revenue
+vs. sum of by-step revenue use overlapping-but-not-identical WHERE clauses, so a real mismatch is catchable, not
+decorative). `by_content`/`by_term` deliberately deferred (real query cost, marginal value over `by_source`).
+**D-179**: new `funnel_recommendations(p_funnel)` — the AI Optimization advisory layer, same deterministic-today
+posture as D-173. Five grounded rules over data `funnel_map`/`funnel_revenue_summary`/`funnel_split_stats` already
+compute: high step-to-step drop-off, low checkout completion, low EPC, missing order bump, a running test with a
+significant non-control leader. Explicitly NOT attempted: traffic-source/funnel-type mismatch (traffic_source isn't
+persisted past the wizard session), "no proof block"/"weak CTA"/"too many form fields" (would need to parse M19
+page content, a capability that doesn't exist) — flagged as deferred, not faked. **D-180**: `funnel_job_runs` table
++ `sweep_abandoned_funnels`/`auto_promote_split_winners` log a row every run (job name, rows affected, timestamp) —
+the two hourly sweeps had zero run-visibility before this. Frontend: readiness score + AI recommendations panel on
+Overview, revenue trend + date-range picker + medium/campaign breakdown on Analytics/Attribution, reconciliation
+warning on CRM & Revenue, job-run history on Logs, a coupon field on Checkout (jsonb-only, no schema), and a
+Viewer/Analyst/Editor/Full-access preset selector on Team (relabels the same two existing booleans — explicitly
+documented as a UX relabel, not new enforcement; full role granularity stays deferred per D-166's access-control
+bar). `m20probe.mjs` 135→150 assertions, `scripts/verify.sh` green, preview-verified across all 14 workspace
+sections + the wizard, 0 console errors, 0 h-scroll at 375px.
+
+## D-181 · M20 v3 Phase F — Instant mode + product/affiliate offer-source branch · **LOCKED 2026-07-10**
+Migration `0036_m20_funnels_v3c.sql`, additive only (widened CHECK constraint + `CREATE OR REPLACE` on the existing
+`recommend_funnel_blueprint` signature). A second master prompt re-requested the full "AI Funnel Studio" vision;
+auditing first found D-171…D-180 already covered most of it, so this closes only the two genuine gaps. Widens
+`funnels_funnel_type_chk` with `affiliate_bridge`/`affiliate_review`/`affiliate_comparison` (existing nullable
+column, no existing rows affected). `recommend_funnel_blueprint` gains an `offer_source` branch, checked before the
+existing objective-based dispatch: `offer_source='affiliate'` + cold/unaware signals → `affiliate_bridge`;
+solution-aware → `affiliate_comparison`; otherwise → `affiliate_review`. All three generate an optin/sales/thankyou
+flow with no order/upsell/downsell step (the sale happens on the vendor's site, not ours) and append an FTC
+affiliate-disclosure reminder to the launch checklist when `disclosure_required` is true (the default). No new
+tables — the affiliate-specific fields (vendor, URL, commission note, disclosure flag) live in the wizard's
+existing `answers`/`blueprint` jsonb columns, same as every other studio answer. `convert_blueprint_to_funnel`
+needed no code change, only the widened CHECK. Frontend: a mode-picker ("Instant Funnel" vs. "Smart Brief") at
+Studio entry plus an "Affiliate Funnel" shortcut; Instant mode is a single condensed screen reusing the same
+recommendation engine with inferred defaults (audience awareness from traffic source, no lead-magnet/checkout
+questions); the Offer stage (both modes) gained the offer-source toggle; a "Generate with AI" entry button added
+to the Funnels list landing. Explicitly NOT attempted, same D-063 honesty posture: an async job queue for
+blueprint generation (deterministic + sub-second, not an LLM call — fake progress/retry UI would be exactly the
+faked capability this rule forbids); a real product/course/offer catalog (its own module-sized workstream, no
+such catalog exists anywhere in this repo — checked M28/M03/M09); one-click upsell/downsell charging and full RBAC
+enforcement (unchanged, already deferred by D-171…D-180). `m20probe.mjs` 150 assertions (+7: affiliate decision
+matrix, no-bump/upsell/downsell invariant, disclosure checklist, end-to-end convert proving the widened CHECK).
+
+## D-182…D-185 · M29 Affiliate Hub Phase 1a + Funnels bridge · **LOCKED 2026-07-10**
+Migration `0037_m29_affiliate_hub.sql`. A third master prompt asked for the same "AI Funnel Studio" vision plus a
+clean split: Funnels builds/generates/optimizes conversion paths, Affiliate Hub owns affiliate business data,
+bridged only by explicit handoff, never merged. "Affiliate Hub" is already reserved in this repo as **M29**
+(`doc/PRD/PRD_M29_Affiliate_Hub.md`) with a full PRD — link cloaker/rotation, Amazon PA-API, live multi-network
+earnings sync, AI content generators — and zero implementation; that full scope is its own module-sized
+workstream. This locks only Phase 1a, scoped down via plan mode with the user's sign-off.
+
+**D-182** — M29 foundation: `affiliate_offers` (name/network/vendor_url/niche/commission_note/
+`compliance_category` check `general|health|finance|income|sensitive`/disclosure_text/promo_assets jsonb/status),
+`affiliate_networks` (manual list, `status` defaults `'manual'` — no live API, same D-063 posture as every other
+unbuilt-integration stub), `affiliate_disclosure_templates` (reusable snippets by category). All three:
+member-read/staff-write RLS, same shape as every other M-module table. New module `frontend/js/m29-affiliate-hub.js`
++ `frontend/m29-affiliate-hub.html` + `frontend/styles/m29-affiliate-hub.css` on the identical shell/moduleHead/
+svg/toast/modal conventions as every other module. Nav is the user's full target IA (Overview/Offers/Networks/
+Campaigns/Creatives/Tracking Links/Disclosures & Compliance/Earnings/Analytics/Library/Settings) from day one —
+safe, since it's a brand-new module with no existing routes to break — but only Overview/Offers/Networks/
+Disclosures & Compliance/Settings are real; the rest render an honest "not built yet" state, never fabricated data.
+
+**D-183** — the bridge: additive `funnels.source_offer_id` (nullable FK → `affiliate_offers`) +
+`convert_blueprint_to_funnel` gains an optional `p_source_offer_id` (had to `drop function` the old 3-arg
+signature first — a 4th param under `CREATE OR REPLACE` creates a new overload instead of replacing it, making a
+2-arg call ambiguous; caught by actually running the probe). One direction only, Phase 1a: M29 Offers →
+"Create Funnel from Offer" writes a one-time `localStorage` prefill key, M20's Studio consumes-and-clears it,
+pre-fills the affiliate wizard, and tags the generated funnel with `source_offer_id` on approve. Reverse
+direction (Earnings rollup from linked funnels, "Open in Affiliate Hub" beyond the one link already added) is
+Phase 1b.
+
+**D-184** — `funnel_compliance_scan(p_funnel)`: deterministic phrase-pattern rule table (5 rules — guaranteed-
+income/miracle-health/risk-free-finance claims at `high`, fake-urgency/100%-absolute claims at `medium`) over the
+funnel's own step copy, same posture as `recommend_funnel_blueprint` (D-173)/`funnel_recommendations` (D-179): a
+real lint-style feature, not NLP claim understanding. Frontend warn-gates (not DB-level block, to avoid touching
+`set_funnel_status`'s tested behavior) the draft→active transition when findings exist.
+
+**D-185** — M20 IA additions (frontend-only, no schema): landing nav reordered/relabeled to Overview/Funnels/
+AI Funnel Studio/Templates/**Pages**/Automations/Analytics/Settings (Attribution's route unchanged, just no longer
+top-level); new **Pages** landing view (cross-funnel page-reuse index from existing `funnel_steps.page_id`, no
+schema change). Per-funnel nav gains **Offers** (source offer + Affiliate Hub link) and **Compliance** (the scan
+above); the existing recommendations panel **moved** (not duplicated) off Overview into its own **Optimization**
+tab; `tabMap`'s label renamed "Funnel Map" → "Flow Map" (cosmetic). The remaining 7 tabs are deliberately **not**
+collapsed into the user's fuller proposed 13-tab IA in this pass — nav restructuring is already treated as its own
+dedicated task sequence in this repo (see "IA restructure Task 9/10/11"), and bundling a 7-tab rename into a
+feature build was judged too risky.
+
+New `m29probe.mjs` (16 assertions), `m20probe.mjs` 158→166 (+8: bridge, cross-tenant offer rejection, compliance
+scan on risky vs. clean copy, RLS on the scan and on `affiliate_offers`), both in `scripts/verify.sh`, full suite
+green. Deferred, not forgotten: Tracking Links/redirect/click-logging, Networks CSV import, Earnings rollup, the
+reverse bridge (**Phase 1b**); Campaigns, Creatives, Library, angle generation, quiz branching (M15), email
+sequence generation (M16), the fuller 13-tab collapse, Amazon PA-API / live network integrations (**Phase 2**).
+
 ---
 
 *AiMindShare.com · Decisions Log v1.0 · D-001…D-085 recorded (D-008 superseded by D-014; M09 added
@@ -1146,5 +1461,15 @@ M22 manual added D-120…D-127; M15 added D-136…D-146 (claimed above the obser
 M21 SEO session reserved at D-128…D-135 in its migration/spec); M21 SEO Engine (Session 21) now records the
 formal **D-128…D-135** headers (migration `0026_m21_seo.sql`; `pagespeed` provider added) —
 if a parallel session also claimed any of these numbers, renumber on merge; M19 v2 (Session 24) added
-D-147…D-152 (migration `0028_m19_sites_v2.sql`)), 5 OPEN. Append-only.
+D-147…D-152 (migration `0028_m19_sites_v2.sql`); M20 v2 added D-153…D-158 (migration
+`0029_m20_funnels_v2.sql`, Priorities 1–3 of the v2 upgrade brief) then D-159…D-162 (migration
+`0030_m20_funnels_v2b.sql`, Priorities 4–5) then D-163…D-166 (migration `0031_m20_funnels_v2c.sql`,
+Priorities 6–7) then D-167 (migration `0032_m20_funnels_v2d.sql`, Priority 8) then D-168 (frontend-only,
+no migration — Priority 9 Step 1, the per-funnel rail nav) then D-169 (migration `0033_m20_funnels_v2e.sql`,
+Priority 9 Step 2 — closes the M20 v2 upgrade brief) then D-170 (frontend-only, no migration — landing-page vs.
+per-funnel-workspace IA split, requested separately after the v2 brief closed)) then D-171…D-180 (M20 v3: AI
+Funnel Studio + Operations Workspace depth + AI Optimization advisories, migrations 0034/0035) then D-181
+(M20 v3 Phase F: Instant mode + product/affiliate offer-source branch, migration `0036_m20_funnels_v3c.sql`) then
+D-182…D-185 (M29 Affiliate Hub Phase 1a + the Funnels↔Affiliate-Hub bridge, migration `0037_m29_affiliate_hub.sql`),
+5 OPEN. Append-only.
 LOCKED entries bind Claude Code; OPEN entries are human calls to be flagged, not resolved, in build sessions.*

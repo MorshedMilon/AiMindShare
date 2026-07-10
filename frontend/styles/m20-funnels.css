@@ -135,11 +135,12 @@
 .split-winner .sw-title{font-family:var(--font-serif);font-size:15px;color:var(--ink-900)}
 .split-winner .sw-sub{font-size:12px;color:var(--ink-400);margin-top:2px}
 .variant-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.variant-grid.three{grid-template-columns:1fr 1fr 1fr}
 .variant{padding:16px;border-radius:var(--r-lg);background:var(--bg-card);border:.5px solid var(--line-strong)}
 .variant.lead{border-color:rgba(46,158,123,.45);box-shadow:0 0 0 1px rgba(46,158,123,.12)}
 .variant .v-tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;font-weight:700;
   text-transform:uppercase;letter-spacing:.08em;color:var(--teal-700);margin-bottom:10px}
-.variant.b .v-tag{color:var(--gold-500)}
+.variant.b .v-tag,.variant.c .v-tag{color:var(--gold-500)}
 .variant .v-rate{font-family:var(--font-mono);font-size:28px;font-weight:500;color:var(--ink-900);letter-spacing:-.02em;line-height:1}
 .variant .v-detail{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-400);margin-top:6px}
 .variant .v-page{font-size:12px;color:var(--ink-500);margin-top:10px;padding-top:10px;border-top:.5px solid var(--line);
@@ -178,8 +179,98 @@
 .st-active{color:var(--status-success);background:rgba(46,158,123,.14)}
 .st-draft{color:var(--status-idle);background:rgba(109,121,122,.14)}
 .st-archived{color:var(--ink-400);background:rgba(109,121,122,.10)}
+.st-testing{color:var(--status-info);background:rgba(44,164,171,.14)}
+.st-paused{color:var(--gold-500);background:rgba(197,160,89,.14)}
 .st-running{color:var(--status-info);background:rgba(44,164,171,.14)}
 .st-promoted{color:var(--gold-500);background:rgba(197,160,89,.14)}
+.test-badge{display:inline-flex;align-items:center;font-family:var(--font-mono);font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--gold-500);background:rgba(197,160,89,.16);
+  border-radius:var(--r-pill);padding:2px 7px}
+
+/* ── Card "more" menu (duplicate / save as template) ──────────────────────── */
+.fc-menu-btn{width:28px;height:28px;font-size:16px;line-height:1;color:var(--ink-400)}
+.fc-menu{position:absolute;top:100%;right:0;z-index:5;min-width:172px;padding:6px;margin-top:4px;
+  background:var(--card-solid);border:.5px solid var(--line-strong);border-radius:var(--r-md);box-shadow:var(--shadow-lg)}
+.fc-menu button{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border:none;background:transparent;
+  color:var(--ink-700);font:inherit;font-size:12.5px;text-align:left;border-radius:var(--r-sm);cursor:pointer}
+.fc-menu button:hover{background:rgba(0,105,110,.08);color:var(--ink-900)}
+
+/* ── Operations — status pills, test-mode toggle, publish readiness ──────── */
+.ready-badge{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600}
+.ready-badge.ok{color:var(--status-success)}
+.ready-badge.no{color:var(--status-danger)}
+.readiness-list{margin:8px 0 0;padding-left:18px;font-size:12.5px;line-height:1.6}
+.readiness-list.blockers{color:var(--status-danger)}
+.readiness-list.warnings{color:var(--gold-500)}
+
+/* ── AI Funnel Studio wizard ───────────────────────────────────────────────── */
+.studio-panel{max-width:640px}
+.studio-steps{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;padding-bottom:16px;border-bottom:.5px solid var(--line)}
+.studio-step{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-400);padding:4px 10px;border-radius:999px;background:rgba(109,121,122,.08)}
+.studio-step.on{color:var(--ink-900);background:rgba(197,160,89,.16);font-weight:600}
+.studio-step.done{color:var(--status-success)}
+.studio-step-n{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;font-size:10px}
+.studio-result{padding-top:2px}
+.studio-badge{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--gold-500);
+  background:rgba(197,160,89,.12);padding:6px 12px;border-radius:999px}
+.studio-modes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.studio-mode-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:16px;
+  border:.5px solid var(--line);border-radius:12px;background:var(--bg-elev);cursor:pointer}
+.studio-mode-card:hover{border-color:var(--gold-500)}
+.smc-ico{color:var(--gold-500)}
+.smc-title{font-size:13.5px;font-weight:600;color:var(--ink-900)}
+.smc-sub{font-size:12px;color:var(--ink-400);line-height:1.4}
+.studio-affiliate-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;margin-top:14px}
+.studio-instant-head{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:16px;border-bottom:.5px solid var(--line)}
+.studio-offersource{display:flex;gap:16px;font-size:13px;color:var(--ink-700);margin-bottom:4px}
+.studio-offersource label{display:flex;align-items:center;gap:6px}
+.studio-affiliate-note{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gold-500);
+  background:rgba(197,160,89,.1);padding:8px 12px;border-radius:8px;margin-top:10px}
+@media (max-width:520px){.studio-modes{grid-template-columns:1fr}}
+
+/* ── Compliance-category badges (Offers/Compliance tabs, D-182) ──────────── */
+.cat-badge{display:inline-flex;align-items:center;font-size:10.5px;font-weight:600;letter-spacing:.03em;
+  padding:3px 9px;border-radius:999px;white-space:nowrap}
+.cat-general{color:var(--ink-400);background:rgba(109,121,122,.12)}
+.cat-health{color:var(--status-danger);background:rgba(196,97,78,.12)}
+.cat-finance{color:var(--gold-500);background:rgba(197,160,89,.14)}
+.cat-income{color:var(--gold-500);background:rgba(197,160,89,.14)}
+.cat-sensitive{color:var(--status-danger);background:rgba(196,97,78,.12)}
+
+/* ── Team & permissions (access-list rows) ────────────────────────────────── */
+.access-list{display:flex;flex-direction:column;gap:2px}
+.access-row{display:flex;align-items:center;gap:10px;padding:9px 4px;border-top:.5px solid var(--line)}
+.access-row:first-child{border-top:none}
+
+/* ── Activity & automation logs ────────────────────────────────────────────── */
+.log-list{display:flex;flex-direction:column;gap:2px}
+.log-row{display:flex;align-items:center;gap:10px;padding:8px 4px;border-top:.5px solid var(--line)}
+.log-row:first-child{border-top:none}
+.log-status{width:22px;height:22px;flex:none;border-radius:50%;display:grid;place-items:center;background:rgba(109,121,122,.12);color:var(--ink-400)}
+.log-status.completed{background:rgba(46,158,123,.14);color:var(--status-success)}
+.log-status.failed{background:rgba(196,97,78,.14);color:var(--status-danger)}
+.log-status.running,.log-status.waiting{background:rgba(197,160,89,.14);color:var(--gold-500)}
+
+/* ── Contacts & entries (entrant list) ────────────────────────────────────── */
+.entrant-list{display:flex;flex-direction:column}
+.entrant-row{display:grid;grid-template-columns:1.6fr 1fr 1.3fr 1fr 1fr 1fr;gap:10px;align-items:center;
+  padding:9px 4px;border-top:.5px solid var(--line)}
+.entrant-row:first-child{border-top:none}
+.entrant-cell{font-size:12.5px;color:var(--ink-500)}
+.entrant-head{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-400);
+  border-top:none;padding-bottom:8px;border-bottom:.5px solid var(--line)}
+.entrant-head .entrant-cell{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-400)}
+
+/* ── Revenue-by-step rows (analytics) ─────────────────────────────────────── */
+.rev-step-row{display:grid;grid-template-columns:1fr 100px 110px;align-items:center;gap:10px;
+  padding:10px 6px;border-top:.5px solid var(--line);font-size:13px;color:var(--ink-900)}
+.rev-step-row:first-child{border-top:none}
+.utm-row .utm-rev{width:90px;text-align:right;font-family:var(--font-mono);color:var(--gold-500);font-size:12px}
+
+/* ── Per-funnel rail nav (mirrors the workspace rail; swapped in via shell()) ── */
+.nav-back{color:var(--ink-400);font-size:12.5px;margin-bottom:8px;padding-bottom:8px;border-bottom:.5px solid var(--line)}
+.nav-back:hover{color:var(--teal-700)}
+:root[data-theme="dark"] .nav-back:hover{color:var(--teal-300)}
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media(max-width:1100px){
@@ -189,7 +280,11 @@
   .rev-strip{grid-template-columns:repeat(2,1fr)}
   .fn-grid{grid-template-columns:1fr}
   .wf-row{grid-template-columns:110px 1fr 84px;gap:10px}
-  .variant-grid{grid-template-columns:1fr}
+  .variant-grid,.variant-grid.three{grid-template-columns:1fr}
+  .rev-step-row{grid-template-columns:1fr 76px 90px;gap:6px}
+  .entrant-head{display:none}
+  .entrant-row{grid-template-columns:1fr;gap:3px;padding:10px 4px}
+  .entrant-row .entrant-cell{font-size:11.5px}
 }
 @media(max-width:480px){
   .rev-strip{grid-template-columns:1fr}
