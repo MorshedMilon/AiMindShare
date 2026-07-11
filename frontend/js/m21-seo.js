@@ -205,10 +205,10 @@
   async function loadRoute() {
     const c = ensureClient(); if (!c) return;
     const ws = state.workspaceId;
-    if (state.route.section === "keywords" && (!state.route.sub || state.route.sub === "explorer")) {
+    if (state.route.section === "keywords" && !state.route.id && (!state.route.sub || state.route.sub === "explorer")) {
       const { data } = await c.from("keyword_lists").select("id,name,description").order("created_at", { ascending: false });
       state.lists = (data || []).map((l) => ({ ...l, count: 0 }));
-    } else if (state.route.section === "rankings" && !state.route.sub) {
+    } else if (state.route.section === "rankings" && !state.route.sub && !state.route.id) {
       const { data } = await c.from("tracked_keywords").select("*").eq("is_active", true);
       // latest ranking per tracker (best-effort; the worker keeps these fresh)
       state.trackers = await Promise.all((data || []).map(async (t) => {
@@ -216,7 +216,7 @@
           .eq("tracked_keyword_id", t.id).order("checked_on", { ascending: false }).limit(2);
         return { ...t, position: r?.[0]?.position ?? null, prev: r?.[1]?.position ?? null, url: r?.[0]?.url, is_featured_snippet: r?.[0]?.is_featured_snippet, history: null };
       }));
-    } else if (state.route.section === "audit" && !state.route.sub) {
+    } else if (state.route.section === "audit" && !state.route.sub && !state.route.id) {
       const { data } = await c.from("seo_audits").select("*").order("created_at", { ascending: false }).limit(1);
       const a = data?.[0];
       if (a) {
@@ -565,16 +565,21 @@
      ══════════════════════════════════════════════════════════════════════════ */
   function render() {
     const app = $("#app");
+    const { section, sub, id } = state.route;
+    const isKeywordsHome = section === "keywords" && !id && (!sub || sub === "explorer");
+    const isRankingsHome = section === "rankings" && !sub && !id;
+    const isAuditHome = section === "audit" && !sub && !id;
     let content;
     if (connected() && !state.user) content = shell(`<div class="panel"><div class="empty-state"><div class="es-ico">${svg("search", 22)}</div><h3>Sign in required</h3><p>Connect a project and sign in to use the SEO Engine.</p></div></div>`);
-    else if (state.route.name === "rankings") content = viewRankings();
-    else if (state.route.name === "audit") content = viewAudit();
-    else content = viewKeywords();
+    else if (isRankingsHome) content = viewRankings();
+    else if (isAuditHome) content = viewAudit();
+    else if (isKeywordsHome) content = viewKeywords();
+    else content = viewPlaceholder(section, sub, id);
     app.innerHTML = content;
     renderConn(); wireCommon();
-    if (state.route.name === "keywords") wireKeywords();
-    if (state.route.name === "rankings") wireRankings();
-    if (state.route.name === "audit") { wireAudit(); drawScoreDial(); }
+    if (isKeywordsHome) wireKeywords();
+    if (isRankingsHome) wireRankings();
+    if (isAuditHome) { wireAudit(); drawScoreDial(); }
   }
   function renderConn() { const pill = $("#connPill"); if (pill) { const on = connected(); pill.hidden = !on; pill.textContent = on ? "live" : ""; pill.classList.toggle("live", on); } }
 
