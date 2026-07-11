@@ -156,9 +156,9 @@
   const state = {
     user: null, workspaceId: null, workspaceName: null, role: "owner",
     loaded: false, previewState: "default", modalOpen: false,
-    route: { name: "keywords" },
+    route: { section: "dashboard", sub: null, id: null },
     research: null, activeTab: "related", selected: new Set(),
-    lists: [], trackers: [], audit: null, gap: null,
+    lists: [], trackers: [], audit: null, gap: null, navOpen: new Set(),
   };
   const PREVIEW_STATES = ["default", "empty", "loading", "error", "success"];
   const st = (name) => !connected() && state.previewState === name;
@@ -274,8 +274,32 @@
       { key: "scoring", label: "Scoring Weights", hash: "#/seo/settings/scoring" },
     ] },
   ];
-  function shell(activeKey, content) {
-    const nav = NAV.map((n) => `<div class="nav-item ${n.key === activeKey ? "active" : ""}" data-hash="${n.hash}"><span class="ni-ico">${svg(n.ico)}</span><span>${n.label}</span></div>`).join("");
+  function getSeoNavCounts() {
+    // Vanilla stand-in for the PRD's useSeoNavCounts() hook — static mock counts.
+    return { audit: 2, competitors: 1 };
+  }
+  function renderNavItem(n) {
+    const counts = getSeoNavCounts();
+    const badge = counts[n.key] ? `<span class="nav-badge">${counts[n.key]}</span>` : "";
+    if (!n.children || !n.children.length) {
+      const active = state.route.section === n.key;
+      return `<div class="nav-item ${active ? "active" : ""}" data-hash="${n.hash}">
+        <span class="ni-ico">${svg(n.ico)}</span><span>${n.label}</span>${badge}</div>`;
+    }
+    const selfOrChildActive = state.route.section === n.key;
+    const open = state.navOpen.has(n.key) || selfOrChildActive;
+    const childRows = n.children.map((c) => {
+      const cActive = state.route.section === n.key && state.route.sub === c.key;
+      return `<div class="nav-item nav-child ${cActive ? "active" : ""}" data-hash="${c.hash}"><span>${c.label}</span></div>`;
+    }).join("");
+    return `<div class="nav-item nav-parent ${selfOrChildActive ? "active" : ""}" data-hash="${n.hash}">
+        <span class="ni-ico">${svg(n.ico)}</span><span>${n.label}</span>${badge}
+        <button class="nav-chevron ${open ? "open" : ""}" data-navtoggle="${n.key}" title="${open ? "Collapse" : "Expand"}">${svg("chev", 12)}</button>
+      </div>
+      <div class="nav-children ${open ? "open" : ""}">${childRows}</div>`;
+  }
+  function shell(content) {
+    const nav = NAV.map(renderNavItem).join("");
     return `
       <aside class="rail" id="rail">
         <div class="brand"><span class="mark">✦</span><span><b>AiMind</b><em>Share</em></span></div>
@@ -535,6 +559,12 @@
   function wireCommon() {
     $("#railBurger")?.addEventListener("click", () => $("#rail").classList.toggle("open"));
     $$("[data-hash]").forEach((n) => n.addEventListener("click", () => { location.hash = n.dataset.hash; $("#rail")?.classList.remove("open"); }));
+    $$("[data-navtoggle]").forEach((b) => b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const key = b.dataset.navtoggle;
+      state.navOpen.has(key) ? state.navOpen.delete(key) : state.navOpen.add(key);
+      render();
+    }));
     $("#themeToggle")?.addEventListener("click", () => setTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark"));
     $("#openConnect2")?.addEventListener("click", openDrawer);
     $$("[data-preview]").forEach((b) => b.addEventListener("click", () => { state.previewState = b.dataset.preview; state.research = null; state.gap = null; boot(); }));
