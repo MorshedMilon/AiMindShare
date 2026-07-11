@@ -480,9 +480,9 @@ with:
   function render() {
     const app = $("#app");
     const { section, sub, id } = state.route;
-    const isKeywordsHome = section === "keywords" && (!sub || sub === "explorer");
-    const isRankingsHome = section === "rankings" && !sub;
-    const isAuditHome = section === "audit" && !sub;
+    const isKeywordsHome = section === "keywords" && !id && (!sub || sub === "explorer");
+    const isRankingsHome = section === "rankings" && !sub && !id;
+    const isAuditHome = section === "audit" && !sub && !id;
     let content;
     if (connected() && !state.user) content = shell(`<div class="panel"><div class="empty-state"><div class="es-ico">${svg("search", 22)}</div><h3>Sign in required</h3><p>Connect a project and sign in to use the SEO Engine.</p></div></div>`);
     else if (isRankingsHome) content = viewRankings();
@@ -496,6 +496,31 @@ with:
     if (isAuditHome) { wireAudit(); drawScoreDial(); }
   }
 ```
+`!id` was added to all three `isXHome` checks (not present in the original design) — found during Task 2's code review. Without it, an unrecognized trailing segment under `keywords`/`rankings`/`audit` (e.g. `#/seo/audit/xyz`) parses to `sub: null, id: "xyz"` in `parseRoute()`, which would satisfy `!sub` alone and wrongly render the real page instead of the placeholder, silently ignoring the id. Requiring `!id` too makes the dispatch correctly fall through to `viewPlaceholder()` for those routes, matching the verification table below (e.g. `#/seo/audit/xyz` → placeholder showing "Requested id: xyz").
+
+- [ ] **Step 1b: Apply the matching fix to `loadRoute()` (from Task 2)**
+
+Task 2's `loadRoute()` conditions have the identical gap for the same reason. Update them to match:
+```js
+    if (state.route.section === "keywords" && (!state.route.sub || state.route.sub === "explorer")) {
+```
+```js
+    } else if (state.route.section === "rankings" && !state.route.sub) {
+```
+```js
+    } else if (state.route.section === "audit" && !state.route.sub) {
+```
+→
+```js
+    if (state.route.section === "keywords" && !state.route.id && (!state.route.sub || state.route.sub === "explorer")) {
+```
+```js
+    } else if (state.route.section === "rankings" && !state.route.sub && !state.route.id) {
+```
+```js
+    } else if (state.route.section === "audit" && !state.route.sub && !state.route.id) {
+```
+This keeps `loadRoute()` and `render()` using the identical "is this a real home page" predicate, so live-data fetches and rendering never disagree about which routes are real vs. placeholder.
 
 - [ ] **Step 2: Verify — full manual route sweep in the browser**
 
