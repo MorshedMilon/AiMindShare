@@ -463,7 +463,7 @@
           <span class="ws-meta"><span class="ws-name">${esc(state.workspaceName || "Workspace")}</span><span class="ws-kind">Funnels</span></span>
         </div>
         <div class="spacer"></div>
-        <span class="pill plain" id="connPill">mockup mode</span>
+        <span class="pill plain" id="connPill" hidden></span>
         <button class="btn btn-ghost btn-sm" id="openConnect2">Connect</button>
         <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme"><span id="themeIco">☾</span></button>
         <span class="avatar" title="${esc(state.user?.email || "")}">${esc(initials(state.user?.name || state.user?.email))}</span>
@@ -471,10 +471,7 @@
       <main class="content"><div class="content-inner">${content}</div></main>`;
   }
   function previewStrip() {
-    if (connected()) return "";
-    return `<div class="mock-note"><span class="mn-ico">◈</span><b>Mockup mode.</b>
-      Connect a project to read live funnels, conversion stats &amp; A/B results. Sample data shown. Preview state:
-      ${PREVIEW_STATES.map((s) => `<button class="link ${state.previewState === s ? "on" : ""}" data-preview="${s}">${s}</button>`).join(" ")}</div>`;
+    return "";
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
@@ -935,17 +932,17 @@
     return `<div class="st-suggest">${examples.map((e) => `<button class="st-chip" data-studiochip="${esc(e)}">${esc(e)}</button>`).join("")}</div>`;
   }
   // Quick-start cards below the hero — same component as M19's sitesQuickCreate()
-  // (.st-quick/.qa-card), same 6-card slot: 5 funnel-type cards + a conditional
-  // "Continue recent funnel" card (omitted entirely when there's no recent
-  // blueprint yet, mirroring M19's own "Continue Recent" pattern). Clicking a
-  // type card still just toggles s.selectedType via the unchanged [data-studiotype]
-  // wiring in wireStudio(); the recent card reuses the existing [data-studioreopen]
-  // handler — no new event wiring needed for either.
+  // (.st-quick/.qa-card): all 6 TYPE_CARDS (5 funnel types + "Let AI decide")
+  // plus a conditional "Continue recent funnel" card (omitted entirely when
+  // there's no recent blueprint yet, mirroring M19's own "Continue Recent"
+  // pattern). Clicking a type card still just toggles s.selectedType via the
+  // unchanged [data-studiotype] wiring in wireStudio(); the recent card reuses
+  // the existing [data-studioreopen] handler — no new event wiring for either.
   function studioTypeCards(s) {
     const recent = s.recent && s.recent.length ? s.recent[0] : null;
-    const typeCards = TYPE_CARDS.filter((c) => c.key !== "auto").map((c) => `
+    const typeCards = TYPE_CARDS.map((c) => `
       <button class="qa-card ${s.selectedType === c.key ? "on" : ""}" data-studiotype="${c.key}">
-        <span class="qa-ico">${svg(c.ico, 18)}</span><b>${esc(c.label)} funnel</b><span>${esc(c.desc)}</span>
+        <span class="qa-ico">${svg(c.ico, 18)}</span><b>${esc(c.label)}${c.key === "auto" ? "" : " funnel"}</b><span>${esc(c.desc)}</span>
       </button>`).join("");
     const recentCard = recent ? `
       <button class="qa-card" data-studioreopen="${recent.id}">
@@ -956,7 +953,8 @@
   function studioGuidedFields(s) {
     const cat = s.selectedType && s.selectedType !== "auto" ? s.selectedType : null;
     return `<div class="studio-guided">
-      ${studioField("Your niche / business", `<input id="sgNiche" placeholder="e.g. Ramadan meal-prep coaching" value="${esc(s.answers.niche || "")}">`)}
+      ${studioField("Your niche or business", `<input id="sgNiche" placeholder="e.g. Ramadan meal-prep coaching" value="${esc(s.answers.niche || "")}">`,
+        "This shapes the funnel steps, copy direction, and offer angle around who you're selling to.")}
       ${cat === "sales" || cat === "affiliate" ? studioField("Price (0 if free)", `<input id="sgPrice" class="num" type="number" min="0" step="1" value="${esc(s.answers.offer_price ?? "")}" style="max-width:140px">`) : ""}
       ${cat === "webinar" ? studioField("Webinar topic", `<input id="sgWebinarTopic" placeholder="e.g. 5-day Quran reading fundamentals" value="${esc(s.answers.webinar_topic || "")}">`) : ""}
       ${cat === "quiz" ? studioField("What should the quiz segment on?", `<input id="sgQuizGoal" placeholder="e.g. travel style, budget, destination type" value="${esc(s.answers.quiz_segmentation || "")}">`) : ""}
@@ -965,21 +963,39 @@
   }
   function studioAdvancedFields(s) {
     return `<details class="studio-advanced">
-      <summary>Advanced options</summary>
+      <summary>
+        <span class="studio-advanced-label">
+          <span class="studio-advanced-title">Advanced options for better results</span>
+          <span class="studio-advanced-hint">Optional, but recommended if you want a more tailored funnel blueprint.</span>
+        </span>
+        ${svg("chev", 14)}
+      </summary>
       <div class="studio-advanced-body">
+        <p class="muted studio-advanced-compare"><b>Quick draft:</b> AI infers the strategy from your description.<br><b>Tailored blueprint:</b> your answers sharpen the steps, messaging angle, and CTA flow.</p>
         ${studioField("Main traffic source", `<select id="sgTraffic">
           <option value="">Not sure yet</option>
           ${[["cold_paid", "Cold paid traffic"], ["warm_email", "Warm email list"], ["organic_social", "Organic social"], ["referral", "Referral / word of mouth"]]
-            .map(([v, l]) => `<option value="${v}" ${s.answers.traffic_source === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)}
+            .map(([v, l]) => `<option value="${v}" ${s.answers.traffic_source === v ? "selected" : ""}>${l}</option>`).join("")}</select>`,
+          "Where most visitors will come from — helps AI judge how much persuasion the funnel needs before the offer.")}
         ${studioField("How aware is your audience?", `<select id="sgAwareness">
           <option value="">Not sure yet</option>
           ${[["unaware", "Unaware they have this problem"], ["problem_aware", "Aware of the problem, not the solution"],
              ["solution_aware", "Aware solutions exist"], ["product_aware", "Aware of your product specifically"], ["most_aware", "Ready to buy"]]
-            .map(([v, l]) => `<option value="${v}" ${s.answers.audience_awareness === v ? "selected" : ""}>${l}</option>`).join("")}</select>`)}
-        ${studioField("I already have a free lead magnet", `<input type="checkbox" id="sgLeadMagnet" ${s.answers.has_lead_magnet ? "checked" : ""}>`)}
+            .map(([v, l]) => `<option value="${v}" ${s.answers.audience_awareness === v ? "selected" : ""}>${l}</option>`).join("")}</select>`,
+          "Helps AI decide whether to lead with education, proof, or a direct offer.")}
+        ${studioField("I already have a free lead magnet", `<input type="checkbox" id="sgLeadMagnet" ${s.answers.has_lead_magnet ? "checked" : ""}>`,
+          "If checked, AI can build a tripwire or bridge step around your lead magnet instead of starting from scratch.")}
         ${s.selectedType !== "affiliate" ? offerSourceToggle(s) : ""}
       </div>
     </details>`;
+  }
+  function studioGuidedCta(s) {
+    return `<div class="studio-guided-cta">
+      <button class="btn btn-primary" id="studioGenerateGuided" ${s.generating ? "disabled" : ""}>${svg("zap", 15)} ${s.generating ? "Generating…" : "Generate funnel"}</button>
+      <p class="studio-guided-cta-hint">Skip the extras for a quick draft, or fill them in for better results.</p>
+      <p class="studio-guided-cta-what">${svg("check", 13)} AI will generate a funnel blueprint with recommended steps, messaging, and CTA flow.</p>
+      <p class="studio-guided-cta-auto">We'll remember this setup so you can reuse or tweak it for future funnels.</p>
+    </div>`;
   }
   function studioClarifyBlock(s) {
     if (!s.clarifyQuestions || !s.clarifyQuestions.length) return "";
@@ -993,9 +1009,9 @@
   }
   function studioHowItWorks() {
     return `<div class="studio-how">
-      <div class="studio-how-step"><div class="shw-n">1</div><div class="shw-title">Describe your funnel</div><div class="shw-sub">Type a sentence or pick guided fields.</div></div>
-      <div class="studio-how-step"><div class="shw-n">2</div><div class="shw-title">AI generates the structure</div><div class="shw-sub">Steps, copy direction, and CTAs, mapped to your goal.</div></div>
-      <div class="studio-how-step"><div class="shw-n">3</div><div class="shw-title">Review, edit, and launch</div><div class="shw-sub">Approve the blueprint, then edit it like any funnel.</div></div>
+      <div class="studio-how-step"><div class="shw-n">1</div><div class="shw-title">Describe your funnel</div><div class="shw-sub">Enter your niche and a few optional details.</div></div>
+      <div class="studio-how-step"><div class="shw-n">2</div><div class="shw-title">AI builds the blueprint</div><div class="shw-sub">Recommended steps, messaging direction, and CTA flow tailored to your goal.</div></div>
+      <div class="studio-how-step"><div class="shw-n">3</div><div class="shw-title">Review, edit, and launch</div><div class="shw-sub">Refine the draft, make changes, and publish like any funnel.</div></div>
     </div>`;
   }
   function studioRecentSection(s) {
@@ -1025,7 +1041,7 @@
     return `${studioField("Who owns this offer?", `<div class="studio-offersource">
         <label><input type="radio" name="stOfferSource" value="own_product" ${src !== "affiliate" ? "checked" : ""}> Own product / service</label>
         <label><input type="radio" name="stOfferSource" value="affiliate" ${src === "affiliate" ? "checked" : ""}> Affiliate offer</label>
-      </div>`)}
+      </div>`, "Affiliate funnels may need a bridge or review step instead of a direct checkout.")}
       ${src === "affiliate" ? `
         ${studioField("Affiliate vendor / network", `<input id="stAffVendor" placeholder="e.g. ClickBank, PartnerStack, direct vendor" value="${esc(s.answers.affiliate_vendor || "")}">`)}
         ${studioField("Product / affiliate link", `<input id="stAffUrl" placeholder="https://…" value="${esc(s.answers.affiliate_url || "")}">`)}
@@ -1049,7 +1065,7 @@
       s.answers.disclosure_required = !!$("#stAffDisclosure")?.checked;
     }
   }
-  function studioField(label, inner) { return `<div class="form-field">${label ? `<label>${label}</label>` : ""}${inner}</div>`; }
+  function studioField(label, inner, hint) { return `<div class="form-field">${label ? `<label>${label}</label>` : ""}${inner}${hint ? `<span class="hint">${hint}</span>` : ""}</div>`; }
   // Read the envelope message out of a Supabase FunctionsHttpError (non-2xx body).
   async function readFnError(error) {
     try { const body = await error.context.json(); return body?.message || body?.error || error.message; }
@@ -1106,20 +1122,26 @@
             <textarea id="stPrompt" placeholder="e.g. Create a lead generation funnel for a roofing company in Toronto">${esc(s.prompt || "")}</textarea>
             <div class="st-comp-bar">
               <span class="cb-hint">A detailed sentence gives the best result</span>
-              <span class="spacer"></span>
-              <button class="cb-send" id="studioGenerate" ${s.generating ? "disabled" : ""}>${svg("zap", 16)} ${s.generating ? "Generating…" : "Generate Funnel"}</button>
             </div>
           </div>
           ${studioClarifyBlock(s)}
           ${studioExampleChips()}
-          <button class="st-link" id="studioStartScratch" style="margin-top:14px">${svg("file", 13)} Prefer to start from scratch?</button>
+          <div class="studio-hero-actions">
+            <button class="btn btn-primary" id="studioGenerate" ${s.generating ? "disabled" : ""}>${svg("zap", 15)} ${s.generating ? "Generating…" : "Generate Funnel"}</button>
+            <button class="btn btn-ghost" id="studioStartScratch">Start from scratch</button>
+          </div>
+          <p class="muted" style="font-size:11.5px;margin-top:8px">Builds a full blueprint — steps, copy direction, and CTAs — for you to review before anything goes live.</p>
         </div>
       </div>
       ${studioTypeCards(s)}
       <div class="panel studio-panel-wide">
-        <div class="panel-head"><h3>Guided setup</h3></div>
+        <div class="studio-guided-head">
+          <h3>Guided setup</h3>
+          <p class="studio-guided-sub">Give AI a clearer brief for a more tailored funnel.<br>Skip the extra details and you'll still get a solid first draft.</p>
+        </div>
         ${studioGuidedFields(s)}
         ${studioAdvancedFields(s)}
+        ${studioGuidedCta(s)}
         ${studioHowItWorks()}
         ${studioRecentSection(s)}
       </div>
@@ -1244,6 +1266,7 @@
       } else render();
     }));
     $("#studioGenerate")?.addEventListener("click", generateStudioBlueprint);
+    $("#studioGenerateGuided")?.addEventListener("click", generateStudioBlueprint);
     $("#studioRegenerate")?.addEventListener("click", generateStudioBlueprint);
     $("#studioApprove")?.addEventListener("click", approveAndGenerateFunnel);
     $("#studioBack")?.addEventListener("click", () => { s.stage = "landing"; render(); });
@@ -1925,7 +1948,7 @@
   }
   function renderConn() {
     const pill = $("#connPill");
-    if (pill) { const on = connected(); pill.textContent = on ? "live" : "mockup mode"; pill.classList.toggle("live", on); }
+    if (pill) { const on = connected(); pill.hidden = !on; pill.textContent = on ? "live" : ""; pill.classList.toggle("live", on); }
   }
   function wireCommon() {
     const burger = $("#railBurger"); if (burger) burger.addEventListener("click", () => $("#rail").classList.toggle("open"));
