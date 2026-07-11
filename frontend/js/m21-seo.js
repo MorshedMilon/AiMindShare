@@ -334,8 +334,8 @@
      Screen 1 · Keyword research
      ══════════════════════════════════════════════════════════════════════════ */
   function viewKeywords() {
-    if (st("loading")) return shell("keywords", loadingBlock());
-    if (st("error")) return shell("keywords", errorBlock());
+    if (st("loading")) return shell(loadingBlock());
+    if (st("error")) return shell(errorBlock());
     const showEmpty = st("empty") || (!state.research && !st("success") && !st("default"));
     const research = st("success") || (st("default")) ? clone(MOCK.research) : state.research;
 
@@ -372,7 +372,7 @@
     }
 
     const sidebar = listsSidebar();
-    return shell("keywords", previewStrip() + head("search", "SEO &amp; Content · M21", `Keyword <em>research</em>`, "Volume, difficulty and intent for any term — with related keywords, questions and the live SERP.", "")
+    return shell(previewStrip() + head("search", "SEO &amp; Content · M21", `Keyword <em>research</em>`, "Volume, difficulty and intent for any term — with related keywords, questions and the live SERP.", "")
       + `<div class="kw-layout"><div class="kw-main">${form}${showEmpty && !research ? "" : ""}${body}${gap}</div>${sidebar}</div>`);
   }
 
@@ -441,8 +441,8 @@
      Screen 2 · Rank tracker
      ══════════════════════════════════════════════════════════════════════════ */
   function viewRankings() {
-    if (st("loading")) return shell("rankings", loadingBlock());
-    if (st("error")) return shell("rankings", errorBlock());
+    if (st("loading")) return shell(loadingBlock());
+    if (st("error")) return shell(errorBlock());
     const trackers = st("empty") ? [] : state.trackers;
     const cta = canWrite() ? `<button class="btn btn-primary" id="addTracker">${svg("plus", 15)} Track keyword</button>` : "";
     let body;
@@ -462,7 +462,7 @@
         <th>Keyword</th><th class="num">Position</th><th class="num">Δ 7d</th><th>URL</th><th>Country</th><th></th></tr></thead><tbody>
         ${trackers.map(rankRow).join("")}</tbody></table></div></div>`;
     }
-    return shell("rankings", previewStrip() + head("trend", "SEO &amp; Content · M21", `Rank <em>tracker</em>`, "Daily Google positions for your domain and competitors, with 90-day history and major-move alerts.", cta) + body);
+    return shell(previewStrip() + head("trend", "SEO &amp; Content · M21", `Rank <em>tracker</em>`, "Daily Google positions for your domain and competitors, with 90-day history and major-move alerts.", cta) + body);
   }
   function rankSummary(ts) {
     return {
@@ -490,8 +490,8 @@
      Screen 3 · Site audit
      ══════════════════════════════════════════════════════════════════════════ */
   function viewAudit() {
-    if (st("loading")) return shell("audit", loadingBlock());
-    if (st("error")) return shell("audit", errorBlock());
+    if (st("loading")) return shell(loadingBlock());
+    if (st("error")) return shell(errorBlock());
     const a = st("empty") ? null : state.audit;
     const form = `<div class="panel audit-form">
       <div class="rf-row"><div class="rf-field grow"><label>Domain to audit</label>
@@ -500,7 +500,7 @@
       <div class="rf-hint">${svg("bolt", 12)} Crawls up to 500 pages at 2 req/s, respecting robots.txt — runs in the background and resumes across chunks.</div>
     </div>`;
     if (!a) {
-      return shell("audit", previewStrip() + head("gauge", "SEO &amp; Content · M21", `Site <em>audit</em>`, "Crawl your site for broken links, on-page SEO gaps and Core Web Vitals.", "")
+      return shell(previewStrip() + head("gauge", "SEO &amp; Content · M21", `Site <em>audit</em>`, "Crawl your site for broken links, on-page SEO gaps and Core Web Vitals.", "")
         + form + `<div class="panel"><div class="empty-state"><div class="es-ico">${geoOrb(svg("gauge", 24))}</div>
         <h3>Run your first audit</h3><p>Point the crawler at your domain and get a prioritised list of technical issues — broken links, missing titles and meta, redirect chains — plus a Core Web Vitals report and an overall health score.</p></div></div>`);
     }
@@ -527,7 +527,7 @@
         ${byType[s].map((i) => `<div class="issue-row"><span class="ir-type">${ISSUE_LABEL[i.type] || i.type}</span>
           <span class="ir-url muted">${esc(i.url || "")}</span><span class="ir-detail muted">${esc(i.detail || "")}</span></div>`).join("")}
       </div>`).join("")}</div>`;
-    return shell("audit", previewStrip() + head("gauge", "SEO &amp; Content · M21", `Site <em>audit</em>`, `Last crawl of <b>${esc(a.domain)}</b> — ${fmtInt(a.pages_crawled)} pages.`, canWrite() ? `<button class="btn btn-ghost" id="runAudit2">${svg("gauge", 14)} Re-run</button>` : "")
+    return shell(previewStrip() + head("gauge", "SEO &amp; Content · M21", `Site <em>audit</em>`, `Last crawl of <b>${esc(a.domain)}</b> — ${fmtInt(a.pages_crawled)} pages.`, canWrite() ? `<button class="btn btn-ghost" id="runAudit2">${svg("gauge", 14)} Re-run</button>` : "")
       + form + `<div class="audit-top">${dial}<div class="audit-cwv">${cwvCards}</div></div>` + issues);
   }
   function cwvCard(k, v, tone, sub) { return `<div class="cwv-card ${tone}"><div class="cwv-k">${k}</div><div class="cwv-v">${v}</div><div class="cwv-sub muted">${sub}</div></div>`; }
@@ -544,7 +544,7 @@
   function render() {
     const app = $("#app");
     let content;
-    if (connected() && !state.user) content = shell("keywords", `<div class="panel"><div class="empty-state"><div class="es-ico">${svg("search", 22)}</div><h3>Sign in required</h3><p>Connect a project and sign in to use the SEO Engine.</p></div></div>`);
+    if (connected() && !state.user) content = shell(`<div class="panel"><div class="empty-state"><div class="es-ico">${svg("search", 22)}</div><h3>Sign in required</h3><p>Connect a project and sign in to use the SEO Engine.</p></div></div>`);
     else if (state.route.name === "rankings") content = viewRankings();
     else if (state.route.name === "audit") content = viewAudit();
     else content = viewKeywords();
