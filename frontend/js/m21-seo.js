@@ -205,10 +205,10 @@
   async function loadRoute() {
     const c = ensureClient(); if (!c) return;
     const ws = state.workspaceId;
-    if (state.route.name === "keywords") {
+    if (state.route.section === "keywords" && (!state.route.sub || state.route.sub === "explorer")) {
       const { data } = await c.from("keyword_lists").select("id,name,description").order("created_at", { ascending: false });
       state.lists = (data || []).map((l) => ({ ...l, count: 0 }));
-    } else if (state.route.name === "rankings") {
+    } else if (state.route.section === "rankings" && !state.route.sub) {
       const { data } = await c.from("tracked_keywords").select("*").eq("is_active", true);
       // latest ranking per tracker (best-effort; the worker keeps these fresh)
       state.trackers = await Promise.all((data || []).map(async (t) => {
@@ -216,7 +216,7 @@
           .eq("tracked_keyword_id", t.id).order("checked_on", { ascending: false }).limit(2);
         return { ...t, position: r?.[0]?.position ?? null, prev: r?.[1]?.position ?? null, url: r?.[0]?.url, is_featured_snippet: r?.[0]?.is_featured_snippet, history: null };
       }));
-    } else if (state.route.name === "audit") {
+    } else if (state.route.section === "audit" && !state.route.sub) {
       const { data } = await c.from("seo_audits").select("*").order("created_at", { ascending: false }).limit(1);
       const a = data?.[0];
       if (a) {
