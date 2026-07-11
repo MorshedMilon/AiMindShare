@@ -156,9 +156,9 @@
   const state = {
     user: null, workspaceId: null, workspaceName: null, role: "owner",
     loaded: false, previewState: "default", modalOpen: false,
-    route: { name: "keywords" },
+    route: { section: "dashboard", sub: null, id: null },
     research: null, activeTab: "related", selected: new Set(),
-    lists: [], trackers: [], audit: null, gap: null,
+    lists: [], trackers: [], audit: null, gap: null, navOpen: new Set(),
   };
   const PREVIEW_STATES = ["default", "empty", "loading", "error", "success"];
   const st = (name) => !connected() && state.previewState === name;
@@ -187,18 +187,28 @@
   }
 
   function parseRoute() {
-    const h = (location.hash || "#/seo/keywords").replace(/^#/, "");
-    const parts = h.split("/").filter(Boolean); // ["seo","keywords"]
-    state.route = { name: parts[1] || "keywords" };
+    const h = (location.hash || "#/seo").replace(/^#/, "");
+    const parts = h.split("/").filter(Boolean); // e.g. ["seo","keywords","explorer"]
+    const section = parts[1] || "dashboard";
+    const rest = parts.slice(2);
+    const sec = NAV.find((n) => n.key === section);
+    const childKeys = (sec?.children || []).map((c) => c.key);
+    let sub = null, id = null;
+    if (rest.length) {
+      if (childKeys.includes(rest[0])) sub = rest[0];
+      else if (section === "rankings" && rest.length === 2 && rest[1] === "history") { id = rest[0]; sub = "history"; }
+      else id = rest[0];
+    }
+    state.route = { section, sub, id };
   }
 
   async function loadRoute() {
     const c = ensureClient(); if (!c) return;
     const ws = state.workspaceId;
-    if (state.route.name === "keywords") {
+    if (state.route.section === "keywords" && !state.route.id && (!state.route.sub || state.route.sub === "explorer")) {
       const { data } = await c.from("keyword_lists").select("id,name,description").order("created_at", { ascending: false });
       state.lists = (data || []).map((l) => ({ ...l, count: 0 }));
-    } else if (state.route.name === "rankings") {
+    } else if (state.route.section === "rankings" && !state.route.sub && !state.route.id) {
       const { data } = await c.from("tracked_keywords").select("*").eq("is_active", true);
       // latest ranking per tracker (best-effort; the worker keeps these fresh)
       state.trackers = await Promise.all((data || []).map(async (t) => {
@@ -206,7 +216,7 @@
           .eq("tracked_keyword_id", t.id).order("checked_on", { ascending: false }).limit(2);
         return { ...t, position: r?.[0]?.position ?? null, prev: r?.[1]?.position ?? null, url: r?.[0]?.url, is_featured_snippet: r?.[0]?.is_featured_snippet, history: null };
       }));
-    } else if (state.route.name === "audit") {
+    } else if (state.route.section === "audit" && !state.route.sub && !state.route.id) {
       const { data } = await c.from("seo_audits").select("*").order("created_at", { ascending: false }).limit(1);
       const a = data?.[0];
       if (a) {
@@ -222,12 +232,74 @@
      Shell
      ══════════════════════════════════════════════════════════════════════════ */
   const NAV = [
-    { key: "keywords", label: "Keyword research", ico: "search", hash: "#/seo/keywords" },
-    { key: "rankings", label: "Rank tracker", ico: "trend", hash: "#/seo/rankings" },
-    { key: "audit", label: "Site audit", ico: "gauge", hash: "#/seo/audit" },
+    { key: "dashboard", label: "Dashboard", ico: "bolt", hash: "#/seo" },
+    { key: "keywords", label: "Keyword Research", ico: "search", hash: "#/seo/keywords", children: [
+      { key: "explorer", label: "Keyword Explorer", hash: "#/seo/keywords/explorer" },
+      { key: "opportunity", label: "Opportunity Score", hash: "#/seo/keywords/opportunity" },
+      { key: "related", label: "Related Keywords", hash: "#/seo/keywords/related" },
+      { key: "questions", label: "Question Finder", hash: "#/seo/keywords/questions" },
+      { key: "long-tail", label: "Long-Tail Generator", hash: "#/seo/keywords/long-tail" },
+      { key: "ai-search", label: "AI-Search Query Variants", hash: "#/seo/keywords/ai-search" },
+      { key: "settings", label: "Country/Language Selector", hash: "#/seo/keywords/settings" },
+    ] },
+    { key: "clusters", label: "Clusters", ico: "target", hash: "#/seo/clusters", children: [
+      { key: "builder", label: "Cluster Builder", hash: "#/seo/clusters/builder" },
+    ] },
+    { key: "serp", label: "SERP Analysis", ico: "globe", hash: "#/seo/serp", children: [
+      { key: "snapshot", label: "SERP Snapshot", hash: "#/seo/serp/snapshot" },
+      { key: "weakness", label: "SERP Weakness Indicator", hash: "#/seo/serp/weakness" },
+    ] },
+    { key: "competitors", label: "Competitors", ico: "swords", hash: "#/seo/competitors", children: [
+      { key: "overview", label: "Domain Overview", hash: "#/seo/competitors/overview" },
+      { key: "gap", label: "Keyword Gap", hash: "#/seo/competitors/gap" },
+      { key: "gap-actions", label: "Gap Action Layer", hash: "#/seo/competitors/gap-actions" },
+      { key: "send-to-queue", label: "Send-to-Queue", hash: "#/seo/competitors/send-to-queue" },
+    ] },
+    { key: "lists", label: "Keyword Lists", ico: "list", hash: "#/seo/lists", children: [
+      { key: "bulk", label: "Bulk Actions", hash: "#/seo/lists/bulk" },
+    ] },
+    { key: "rankings", label: "Rank Tracking", ico: "trend", hash: "#/seo/rankings", children: [
+      { key: "overlay", label: "Competitor Overlay", hash: "#/seo/rankings/overlay" },
+      { key: "summary", label: "Weekly Summary", hash: "#/seo/rankings/summary" },
+    ] },
+    { key: "audit", label: "Technical Audit", ico: "gauge", hash: "#/seo/audit", children: [
+      { key: "crawler", label: "Site Crawler", hash: "#/seo/audit/crawler" },
+      { key: "cwv", label: "Core Web Vitals", hash: "#/seo/audit/cwv" },
+      { key: "schema", label: "Schema Validator", hash: "#/seo/audit/schema" },
+      { key: "ssl", label: "SSL Check", hash: "#/seo/audit/ssl" },
+    ] },
+    { key: "settings", label: "Settings", ico: "settings", hash: "#/seo/settings", children: [
+      { key: "connections", label: "API Connections", hash: "#/seo/settings/connections" },
+      { key: "cache", label: "Cache Settings", hash: "#/seo/settings/cache" },
+      { key: "scoring", label: "Scoring Weights", hash: "#/seo/settings/scoring" },
+    ] },
   ];
-  function shell(activeKey, content) {
-    const nav = NAV.map((n) => `<div class="nav-item ${n.key === activeKey ? "active" : ""}" data-hash="${n.hash}"><span class="ni-ico">${svg(n.ico)}</span><span>${n.label}</span></div>`).join("");
+  function getSeoNavCounts() {
+    // Vanilla stand-in for the PRD's useSeoNavCounts() hook — static mock counts.
+    return { audit: 2, competitors: 1 };
+  }
+  function renderNavItem(n) {
+    const counts = getSeoNavCounts();
+    const badge = counts[n.key] ? `<span class="nav-badge">${counts[n.key]}</span>` : "";
+    if (!n.children || !n.children.length) {
+      const active = state.route.section === n.key;
+      return `<div class="nav-item ${active ? "active" : ""}" data-hash="${n.hash}">
+        <span class="ni-ico">${svg(n.ico)}</span><span>${n.label}</span>${badge}</div>`;
+    }
+    const selfOrChildActive = state.route.section === n.key;
+    const open = state.navOpen.has(n.key) || selfOrChildActive;
+    const childRows = n.children.map((c) => {
+      const cActive = state.route.section === n.key && (state.route.sub === c.key || (!state.route.sub && n.key === "keywords" && c.key === "explorer"));
+      return `<div class="nav-item nav-child ${cActive ? "active" : ""}" data-hash="${c.hash}"><span>${c.label}</span></div>`;
+    }).join("");
+    return `<div class="nav-item nav-parent ${selfOrChildActive ? "active" : ""}" data-hash="${n.hash}">
+        <span class="ni-ico">${svg(n.ico)}</span><span>${n.label}</span>${badge}
+        <button class="nav-chevron ${open ? "open" : ""}" data-navtoggle="${n.key}" title="${open ? "Collapse" : "Expand"}">${svg("chev", 12)}</button>
+      </div>
+      <div class="nav-children ${open ? "open" : ""}">${childRows}</div>`;
+  }
+  function shell(content) {
+    const nav = NAV.map(renderNavItem).join("");
     return `
       <aside class="rail" id="rail">
         <div class="brand"><span class="mark">✦</span><span><b>AiMind</b><em>Share</em></span></div>
@@ -262,8 +334,8 @@
      Screen 1 · Keyword research
      ══════════════════════════════════════════════════════════════════════════ */
   function viewKeywords() {
-    if (st("loading")) return shell("keywords", loadingBlock());
-    if (st("error")) return shell("keywords", errorBlock());
+    if (st("loading")) return shell(loadingBlock());
+    if (st("error")) return shell(errorBlock());
     const showEmpty = st("empty") || (!state.research && !st("success") && !st("default"));
     const research = st("success") || (st("default")) ? clone(MOCK.research) : state.research;
 
@@ -300,7 +372,7 @@
     }
 
     const sidebar = listsSidebar();
-    return shell("keywords", previewStrip() + head("search", "SEO &amp; Content · M21", `Keyword <em>research</em>`, "Volume, difficulty and intent for any term — with related keywords, questions and the live SERP.", "")
+    return shell(previewStrip() + head("search", "SEO &amp; Content · M21", `Keyword <em>research</em>`, "Volume, difficulty and intent for any term — with related keywords, questions and the live SERP.", "")
       + `<div class="kw-layout"><div class="kw-main">${form}${showEmpty && !research ? "" : ""}${body}${gap}</div>${sidebar}</div>`);
   }
 
@@ -369,8 +441,8 @@
      Screen 2 · Rank tracker
      ══════════════════════════════════════════════════════════════════════════ */
   function viewRankings() {
-    if (st("loading")) return shell("rankings", loadingBlock());
-    if (st("error")) return shell("rankings", errorBlock());
+    if (st("loading")) return shell(loadingBlock());
+    if (st("error")) return shell(errorBlock());
     const trackers = st("empty") ? [] : state.trackers;
     const cta = canWrite() ? `<button class="btn btn-primary" id="addTracker">${svg("plus", 15)} Track keyword</button>` : "";
     let body;
@@ -390,7 +462,7 @@
         <th>Keyword</th><th class="num">Position</th><th class="num">Δ 7d</th><th>URL</th><th>Country</th><th></th></tr></thead><tbody>
         ${trackers.map(rankRow).join("")}</tbody></table></div></div>`;
     }
-    return shell("rankings", previewStrip() + head("trend", "SEO &amp; Content · M21", `Rank <em>tracker</em>`, "Daily Google positions for your domain and competitors, with 90-day history and major-move alerts.", cta) + body);
+    return shell(previewStrip() + head("trend", "SEO &amp; Content · M21", `Rank <em>tracker</em>`, "Daily Google positions for your domain and competitors, with 90-day history and major-move alerts.", cta) + body);
   }
   function rankSummary(ts) {
     return {
@@ -418,8 +490,8 @@
      Screen 3 · Site audit
      ══════════════════════════════════════════════════════════════════════════ */
   function viewAudit() {
-    if (st("loading")) return shell("audit", loadingBlock());
-    if (st("error")) return shell("audit", errorBlock());
+    if (st("loading")) return shell(loadingBlock());
+    if (st("error")) return shell(errorBlock());
     const a = st("empty") ? null : state.audit;
     const form = `<div class="panel audit-form">
       <div class="rf-row"><div class="rf-field grow"><label>Domain to audit</label>
@@ -428,7 +500,7 @@
       <div class="rf-hint">${svg("bolt", 12)} Crawls up to 500 pages at 2 req/s, respecting robots.txt — runs in the background and resumes across chunks.</div>
     </div>`;
     if (!a) {
-      return shell("audit", previewStrip() + head("gauge", "SEO &amp; Content · M21", `Site <em>audit</em>`, "Crawl your site for broken links, on-page SEO gaps and Core Web Vitals.", "")
+      return shell(previewStrip() + head("gauge", "SEO &amp; Content · M21", `Site <em>audit</em>`, "Crawl your site for broken links, on-page SEO gaps and Core Web Vitals.", "")
         + form + `<div class="panel"><div class="empty-state"><div class="es-ico">${geoOrb(svg("gauge", 24))}</div>
         <h3>Run your first audit</h3><p>Point the crawler at your domain and get a prioritised list of technical issues — broken links, missing titles and meta, redirect chains — plus a Core Web Vitals report and an overall health score.</p></div></div>`);
     }
@@ -455,10 +527,32 @@
         ${byType[s].map((i) => `<div class="issue-row"><span class="ir-type">${ISSUE_LABEL[i.type] || i.type}</span>
           <span class="ir-url muted">${esc(i.url || "")}</span><span class="ir-detail muted">${esc(i.detail || "")}</span></div>`).join("")}
       </div>`).join("")}</div>`;
-    return shell("audit", previewStrip() + head("gauge", "SEO &amp; Content · M21", `Site <em>audit</em>`, `Last crawl of <b>${esc(a.domain)}</b> — ${fmtInt(a.pages_crawled)} pages.`, canWrite() ? `<button class="btn btn-ghost" id="runAudit2">${svg("gauge", 14)} Re-run</button>` : "")
+    return shell(previewStrip() + head("gauge", "SEO &amp; Content · M21", `Site <em>audit</em>`, `Last crawl of <b>${esc(a.domain)}</b> — ${fmtInt(a.pages_crawled)} pages.`, canWrite() ? `<button class="btn btn-ghost" id="runAudit2">${svg("gauge", 14)} Re-run</button>` : "")
       + form + `<div class="audit-top">${dial}<div class="audit-cwv">${cwvCards}</div></div>` + issues);
   }
   function cwvCard(k, v, tone, sub) { return `<div class="cwv-card ${tone}"><div class="cwv-k">${k}</div><div class="cwv-v">${v}</div><div class="cwv-sub muted">${sub}</div></div>`; }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     Placeholder pages — routing shell only, feature logic lands in a later session
+     ══════════════════════════════════════════════════════════════════════════ */
+  const SHADOW_NOTE = {
+    "keywords/related": "This view currently lives as the “Related” tab inside Keyword Explorer — promote to a standalone page in a later session.",
+    "keywords/questions": "This view currently lives as the “Questions” tab inside Keyword Explorer — promote to a standalone page in a later session.",
+    "serp/snapshot": "This view currently lives as the “SERP” tab inside Keyword Explorer — promote to a standalone page in a later session.",
+  };
+  function viewPlaceholder(section, sub, id) {
+    const sec = NAV.find((n) => n.key === section);
+    const child = sec?.children?.find((c) => c.key === sub);
+    const title = child ? child.label : (sec ? sec.label : "Not found");
+    const note = SHADOW_NOTE[`${section}/${sub}`];
+    const idNote = id ? `<p class="muted">Requested id: <span class="mono">${esc(id)}</span></p>` : "";
+    const ico = sec?.ico || "bolt";
+    return shell(previewStrip() + head(ico, "SEO &amp; Content · M21", `<em>${esc(title)}</em>`,
+      note ? "See note below." : "Feature logic for this page isn't built yet — this is a routing placeholder.", "")
+      + `<div class="panel"><div class="empty-state"><div class="es-ico">${geoOrb(svg(ico, 24))}</div>
+        <h3>Coming soon</h3><p>${note || "This page is wired into navigation and routing but doesn't have real data or logic behind it yet."}</p>${idNote}
+      </div></div>`);
+  }
 
   /* ── Small shared bits ───────────────────────────────────────────────────── */
   function kpi(ico, val, label, sub, dir) {
@@ -471,22 +565,33 @@
      ══════════════════════════════════════════════════════════════════════════ */
   function render() {
     const app = $("#app");
+    const { section, sub, id } = state.route;
+    const isKeywordsHome = section === "keywords" && !id && (!sub || sub === "explorer");
+    const isRankingsHome = section === "rankings" && !sub && !id;
+    const isAuditHome = section === "audit" && !sub && !id;
     let content;
-    if (connected() && !state.user) content = shell("keywords", `<div class="panel"><div class="empty-state"><div class="es-ico">${svg("search", 22)}</div><h3>Sign in required</h3><p>Connect a project and sign in to use the SEO Engine.</p></div></div>`);
-    else if (state.route.name === "rankings") content = viewRankings();
-    else if (state.route.name === "audit") content = viewAudit();
-    else content = viewKeywords();
+    if (connected() && !state.user) content = shell(`<div class="panel"><div class="empty-state"><div class="es-ico">${svg("search", 22)}</div><h3>Sign in required</h3><p>Connect a project and sign in to use the SEO Engine.</p></div></div>`);
+    else if (isRankingsHome) content = viewRankings();
+    else if (isAuditHome) content = viewAudit();
+    else if (isKeywordsHome) content = viewKeywords();
+    else content = viewPlaceholder(section, sub, id);
     app.innerHTML = content;
     renderConn(); wireCommon();
-    if (state.route.name === "keywords") wireKeywords();
-    if (state.route.name === "rankings") wireRankings();
-    if (state.route.name === "audit") { wireAudit(); drawScoreDial(); }
+    if (isKeywordsHome) wireKeywords();
+    if (isRankingsHome) wireRankings();
+    if (isAuditHome) { wireAudit(); drawScoreDial(); }
   }
   function renderConn() { const pill = $("#connPill"); if (pill) { const on = connected(); pill.hidden = !on; pill.textContent = on ? "live" : ""; pill.classList.toggle("live", on); } }
 
   function wireCommon() {
     $("#railBurger")?.addEventListener("click", () => $("#rail").classList.toggle("open"));
     $$("[data-hash]").forEach((n) => n.addEventListener("click", () => { location.hash = n.dataset.hash; $("#rail")?.classList.remove("open"); }));
+    $$("[data-navtoggle]").forEach((b) => b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const key = b.dataset.navtoggle;
+      state.navOpen.has(key) ? state.navOpen.delete(key) : state.navOpen.add(key);
+      render();
+    }));
     $("#themeToggle")?.addEventListener("click", () => setTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark"));
     $("#openConnect2")?.addEventListener("click", openDrawer);
     $$("[data-preview]").forEach((b) => b.addEventListener("click", () => { state.previewState = b.dataset.preview; state.research = null; state.gap = null; boot(); }));
