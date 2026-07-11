@@ -256,10 +256,7 @@
   }
 
   function previewStrip() {
-    if (connected()) return "";
-    return `<div class="preview-strip"><span class="ps-label">Preview state</span>
-      ${PREVIEW_STATES.map((s) => `<button class="ps-btn ${state.previewState === s ? "on" : ""}" data-preview="${s}">${s}</button>`).join("")}
-      <span class="ps-hint">mockup mode · SAMPLE data · connect a project for live data</span></div>`;
+    return "";
   }
   function sampleTag() { return connected() ? "" : `<span class="sample-tag mono">Sample data</span>`; }
 

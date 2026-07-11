@@ -203,8 +203,8 @@
   /* ── Connection pill ────────────────────────────────────────────────────── */
   function renderConn() {
     const pill = $("#connPill"); if (!pill) return;
-    if (connected()) { pill.className = "pill success"; pill.textContent = "connected"; }
-    else { pill.className = "pill plain"; pill.textContent = "mockup mode"; }
+    if (connected()) { pill.className = "pill success"; pill.textContent = "connected"; pill.hidden = false; }
+    else { pill.hidden = true; }
   }
 
   /* ── A2P stage resolution (mock respects the preview switcher) ───────────── */
@@ -248,7 +248,7 @@
         </div>
         <div class="tb-search"><span>${svg("shield", 15)}</span><span class="tbs-label">Search…</span><span class="kbd">⌘K</span></div>
         <div class="spacer"></div>
-        <span class="pill plain" id="connPill">mockup mode</span>
+        <span class="pill plain" id="connPill" hidden></span>
         <button class="btn btn-ghost btn-sm" id="openConnect2">Connect</button>
         <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme"><span id="themeIco">☾</span></button>
         <span class="avatar" title="${esc(state.user?.email || "")}">${esc(initials(state.user?.name || state.user?.email))}</span>
@@ -258,10 +258,7 @@
 
   /* ── Mockup preview switcher ─────────────────────────────────────────────── */
   function previewStrip() {
-    if (connected()) return "";
-    return `<div class="mock-note"><span class="mn-ico">◈</span><b>Mockup mode.</b>
-      Connect a project to read live A2P status, the consent ledger and data requests. Sample data shown. Preview state:
-      ${PREVIEW_STATES.map((s) => `<button class="link ${state.previewState === s ? "on" : ""}" data-preview="${s}">${s}</button>`).join(" ")}</div>`;
+    return "";
   }
   function pageHead(sub) {
     return `<div class="page-head reveal">

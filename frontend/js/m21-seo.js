@@ -241,7 +241,7 @@
           <span class="ws-meta"><span class="ws-name">${esc(state.workspaceName || "Workspace")}</span><span class="ws-kind">SEO Engine</span></span>
         </div>
         <div class="spacer"></div>
-        <span class="pill plain" id="connPill">mockup mode</span>
+        <span class="pill plain" id="connPill" hidden></span>
         <button class="btn btn-ghost btn-sm" id="openConnect2">Connect</button>
         <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme"><span id="themeIco">☾</span></button>
         <span class="avatar" title="${esc(state.user?.email || "")}">${esc(initials(state.user?.name || state.user?.email))}</span>
@@ -249,10 +249,7 @@
       <main class="content"><div class="content-inner">${content}</div></main>`;
   }
   function previewStrip() {
-    if (connected()) return "";
-    return `<div class="mock-note"><span class="mn-ico">◈</span><b>Mockup mode.</b>
-      Connect a project to research live keywords, rankings &amp; audits. Sample data shown. Preview state:
-      ${PREVIEW_STATES.map((s) => `<button class="link ${state.previewState === s ? "on" : ""}" data-preview="${s}">${s}</button>`).join(" ")}</div>`;
+    return "";
   }
   function loadingBlock() { return `<div class="panel skeleton-panel"><div class="sk-row"></div><div class="sk-row"></div><div class="sk-row short"></div></div>`; }
   function errorBlock() { return `<div class="panel"><div class="empty-state"><div class="es-ico err">${svg("alert", 24)}</div><h3>Couldn't load SEO data</h3><p>Something went wrong reading this workspace. Check your connection and try again.</p><button class="btn btn-primary es-cta" id="retry">Retry</button></div></div>`; }
@@ -485,7 +482,7 @@
     if (state.route.name === "rankings") wireRankings();
     if (state.route.name === "audit") { wireAudit(); drawScoreDial(); }
   }
-  function renderConn() { const pill = $("#connPill"); if (pill) { const on = connected(); pill.textContent = on ? "live" : "mockup mode"; pill.classList.toggle("live", on); } }
+  function renderConn() { const pill = $("#connPill"); if (pill) { const on = connected(); pill.hidden = !on; pill.textContent = on ? "live" : ""; pill.classList.toggle("live", on); } }
 
   function wireCommon() {
     $("#railBurger")?.addEventListener("click", () => $("#rail").classList.toggle("open"));

@@ -275,7 +275,7 @@
           <span class="ws-meta"><span class="ws-name">${esc(state.workspaceName || "Workspace")}</span><span class="ws-kind">Inbox</span></span>
         </div>
         <div class="spacer"></div>
-        <span class="pill ${connected() ? "success" : "plain"}" id="connPill">${connected() ? "live" : "mockup mode"}</span>
+        <span class="pill ${connected() ? "success" : "plain"}" id="connPill" ${connected() ? "" : "hidden"}>${connected() ? "live" : ""}</span>
         <button class="btn btn-ghost btn-sm" id="openConnect2">Connect</button>
         <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme"><span id="themeIco">☾</span></button>
         <span class="avatar" title="${esc(state.user?.email || "")}">${esc(initials(state.user?.email || "AiMindShare"))}</span>
@@ -287,10 +287,7 @@
       <h1 style="margin-top:12px">${title}</h1><p class="sub">${sub}</p></div>`;
   }
   function previewStrip() {
-    if (connected()) return "";
-    return `<div class="mock-note"><span class="mn-ico">◈</span><b>Mockup mode.</b>
-      Connect a project to load live threads, post notes and send SMS under RLS. Sample data shown. Preview:
-      ${PREVIEW_STATES.map((s) => `<button class="link ${state.previewState === s ? "on" : ""}" data-preview="${s}">${s}</button>`).join(" ")}</div>`;
+    return "";
   }
 
   /* ═══════════════════════════════════════════════════════════════════════

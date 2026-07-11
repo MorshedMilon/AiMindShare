@@ -2079,7 +2079,7 @@
           <div class="dz-row"><div><b>Business Profile first</b><p class="muted">Reuse one structured profile across generation, copy and schema.</p></div><span class="pill success">on</span></div>
         </div>
         <div class="panel"><div class="panel-head"><span class="ph-ico">${svg("globe", 15)}</span><h3>Data &amp; connection</h3></div>
-          <div class="dz-row"><div><b>Supabase project</b><p class="muted">${connected() ? "Connected — sites, pages and domains are live." : "Not connected — running on sample data (mockup mode)."}</p></div><button class="btn btn-ghost btn-sm" id="seConnect">${connected() ? "Reconnect" : "Connect"}</button></div>
+          <div class="dz-row"><div><b>Supabase project</b><p class="muted">${connected() ? "Connected — sites, pages and domains are live." : "Not connected — running on sample data."}</p></div><button class="btn btn-ghost btn-sm" id="seConnect">${connected() ? "Reconnect" : "Connect"}</button></div>
         </div>
       </div>`;
   }

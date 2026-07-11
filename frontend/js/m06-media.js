@@ -241,10 +241,7 @@
   }
 
   function mockSwitcher() {
-    if (connected()) return "";
-    return `<div class="mock-note"><span class="mn-ico">${svg("info", 15)}</span>
-      <span><b>Mockup preview</b> — sample data. Connect a project to run live. Preview state:</span>
-      ${PREVIEW_STATES.map((s) => `<button class="link ${state.previewState === s ? "on" : ""}" data-ps="${s}">${s}</button>`).join("")}</div>`;
+    return "";
   }
   function wireMock(scope) {
     $$("[data-ps]", scope).forEach((b) => b.onclick = () => { state.previewState = b.getAttribute("data-ps"); render(); });

@@ -49,8 +49,8 @@
 
   function renderConn() {
     const pill = $("#connPill");
-    if (connected()) { pill.className = "pill success"; pill.textContent = "connected"; }
-    else { pill.className = "pill plain"; pill.textContent = "not connected"; }
+    if (connected()) { pill.className = "pill success"; pill.textContent = "connected"; pill.hidden = false; }
+    else { pill.hidden = true; }
   }
 
   /* ── Connect drawer ─────────────────────────────────────────────────────── */
@@ -78,10 +78,7 @@
   let previewState = "default";
   const STATES = ["default", "loading", "error", "success"];
   function stateStrip() {
-    if (connected()) return "";
-    return `<div class="mock-note">${msg("gold", "◈",
-      `<b>Mockup mode.</b> Connect a project to run these flows live. Preview each state: ` +
-      STATES.map((s) => `<button class="link" data-state="${s}" style="margin:0 4px">${s}</button>`).join("·"))}</div>`;
+    return "";
   }
   function wireStateStrip(mount) {
     $$("[data-state]", mount).forEach((b) => b.addEventListener("click", () => { previewState = b.dataset.state; render(); }));

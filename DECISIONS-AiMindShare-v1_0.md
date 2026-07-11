@@ -1466,6 +1466,18 @@ alternative that seeds guided-field defaults rather than hard-selecting one of t
 values — the deterministic engine / LLM still makes that final call. The old Instant/Smart-Brief wizard entry
 screen is retired; its field logic is reused inline.
 
+## D-188 · Site-wide — "mockup mode" is a dev-only signal, never a visible UI element · **LOCKED 2026-07-10**
+Frontend-only, no migration, applies across every module (M00…M44). Every module's `connected()`-gated
+fallback-data logic stays exactly as-is — the app must keep working with realistic sample data when no
+Supabase project is linked. What's removed is the *visible* tells: each module's `previewStrip()`/`stateStrip()`
+(or equivalently named) banner — the "Mockup mode. Preview state: Default/Empty/Loading/Error/Success" strip
+with clickable state buttons — now unconditionally returns `""`; the topbar `#connPill` is hidden entirely
+whenever not connected instead of showing "mockup mode"/"not connected" text (it still shows a positive
+"connected"/"live" label once a real project is linked). `state.previewState`/`PREVIEW_STATES` and their
+click-handler wiring are untouched in every file — Gate 5 states (Definition of Done) still exist and are
+testable, just via the browser console (`state.previewState = 'empty'; render();`) rather than a visible
+button. New modules must follow this from the start — see `DEFINITION-OF-DONE-v1_0.md` Gate 5.
+
 ---
 
 *AiMindShare.com · Decisions Log v1.0 · D-001…D-085 recorded (D-008 superseded by D-014; M09 added
@@ -1487,6 +1499,7 @@ Funnel Studio + Operations Workspace depth + AI Optimization advisories, migrati
 (M20 v3 Phase F: Instant mode + product/affiliate offer-source branch, migration `0036_m20_funnels_v3c.sql`) then
 D-182…D-185 (M29 Affiliate Hub Phase 1a + the Funnels↔Affiliate-Hub bridge, migration `0037_m29_affiliate_hub.sql`)
 then D-186 (M20 AI Funnel Studio Phase 1: real Anthropic provider layer, migration `0038_m20_funnels_v3d.sql`)
-then D-187 (M20 AI Funnel Studio Phase 2: prompt-first hero redesign, frontend-only, no migration),
+then D-187 (M20 AI Funnel Studio Phase 2: prompt-first hero redesign, frontend-only, no migration) then
+D-188 (site-wide: "mockup mode" banner/pill hidden from view in every module, frontend-only, no migration),
 5 OPEN. Append-only.
 LOCKED entries bind Claude Code; OPEN entries are human calls to be flagged, not resolved, in build sessions.*

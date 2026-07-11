@@ -325,7 +325,7 @@
 
     const name = S.form.name || "Form";
     const typeLabel = S.form.type === "quiz" ? "Quiz" : S.form.type === "survey" ? "Survey" : "Form";
-    const flag = live ? "" : `<div class="mock-flag">Sample form · connect a project to go live</div>`;
+    const flag = "";
 
     // Multi-step chrome.
     let stepChrome = "";
@@ -371,7 +371,7 @@
     if (r.status === "complete") {
       const tierPill = r.result_tier ? `<div class="f-tier">${esc(r.result_tier)}</div>` : "";
       const msg = r.message || "Thanks — your response has been received.";
-      root.innerHTML = shell(`<div class="f-result"><div class="rk">&#10003;</div>${tierPill}<h2>${r.result_tier ? "Your result" : "All done"}</h2><p>${esc(msg)}</p>${live ? "" : `<div class="f-note">(Sample — connect a project to submit for real.)</div>`}</div>`);
+      root.innerHTML = shell(`<div class="f-result"><div class="rk">&#10003;</div>${tierPill}<h2>${r.result_tier ? "Your result" : "All done"}</h2><p>${esc(msg)}</p></div>`);
     } else if (r.status === "pending_confirmation") {
       root.innerHTML = shell(`<div class="f-result pending"><div class="rk">&#9993;</div><h2>Check your email</h2><p>${esc(r.message || "We've sent a confirmation link — click it to complete your submission.")}</p></div>`);
     } else {

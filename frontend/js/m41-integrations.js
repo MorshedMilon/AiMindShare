@@ -189,8 +189,8 @@
   /* ── Connection pill ────────────────────────────────────────────────────── */
   function renderConn() {
     const pill = $("#connPill"); if (!pill) return;
-    if (connected()) { pill.className = "pill success"; pill.textContent = "connected"; }
-    else { pill.className = "pill plain"; pill.textContent = "mockup mode"; }
+    if (connected()) { pill.className = "pill success"; pill.textContent = "connected"; pill.hidden = false; }
+    else { pill.className = "pill plain"; pill.textContent = ""; pill.hidden = true; }
   }
 
   /* ── Status → pill ──────────────────────────────────────────────────────── */
@@ -228,7 +228,7 @@
         <div class="tb-search"><span>${svg("search", 15)}</span><span class="tbs-label">Search…</span><span class="kbd">⌘K</span></div>
         <div class="spacer"></div>
         <button class="jobs-chip" id="jobsChip" title="Job queue"><span class="jc-dot"></span><span class="num">${state.jobs || 0}</span> jobs</button>
-        <span class="pill plain" id="connPill">mockup mode</span>
+        <span class="pill plain" id="connPill" hidden></span>
         <button class="btn btn-ghost btn-sm" id="openConnect2">Connect</button>
         <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme"><span id="themeIco">☾</span></button>
         <span class="avatar" title="${esc(state.user?.email || "")}">${esc(initials(state.user?.name || state.user?.email))}</span>
@@ -238,10 +238,7 @@
 
   /* ── Mockup preview switcher ─────────────────────────────────────────────── */
   function previewStrip() {
-    if (connected()) return "";
-    return `<div class="mock-note"><span class="mn-ico">◈</span><b>Mockup mode.</b>
-      Connect a project to run these flows live. Preview state:
-      ${PREVIEW_STATES.map((s) => `<button class="link ${state.previewState === s ? "on" : ""}" data-preview="${s}">${s}</button>`).join(" ")}</div>`;
+    return "";
   }
 
   /* ── Shared building blocks ─────────────────────────────────────────────── */

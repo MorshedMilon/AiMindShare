@@ -190,13 +190,7 @@ import { sanitizeHtml } from "./content-editor.mjs";
 
   // mockup preview-state switcher (honest Gate-5)
   function mockNote() {
-    if (connected()) return "";
-    const states = ["default", "empty", "loading", "error", "success"];
-    return `<div class="mock-note"><span class="mn-ico">${svg("sparkle", 15)}</span>
-      <span><b>Preview mode</b> — no project connected. Explore each UI state:</span>
-      ${states.map((s) => `<button class="link ${state.view === s ? "on" : ""}" data-view="${s}">${s}</button>`).join("")}
-      <span class="spacer" style="flex:1"></span>
-      <button class="link" id="connectInline">Connect a project →</button></div>`;
+    return "";
   }
   function wireMockNote() {
     document.querySelectorAll("[data-view]").forEach((b) => b.onclick = () => { state.view = b.getAttribute("data-view"); render(); });

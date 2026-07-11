@@ -262,7 +262,7 @@
         </div>
         <div class="tb-search"><span>${svg("search", 15)}</span><span class="tbs-label">Search…</span><span class="kbd">⌘K</span></div>
         <div class="spacer"></div>
-        <span class="pill plain" id="connPill">mockup mode</span>
+        <span class="pill plain" id="connPill" hidden></span>
         <button class="btn btn-ghost btn-sm" id="openConnect2">Connect</button>
         <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme"><span id="themeIco">☾</span></button>
         <span class="avatar" title="${esc(state.user?.email || "")}">${esc(initials(state.user?.name || state.user?.email))}</span>
@@ -270,10 +270,7 @@
       <main class="content"><div class="content-inner">${content}</div></main>`;
   }
   function previewStrip() {
-    if (connected()) return "";
-    return `<div class="mock-note"><span class="mn-ico">◈</span><b>Mockup mode.</b>
-      Connect a project to read live pipelines, deals and the forecast. Sample data shown. Preview state:
-      ${PREVIEW_STATES.map((s) => `<button class="link ${state.previewState === s ? "on" : ""}" data-preview="${s}">${s}</button>`).join(" ")}</div>`;
+    return "";
   }
   function pageHead(sub) {
     return `<div class="page-head reveal"><span class="eyebrow">Module · M11</span>
@@ -549,7 +546,7 @@
     document.body.classList.add("js-ready");
   }
   function afterShell() {
-    const pill = $("#connPill"); if (pill) { if (connected()) { pill.className = "pill success"; pill.textContent = "connected"; } else { pill.className = "pill plain"; pill.textContent = "mockup mode"; } }
+    const pill = $("#connPill"); if (pill) { if (connected()) { pill.className = "pill success"; pill.textContent = "connected"; pill.hidden = false; } else { pill.className = "pill plain"; pill.textContent = ""; pill.hidden = true; } }
     setTheme(root.getAttribute("data-theme"));
     $("#themeToggle").addEventListener("click", () => setTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark"));
     $("#openConnect2").addEventListener("click", openDrawer);

@@ -91,7 +91,7 @@
     </div>`;
   }
   const steps = (n) => `<div class="bk-steps">${[1, 2, 3].map((i) => `<span class="bk-dot ${i <= n ? "on" : ""}"></span>`).join("")}</div>`;
-  const mockFlag = () => live ? "" : `<div class="mock-flag">Sample data · connect a project to go live</div>`;
+  const mockFlag = () => "";
 
   /* ── Render ───────────────────────────────────────────────────────────────── */
   function render() {

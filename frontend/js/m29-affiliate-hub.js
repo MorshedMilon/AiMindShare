@@ -232,7 +232,7 @@
           <span class="ws-meta"><span class="ws-name">${esc(state.workspaceName || "Workspace")}</span><span class="ws-kind">Affiliate Hub</span></span>
         </div>
         <div class="spacer"></div>
-        <span class="pill plain" id="connPill">mockup mode</span>
+        <span class="pill plain" id="connPill" hidden></span>
         <button class="btn btn-ghost btn-sm" id="openConnect2">Connect</button>
         <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme"><span id="themeIco">☾</span></button>
         <span class="avatar" title="${esc(state.user?.email || "")}">${esc(initials(state.user?.name || state.user?.email))}</span>
@@ -240,10 +240,7 @@
       <main class="content"><div class="content-inner">${content}</div></main>`;
   }
   function previewStrip() {
-    if (connected()) return "";
-    return `<div class="mock-note"><span class="mn-ico">◈</span><b>Mockup mode.</b>
-      Connect a project to read live offers, networks &amp; disclosure templates. Sample data shown. Preview state:
-      ${PREVIEW_STATES.map((s) => `<button class="link ${state.previewState === s ? "on" : ""}" data-preview="${s}">${s}</button>`).join(" ")}</div>`;
+    return "";
   }
   function moduleHead(title, sub, extra) {
     return `<div class="fn-head">
@@ -516,7 +513,7 @@
   }
   function renderConn() {
     const pill = $("#connPill"); if (!pill) return;
-    const on = connected(); pill.textContent = on ? "live" : "mockup mode"; pill.classList.toggle("live", on);
+    const on = connected(); pill.hidden = !on; pill.textContent = on ? "live" : ""; pill.classList.toggle("live", on);
   }
   function wire() {
     $$("[data-hash]").forEach((n) => n.addEventListener("click", () => { location.hash = n.dataset.hash; }));

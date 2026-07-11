@@ -208,8 +208,8 @@
   /* ── Connection pill ────────────────────────────────────────────────────── */
   function renderConn() {
     const pill = $("#connPill"); if (!pill) return;
-    if (connected()) { pill.className = "pill success"; pill.textContent = "connected"; }
-    else { pill.className = "pill plain"; pill.textContent = "mockup mode"; }
+    if (connected()) { pill.className = "pill success"; pill.textContent = "connected"; pill.hidden = false; }
+    else { pill.hidden = true; }
   }
 
   /* ── Shell (rail + topbar with the bell) ────────────────────────────────── */
@@ -239,7 +239,7 @@
         <div class="spacer"></div>
         ${BELL.bellMarkup(0)}
         <button class="jobs-chip" id="jobsChip" title="Job queue"><span class="jc-dot"></span><span class="num">${state.jobs || 0}</span> jobs</button>
-        <span class="pill plain" id="connPill">mockup mode</span>
+        <span class="pill plain" id="connPill" hidden></span>
         <button class="btn btn-ghost btn-sm" id="openConnect2">Connect</button>
         <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme"><span id="themeIco">☾</span></button>
         <span class="avatar" title="${esc(state.user?.email || "")}">${esc(initials(state.user?.name || state.user?.email))}</span>
@@ -249,10 +249,7 @@
 
   /* ── Mockup preview switcher + shared blocks ────────────────────────────── */
   function previewStrip() {
-    if (connected()) return "";
-    return `<div class="mock-note"><span class="mn-ico">◈</span><b>Mockup mode.</b>
-      Connect a project to run these flows live. Preview state:
-      ${PREVIEW_STATES.map((s) => `<button class="link ${state.previewState === s ? "on" : ""}" data-preview="${s}">${s}</button>`).join(" ")}</div>`;
+    return "";
   }
   function errorBlock(msg) { return `<div class="panel" style="border-color:rgba(196,97,78,.4)"><div class="empty-state"><div class="es-ico" style="background:rgba(196,97,78,.12);color:var(--status-danger)">⚠</div><h3>Something went wrong</h3><p>${esc(msg)}</p><button class="btn btn-ghost es-cta" id="retryBtn">Retry</button></div></div>`; }
   function emptyNoWorkspace() { return `<div class="panel"><div class="empty-state"><div class="es-ico">${svg("building", 22)}</div><h3>No active workspace</h3><p>Create or select a workspace in M01 to see its notifications.</p><a class="btn btn-primary es-cta" href="m01-workspaces-and-multi-tenancy.html#/workspaces">Go to workspaces</a></div></div>`; }

@@ -325,7 +325,7 @@ h1,h2,h3{font-family:var(--font-serif);color:var(--ink-900);font-weight:600;line
     <div class="brand"><span class="mark">&#9650;</span><span><b>AiMind</b><em>Share</em></span></div>
     <span class="session-tag">Session 0 &middot; Foundation</span>
     <div class="spacer"></div>
-    <span class="pill plain" id="connPill">not connected</span>
+    <span class="pill plain" id="connPill" hidden></span>
     <button class="btn btn-ghost btn-sm" id="openConnect">Connect</button>
     <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme"><span id="themeIco">&#9790;</span></button>
   </header>
@@ -477,7 +477,7 @@ h1,h2,h3{font-family:var(--font-serif);color:var(--ink-900);font-weight:600;line
     const CFG_KEY="aimindshare-supabase";
     function getCfg(){ try{ const s=JSON.parse(localStorage.getItem(CFG_KEY)||"null"); if(s&&s.url)return s; }catch(e){} return null; }
     function renderConn(){ const cfg=getCfg(),pill=$("#connPill");
-      if(cfg){pill.className="pill success";pill.textContent="connected";}else{pill.className="pill plain";pill.textContent="not connected";}
+      if(cfg){pill.hidden=false;pill.className="pill success";pill.textContent="connected";}else{pill.hidden=true;pill.className="pill plain";pill.textContent="";}
       $("#runHealth").disabled=!cfg; const hc=$("#probe-health");
       if(!cfg){ $(".p-content",hc).innerHTML='<div class="p-body">Connect a Supabase project (URL + anon key) to call the <span class="mono">health</span> Edge Function and read its Vault-backed envelope live.</div>'; $(".p-status",hc).className="pill p-status"; $(".p-status",hc).textContent="idle"; }
       else { $(".p-content",hc).innerHTML='<div class="p-body">Ready. Click <b>Run</b> to call <span class="mono">/functions/v1/health</span>.</div>'; } }

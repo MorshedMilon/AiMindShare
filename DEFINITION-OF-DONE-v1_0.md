@@ -64,6 +64,13 @@ session's attach list):
 - [ ] **Loading** state — calm, token-based, **no shimmer**.
 - [ ] **Error** state — envelope `error` codes mapped to human messages; retry path where sane.
 
+These states must exist and be reachable for testing (e.g. via `state.previewState` in the
+browser console), but a module must NOT render a permanent, user-visible "mockup mode" /
+"not connected" banner or pill to switch between them — Gate 5 is about the states existing
+and being testable, not about advertising the sample-data condition to end users. The
+`connected()` fallback-data logic that lets a module run without a live backend stays; only
+its always-on visible indicator does not ship *(2026-07-10, D-188)*.
+
 ## Gate 6 · Design — both themes, responsive, motion-safe
 
 - [ ] Light theme (default) and dark theme (`[data-theme="dark"]` sibling block) both correct —

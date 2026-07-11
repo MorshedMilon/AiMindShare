@@ -227,10 +227,7 @@
   function starGlyph() { return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 2l2.4 4.8L20 8l-4 4 1 6-5-3-5 3 1-6-4-4 5.6-1.2z"/><circle cx="12" cy="12" r="2"/></svg>`; }
 
   function previewStrip() {
-    if (connected()) return "";
-    return `<div class="preview-strip"><span class="ps-label">Preview state</span>
-      ${PREVIEW_STATES.map((s) => `<button class="ps-btn ${state.previewState === s ? "on" : ""}" data-preview="${s}">${s}</button>`).join("")}
-      <span class="ps-hint">mockup mode · connect a project for live data</span></div>`;
+    return "";
   }
 
   /* ── Routing ────────────────────────────────────────────────────────────── */

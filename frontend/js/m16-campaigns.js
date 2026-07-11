@@ -306,7 +306,7 @@
         </div>
         <div class="tb-search"><span>${svg("search", 15)}</span><span class="tbs-label">Search…</span><span class="kbd">⌘K</span></div>
         <div class="spacer"></div>
-        <span class="pill plain" id="connPill">mockup mode</span>
+        <span class="pill plain" id="connPill" hidden></span>
         <button class="btn btn-ghost btn-sm" id="openConnect2">Connect</button>
         <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme"><span id="themeIco">☾</span></button>
         <span class="avatar" title="${esc(state.user?.email || "")}">${esc(initials(state.user?.name || state.user?.email))}</span>
@@ -314,10 +314,7 @@
       <main class="content"><div class="content-inner">${content}</div></main>`;
   }
   function previewStrip() {
-    if (connected()) return "";
-    return `<div class="mock-note"><span class="mn-ico">◈</span><b>Mockup mode.</b>
-      Connect a project to read live campaigns, sequences &amp; suppressions and run sends. Sample data shown. Preview state:
-      ${PREVIEW_STATES.map((s) => `<button class="link ${state.previewState === s ? "on" : ""}" data-preview="${s}">${s}</button>`).join(" ")}</div>`;
+    return "";
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
@@ -849,7 +846,7 @@
   }
   function renderConn() {
     const pill = $("#connPill");
-    if (pill) { const on = connected(); pill.textContent = on ? "live" : "mockup mode"; pill.classList.toggle("live", on); }
+    if (pill) { const on = connected(); pill.hidden = !on; pill.textContent = on ? "live" : ""; pill.classList.toggle("live", on); }
   }
   function patchWizard() { $("#app").innerHTML = viewWizard(); wireCommon(); wireWizard(); }
   function patchSequence() { $("#app").innerHTML = viewSequence(); wireCommon(); wireSequence(); }
