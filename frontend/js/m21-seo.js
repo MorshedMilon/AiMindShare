@@ -187,9 +187,19 @@
   }
 
   function parseRoute() {
-    const h = (location.hash || "#/seo/keywords").replace(/^#/, "");
-    const parts = h.split("/").filter(Boolean); // ["seo","keywords"]
-    state.route = { name: parts[1] || "keywords" };
+    const h = (location.hash || "#/seo").replace(/^#/, "");
+    const parts = h.split("/").filter(Boolean); // e.g. ["seo","keywords","explorer"]
+    const section = parts[1] || "dashboard";
+    const rest = parts.slice(2);
+    const sec = NAV.find((n) => n.key === section);
+    const childKeys = (sec?.children || []).map((c) => c.key);
+    let sub = null, id = null;
+    if (rest.length) {
+      if (childKeys.includes(rest[0])) sub = rest[0];
+      else if (section === "rankings" && rest.length === 2 && rest[1] === "history") { id = rest[0]; sub = "history"; }
+      else id = rest[0];
+    }
+    state.route = { section, sub, id };
   }
 
   async function loadRoute() {
@@ -222,9 +232,47 @@
      Shell
      ══════════════════════════════════════════════════════════════════════════ */
   const NAV = [
-    { key: "keywords", label: "Keyword research", ico: "search", hash: "#/seo/keywords" },
-    { key: "rankings", label: "Rank tracker", ico: "trend", hash: "#/seo/rankings" },
-    { key: "audit", label: "Site audit", ico: "gauge", hash: "#/seo/audit" },
+    { key: "dashboard", label: "Dashboard", ico: "bolt", hash: "#/seo" },
+    { key: "keywords", label: "Keyword Research", ico: "search", hash: "#/seo/keywords", children: [
+      { key: "explorer", label: "Keyword Explorer", hash: "#/seo/keywords/explorer" },
+      { key: "opportunity", label: "Opportunity Score", hash: "#/seo/keywords/opportunity" },
+      { key: "related", label: "Related Keywords", hash: "#/seo/keywords/related" },
+      { key: "questions", label: "Question Finder", hash: "#/seo/keywords/questions" },
+      { key: "long-tail", label: "Long-Tail Generator", hash: "#/seo/keywords/long-tail" },
+      { key: "ai-search", label: "AI-Search Query Variants", hash: "#/seo/keywords/ai-search" },
+      { key: "settings", label: "Country/Language Selector", hash: "#/seo/keywords/settings" },
+    ] },
+    { key: "clusters", label: "Clusters", ico: "target", hash: "#/seo/clusters", children: [
+      { key: "builder", label: "Cluster Builder", hash: "#/seo/clusters/builder" },
+    ] },
+    { key: "serp", label: "SERP Analysis", ico: "globe", hash: "#/seo/serp", children: [
+      { key: "snapshot", label: "SERP Snapshot", hash: "#/seo/serp/snapshot" },
+      { key: "weakness", label: "SERP Weakness Indicator", hash: "#/seo/serp/weakness" },
+    ] },
+    { key: "competitors", label: "Competitors", ico: "swords", hash: "#/seo/competitors", children: [
+      { key: "overview", label: "Domain Overview", hash: "#/seo/competitors/overview" },
+      { key: "gap", label: "Keyword Gap", hash: "#/seo/competitors/gap" },
+      { key: "gap-actions", label: "Gap Action Layer", hash: "#/seo/competitors/gap-actions" },
+      { key: "send-to-queue", label: "Send-to-Queue", hash: "#/seo/competitors/send-to-queue" },
+    ] },
+    { key: "lists", label: "Keyword Lists", ico: "list", hash: "#/seo/lists", children: [
+      { key: "bulk", label: "Bulk Actions", hash: "#/seo/lists/bulk" },
+    ] },
+    { key: "rankings", label: "Rank Tracking", ico: "trend", hash: "#/seo/rankings", children: [
+      { key: "overlay", label: "Competitor Overlay", hash: "#/seo/rankings/overlay" },
+      { key: "summary", label: "Weekly Summary", hash: "#/seo/rankings/summary" },
+    ] },
+    { key: "audit", label: "Technical Audit", ico: "gauge", hash: "#/seo/audit", children: [
+      { key: "crawler", label: "Site Crawler", hash: "#/seo/audit/crawler" },
+      { key: "cwv", label: "Core Web Vitals", hash: "#/seo/audit/cwv" },
+      { key: "schema", label: "Schema Validator", hash: "#/seo/audit/schema" },
+      { key: "ssl", label: "SSL Check", hash: "#/seo/audit/ssl" },
+    ] },
+    { key: "settings", label: "Settings", ico: "settings", hash: "#/seo/settings", children: [
+      { key: "connections", label: "API Connections", hash: "#/seo/settings/connections" },
+      { key: "cache", label: "Cache Settings", hash: "#/seo/settings/cache" },
+      { key: "scoring", label: "Scoring Weights", hash: "#/seo/settings/scoring" },
+    ] },
   ];
   function shell(activeKey, content) {
     const nav = NAV.map((n) => `<div class="nav-item ${n.key === activeKey ? "active" : ""}" data-hash="${n.hash}"><span class="ni-ico">${svg(n.ico)}</span><span>${n.label}</span></div>`).join("");
