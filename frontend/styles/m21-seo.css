@@ -209,3 +209,23 @@
 
 /* ── Dark theme: soft-tint the tinted chips (tokens already flip via app.css) ── */
 [data-theme="dark"] .you-tag, [data-theme="dark"] .diff-pill.hard, [data-theme="dark"] .sev-pill.danger, [data-theme="dark"] .pos-badge.top { color: var(--ink-900); }
+
+/* ── Nested sidebar nav (9-section tree) — pattern reused from m19-studio.css ── */
+.nav-parent{cursor:pointer}
+.nav-parent .nav-chevron{margin-left:auto;display:flex;align-items:center;justify-content:center;
+  width:20px;height:20px;border:none;background:transparent;color:inherit;opacity:.6;
+  border-radius:var(--r-sm);transition:transform .15s ease}
+.nav-parent .nav-chevron:hover{opacity:1;background:rgba(0,105,110,.1)}
+.nav-parent .nav-chevron.open{transform:rotate(90deg)}
+.nav-children{display:none;padding-left:10px;margin:2px 0 4px;border-left:1px solid var(--line)}
+.nav-children.open{display:block}
+.nav-children .nav-child{padding:7px 12px;font-size:12.5px}
+.nav-badge{margin-left:auto;padding:1px 7px;border-radius:var(--r-pill);font:600 10.5px/1.6 var(--font-sans);
+  background:var(--teal-100);color:var(--teal-700)}
+
+/* Icon-only rail (≤1100px, shared breakpoint from components.css): no room for a
+   flyout submenu, so collapse children entirely instead of showing orphaned text. */
+@media(max-width:1100px){
+  .nav-children,.nav-children.open{display:none}
+  .nav-parent .nav-chevron{display:none}
+}
