@@ -289,7 +289,7 @@
     const selfOrChildActive = state.route.section === n.key;
     const open = state.navOpen.has(n.key) || selfOrChildActive;
     const childRows = n.children.map((c) => {
-      const cActive = state.route.section === n.key && state.route.sub === c.key;
+      const cActive = state.route.section === n.key && (state.route.sub === c.key || (!state.route.sub && n.key === "keywords" && c.key === "explorer"));
       return `<div class="nav-item nav-child ${cActive ? "active" : ""}" data-hash="${c.hash}"><span>${c.label}</span></div>`;
     }).join("");
     return `<div class="nav-item nav-parent ${selfOrChildActive ? "active" : ""}" data-hash="${n.hash}">

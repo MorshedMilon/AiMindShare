@@ -225,7 +225,7 @@
 
 /* Icon-only rail (≤1100px, shared breakpoint from components.css): no room for a
    flyout submenu, so collapse children entirely instead of showing orphaned text. */
-@media(max-width:1100px){
+@media(max-width:1100px) and (min-width:761px){
   .nav-children,.nav-children.open{display:none}
   .nav-parent .nav-chevron{display:none}
 }
