@@ -532,6 +532,28 @@
   }
   function cwvCard(k, v, tone, sub) { return `<div class="cwv-card ${tone}"><div class="cwv-k">${k}</div><div class="cwv-v">${v}</div><div class="cwv-sub muted">${sub}</div></div>`; }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     Placeholder pages — routing shell only, feature logic lands in a later session
+     ══════════════════════════════════════════════════════════════════════════ */
+  const SHADOW_NOTE = {
+    "keywords/related": "This view currently lives as the “Related” tab inside Keyword Explorer — promote to a standalone page in a later session.",
+    "keywords/questions": "This view currently lives as the “Questions” tab inside Keyword Explorer — promote to a standalone page in a later session.",
+    "serp/snapshot": "This view currently lives as the “SERP” tab inside Keyword Explorer — promote to a standalone page in a later session.",
+  };
+  function viewPlaceholder(section, sub, id) {
+    const sec = NAV.find((n) => n.key === section);
+    const child = sec?.children?.find((c) => c.key === sub);
+    const title = child ? child.label : (sec ? sec.label : "Not found");
+    const note = SHADOW_NOTE[`${section}/${sub}`];
+    const idNote = id ? `<p class="muted">Requested id: <span class="mono">${esc(id)}</span></p>` : "";
+    const ico = sec?.ico || "bolt";
+    return shell(previewStrip() + head(ico, "SEO &amp; Content · M21", `<em>${esc(title)}</em>`,
+      note ? "See note below." : "Feature logic for this page isn't built yet — this is a routing placeholder.", "")
+      + `<div class="panel"><div class="empty-state"><div class="es-ico">${geoOrb(svg(ico, 24))}</div>
+        <h3>Coming soon</h3><p>${note || "This page is wired into navigation and routing but doesn't have real data or logic behind it yet."}</p>${idNote}
+      </div></div>`);
+  }
+
   /* ── Small shared bits ───────────────────────────────────────────────────── */
   function kpi(ico, val, label, sub, dir) {
     return `<div class="kpi"><div class="kpi-ico">${svg(ico)}</div><div class="kpi-val">${val}</div><div class="kpi-label">${label}</div><div class="kpi-delta ${dir || ""}">${sub}</div></div>`;
