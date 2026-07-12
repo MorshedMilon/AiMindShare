@@ -687,3 +687,37 @@ insert into public.content_queue (workspace_id, keyword, priority, status, sourc
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa','sharia compliant investing',2,'queued','seo'),
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa','zakat calculator app',3,'queued','seo')
 on conflict do nothing;
+
+-- ── M22-auto (D-190/D-191) — the real content-network sites the bulk pipeline ──
+-- targets, replacing the single generic "Acme" test site for this purpose.
+-- plan='agency' (not the plan's original 'scale' — 'scale' is not a public.plan_tier
+-- enum value anywhere in the migration chain (0000_extensions_enums.sql defines only
+-- free/starter/pro/agency/enterprise); 'agency' matches the only other parent-null,
+-- top-level workspace in this file (Acme Agency) — flagged for plan-author review).
+insert into public.workspaces (id, owner_id, parent_workspace_id, name, slug, plan, niche) values
+  ('dddddddd-dddd-dddd-dddd-dddddddddddd','11111111-1111-1111-1111-111111111111', null, 'AiMindShare Content Network','content-network','agency','Content')
+on conflict (id) do nothing;
+
+insert into public.sites (id, workspace_id, name, subdomain, status, brand, nav, seo_defaults, style_preset) values
+  ('19000000-0000-0000-0000-000000000002','dddddddd-dddd-dddd-dddd-dddddddddddd','IslamicInfo.org','islamicinfo','published',
+   '{"colors":{"emerald":"#0F6E4A"},"fonts":{}}','{"items":[{"label":"Home","page_id":null}]}',
+   '{"description":"Authentic Islamic knowledge, duas, and daily guidance.","robots":"index,follow"}','islamic'),
+  ('19000000-0000-0000-0000-000000000003','dddddddd-dddd-dddd-dddd-dddddddddddd','TravellyAI.com','travellyai','published',
+   '{"colors":{"sky":"#0284C7"},"fonts":{}}','{"items":[{"label":"Home","page_id":null}]}',
+   '{"description":"Travel deals, destination guides, and trip-planning tips.","robots":"index,follow"}','bold'),
+  ('19000000-0000-0000-0000-000000000004','dddddddd-dddd-dddd-dddd-dddddddddddd','GeniuslyAI.com','geniuslyai','published',
+   '{"colors":{"violet":"#7C3AED"},"fonts":{}}','{"items":[{"label":"Home","page_id":null}]}',
+   '{"description":"Practical guides on AI tools, productivity, and learning.","robots":"index,follow"}','minimal')
+on conflict (id) do nothing;
+
+insert into public.site_brand_voice (site_id, workspace_id, tone_prompt, review_required) values
+  ('19000000-0000-0000-0000-000000000002','dddddddd-dddd-dddd-dddd-dddddddddddd',
+   'Warm, respectful, and rooted in authentic Islamic sources. Avoid casual slang, avoid speculative religious rulings, cite the Quran/Sunnah in general terms only (never invent a specific ayah/hadith reference).',
+   true),
+  ('19000000-0000-0000-0000-000000000003','dddddddd-dddd-dddd-dddd-dddddddddddd',
+   'Upbeat, practical, and deal-focused — write like a well-traveled friend giving advice, with concrete tips and urgency around limited-time offers.',
+   false),
+  ('19000000-0000-0000-0000-000000000004','dddddddd-dddd-dddd-dddd-dddddddddddd',
+   'Clear, encouraging, and jargon-light — explain AI/productivity concepts to a smart beginner without condescension.',
+   false)
+on conflict (site_id) do nothing;
