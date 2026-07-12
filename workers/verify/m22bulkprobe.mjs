@@ -133,6 +133,20 @@ async function main() {
     "enforce_review_lock trigger ALLOWS disabling review_required on a non-'islamic'-preset site"
   );
 
+  // ═══ 4b — regression: re-pointing site_id to escape the islamic-preset lock ═══
+  // Uses a FRESH non-islamic site (004), not the '003' site already inserted above —
+  // '003' already has its own site_brand_voice row, so re-pointing '002' onto it
+  // would be blocked by the site_id primary key regardless of the immutability
+  // check, which would make this test pass for the wrong reason.
+  await pg.exec(`insert into public.sites (id, workspace_id, name, style_preset) values
+    ('a0000000-0000-0000-0000-000000000004','a0000000-0000-0000-0000-000000000001','Also Not Islamic','minimal')
+    on conflict do nothing`);
+  assert(
+    await denied(pg, `update public.site_brand_voice set site_id='a0000000-0000-0000-0000-000000000004', review_required=false
+      where site_id='a0000000-0000-0000-0000-000000000002'`),
+    "enforce_review_lock trigger REJECTS re-pointing site_id to escape the islamic-preset lock"
+  );
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 }

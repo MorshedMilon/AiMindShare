@@ -97,3 +97,24 @@ begin
 end $$;
 create trigger site_brand_voice_lock before insert or update on public.site_brand_voice
   for each row execute function public.enforce_review_lock();
+
+-- enforce_review_lock (revised) — the review_required check alone was bypassable: a
+-- staff-tier UPDATE could change site_id to point at a different, non-islamic site
+-- WHILE ALSO setting review_required=false in the same statement, since the check
+-- reads NEW.site_id (post-change). That left the islamic site's row missing entirely,
+-- and worker.mjs treats a missing row as reviewRequired=false — silently unlocking
+-- auto-publish for exactly the sites D-191 exists to protect. Fix: site_id is made
+-- immutable on this table (checked independently of the review_required check).
+create or replace function public.enforce_review_lock() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if TG_OP = 'UPDATE' and OLD.site_id is distinct from NEW.site_id then
+    raise exception 'site_id is immutable on site_brand_voice';
+  end if;
+  if new.review_required = false and exists (
+    select 1 from public.sites where id = new.site_id and style_preset = 'islamic'
+  ) then
+    raise exception 'review_required cannot be disabled for an islamic-preset site';
+  end if;
+  return new;
+end $$;
