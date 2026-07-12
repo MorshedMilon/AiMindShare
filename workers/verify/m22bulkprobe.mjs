@@ -147,6 +147,30 @@ async function main() {
     "enforce_review_lock trigger REJECTS re-pointing site_id to escape the islamic-preset lock"
   );
 
+  // ═══ 5 — content_templates / content_batch_jobs / extended content_queue ═══
+  assert(
+    (await pg.query(`select table_name from information_schema.tables
+       where table_name in ('content_templates','content_batch_jobs')`)).rows.length === 2,
+    "content_templates and content_batch_jobs tables exist"
+  );
+  assert(
+    (await pg.query(`select column_name from information_schema.columns
+       where table_name='content_queue' and column_name in ('batch_job_id','template_id','variables')`))
+      .rows.length === 3,
+    "content_queue has batch_job_id/template_id/variables columns"
+  );
+  await pg.exec(`insert into public.content_batch_jobs
+      (id, workspace_id, site_id, name, topic_source, model, word_count_min, word_count_max, total_items, topics)
+    values
+      ('a0000000-0000-0000-0000-000000000010','a0000000-0000-0000-0000-000000000001',
+       'a0000000-0000-0000-0000-000000000002','Ramadan batch','manual','claude-sonnet-5',800,1600,2,
+       '[{"keyword":"best dua for ramadan"},{"keyword":"ramadan fasting tips"}]'::jsonb)`);
+  assert(
+    (await pg.query(`select status, total_items from public.content_batch_jobs where id='a0000000-0000-0000-0000-000000000010'`))
+      .rows[0].status === 'draft',
+    "a new content_batch_jobs row defaults to status='draft'"
+  );
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 }

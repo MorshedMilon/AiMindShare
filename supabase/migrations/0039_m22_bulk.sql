@@ -118,3 +118,60 @@ begin
   end if;
   return new;
 end $$;
+
+-- ── Part C — content_templates + content_batch_jobs + content_queue extension (D-192) ──
+create table if not exists public.content_templates (
+  id              uuid primary key default gen_random_uuid(),
+  workspace_id    uuid not null references public.workspaces(id) on delete cascade,
+  site_id         uuid references public.sites(id) on delete cascade,
+  name            text not null,
+  prompt_template text not null,          -- free text with [var] slots, e.g. "[city] travel guide"
+  variable_defs   jsonb not null default '[]',  -- [{name,label,sample_values:[...]}]
+  category        text,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz
+);
+create index if not exists content_templates_ws_idx on public.content_templates (workspace_id);
+alter table public.content_templates enable row level security;
+create policy content_templates_sel on public.content_templates for select using ( public.has_role(workspace_id,'staff') );
+create policy content_templates_ins on public.content_templates for insert with check ( public.has_role(workspace_id,'staff') );
+create policy content_templates_upd on public.content_templates for update using ( public.has_role(workspace_id,'staff') ) with check ( public.has_role(workspace_id,'staff') );
+create policy content_templates_del on public.content_templates for delete using ( public.has_role(workspace_id,'manager') );
+create trigger content_templates_set_updated_at before update on public.content_templates
+  for each row execute function public.set_updated_at();
+
+create table if not exists public.content_batch_jobs (
+  id                    uuid primary key default gen_random_uuid(),
+  workspace_id          uuid not null references public.workspaces(id) on delete cascade,
+  site_id               uuid not null references public.sites(id) on delete cascade,
+  name                  text not null,
+  topic_source          text not null default 'manual' check (topic_source in ('manual','csv','ai_seed')),
+  template_id           uuid references public.content_templates(id) on delete set null,
+  model                 text not null default 'claude-sonnet-5',
+  word_count_min        int not null default 800,
+  word_count_max        int not null default 1600,
+  topics                jsonb not null default '[]',   -- [{keyword, variables:{}}] resolved at creation
+  total_items           int not null default 0,
+  preview_count         int not null default 0,
+  status                text not null default 'draft'
+    check (status in ('draft','previewing','queued','running','paused','completed','rolled_back')),
+  scheduled_spread_days int,
+  created_by            uuid references auth.users(id),
+  created_at            timestamptz not null default now(),
+  updated_at            timestamptz
+);
+create index if not exists content_batch_jobs_ws_idx on public.content_batch_jobs (workspace_id, status);
+alter table public.content_batch_jobs enable row level security;
+create policy content_batch_jobs_sel on public.content_batch_jobs for select using ( public.has_role(workspace_id,'staff') );
+create policy content_batch_jobs_ins on public.content_batch_jobs for insert with check ( public.has_role(workspace_id,'staff') );
+create policy content_batch_jobs_upd on public.content_batch_jobs for update using ( public.has_role(workspace_id,'staff') ) with check ( public.has_role(workspace_id,'staff') );
+create policy content_batch_jobs_del on public.content_batch_jobs for delete using ( public.has_role(workspace_id,'manager') );
+create trigger content_batch_jobs_set_updated_at before update on public.content_batch_jobs
+  for each row execute function public.set_updated_at();
+
+-- Extend content_queue (same add-column-if-not-exists pattern 0027 used on 0026;
+-- 0026 stays untouched, D-148/D-192).
+alter table public.content_queue add column if not exists batch_job_id uuid references public.content_batch_jobs(id) on delete set null;
+alter table public.content_queue add column if not exists template_id  uuid references public.content_templates(id) on delete set null;
+alter table public.content_queue add column if not exists variables    jsonb not null default '{}';
+create index if not exists content_queue_batch_idx on public.content_queue (batch_job_id);
