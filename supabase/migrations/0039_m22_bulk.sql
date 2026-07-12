@@ -174,4 +174,4 @@ create trigger content_batch_jobs_set_updated_at before update on public.content
 alter table public.content_queue add column if not exists batch_job_id uuid references public.content_batch_jobs(id) on delete set null;
 alter table public.content_queue add column if not exists template_id  uuid references public.content_templates(id) on delete set null;
 alter table public.content_queue add column if not exists variables    jsonb not null default '{}';
-create index if not exists content_queue_batch_idx on public.content_queue (batch_job_id);
+create index if not exists content_queue_batch_idx on public.content_queue (batch_job_id, status);
