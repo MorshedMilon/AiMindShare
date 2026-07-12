@@ -969,7 +969,10 @@ if (ONCE) {
   const did = await processOne();
   if (!did) { console.error("no queued job to claim"); process.exit(1); }
   process.exit(0);
-} else if (MAX) {
+} else if (maxArg && Number.isNaN(MAX)) {
+  console.error(`invalid --max value: ${maxArg}`);
+  process.exit(1);
+} else if (MAX !== null && !Number.isNaN(MAX)) {
   // Claim up to MAX jobs then exit cleanly — the mode a scheduled CI runner needs
   // (D-010/D-189): no infinite loop, no lingering process for the runner to kill.
   let claimedCount = 0;
