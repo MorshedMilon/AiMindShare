@@ -87,6 +87,25 @@ async function main() {
     "generation_source check constraint accepts 'llm'"
   );
 
+  // ═══ 3 — create_generated_article persists generation_source/llm_model/tokens_used ═══
+  await pg.exec(`insert into public.memberships (workspace_id, user_id, role, status) values
+    ('a0000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001','owner','active')
+    on conflict do nothing`);
+  const genRow = await pg.query(
+    `select public.create_generated_article($1,$2,null,$3) as id`,
+    ['a0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002',
+     JSON.stringify({ keyword: "k", title: "T", slug: "gen-article-test",
+       generation_source: "llm", llm_model: "claude-sonnet-5", tokens_used: 842 })]
+  );
+  const genId = genRow.rows[0].id;
+  assert(!!genId, "create_generated_article returns a new article id");
+  const genArt = (await pg.query(
+    `select generation_source, llm_model, tokens_used from public.blog_articles where id=$1`, [genId]
+  )).rows[0];
+  assert(genArt.generation_source === "llm", "create_generated_article persists generation_source");
+  assert(genArt.llm_model === "claude-sonnet-5", "create_generated_article persists llm_model");
+  assert(Number(genArt.tokens_used) === 842, "create_generated_article persists tokens_used");
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 }
