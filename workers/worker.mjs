@@ -28,6 +28,8 @@ const db = createClient(URL, KEY, { auth: { persistSession: false } });
 const { automationExecute, automationDateSweep } = createAutomationEngine(db);
 const WORKER_ID = process.env.WORKER_ID || `worker-${process.pid}`;
 const ONCE = process.argv.includes("--once");
+const maxArg = process.argv.find((a) => a.startsWith("--max="));
+const MAX = maxArg ? parseInt(maxArg.split("=")[1], 10) : null;
 
 async function claim() {
   const { data, error } = await db.rpc("claim_job", { p_worker: WORKER_ID });
@@ -966,6 +968,17 @@ async function processOne() {
 if (ONCE) {
   const did = await processOne();
   if (!did) { console.error("no queued job to claim"); process.exit(1); }
+  process.exit(0);
+} else if (MAX) {
+  // Claim up to MAX jobs then exit cleanly — the mode a scheduled CI runner needs
+  // (D-010/D-189): no infinite loop, no lingering process for the runner to kill.
+  let claimedCount = 0;
+  for (let i = 0; i < MAX; i++) {
+    const did = await processOne();
+    if (!did) break;
+    claimedCount++;
+  }
+  console.log(`${WORKER_ID} processed ${claimedCount}/${MAX} job(s), exiting`);
   process.exit(0);
 } else {
   console.log(`${WORKER_ID} polling for jobs…`);
