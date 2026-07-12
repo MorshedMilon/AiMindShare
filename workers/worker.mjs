@@ -786,16 +786,20 @@ async function seoAuditCrawl(job) {
 }
 
 // M22-auto · blog.generate — turn a queued content_queue keyword into a SCORED,
-// internally-linked, JSON-LD blog_articles DRAFT via the deterministic
-// blog-pipeline.mjs SCAFFOLD (D-147). No provider, no network, NOTHING metered —
-// the two provider gaps (GPT prose + DALL·E/M35 images) are labelled stubs the
-// pipeline module never calls. Payload: {content_queue_id, workspace_id}. Flow:
-//   claim → load queue row + its site's content_schedules settings →
-//   compute_topic_cluster → build_serp_brief → build_article_html → score_article →
-//   suggest_internal_links → build_schema → create_generated_article (draft) →
-//   quality gate vs the schedule thresholds:
-//     below threshold          → item done, step='review', fail_reason='BELOW_THRESHOLD',
-//                                 article routed to the M22-manual review queue (in_review).
+// internally-linked, JSON-LD blog_articles DRAFT. Real Anthropic generation is
+// attempted first (D-190, via workers/llm.mjs's callAnthropicForArticle, gated by a
+// pre-flight ai_tokens meter_check and metered on success) and falls back to the
+// deterministic blog-pipeline.mjs scaffold (D-147) on no key / quota / provider
+// error / timeout — never a hard failure. Payload: {content_queue_id, workspace_id}.
+// Flow:
+//   claim → load queue row + its site's content_schedules + site_brand_voice settings →
+//   compute_topic_cluster → build_serp_brief → generate_article_with_ai (LLM) or
+//   build_article_html (fallback) → score_article → suggest_internal_links →
+//   build_schema → create_generated_article (draft, tagged generation_source) →
+//   decidePublishStep (D-191 — IslamicInfo/review-locked sites can never auto-publish,
+//   regardless of quality score or auto_publish):
+//     below threshold           → item done, step='review', fail_reason='BELOW_THRESHOLD'.
+//     review-locked site        → item done, step='review', fail_reason=null.
 //     pass + auto_publish=true  → _m22_publish (service-role publish), item step='published'.
 //     pass + auto_publish=false → item step='review', article in_review.
 //   On error → fail_content_item + rethrow so the worker's retry (×max_attempts) applies.
