@@ -29,7 +29,12 @@ export async function resolveAnthropicKey(db, workspaceId) {
 // throws. `fetchImpl` defaults to the global fetch (Node 18+ has it built in); tests
 // inject a fake.
 export async function callAnthropicForArticle(db, workspaceId, systemPrompt, userPrompt, model, fetchImpl = fetch) {
-  const apiKey = await resolveAnthropicKey(db, workspaceId);
+  let apiKey;
+  try {
+    apiKey = await resolveAnthropicKey(db, workspaceId);
+  } catch {
+    return { kind: "unavailable", reason: "no_key" };
+  }
   if (!apiKey) return { kind: "unavailable", reason: "no_key" };
 
   const controller = new AbortController();
