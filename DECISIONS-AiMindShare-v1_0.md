@@ -786,9 +786,13 @@ never writes `visitor_sessions`. Proven in `m19probe.mjs`.
 Cloudflare Pages + Access vs GitHub Pages for the static front end. Same call as D-CONSOLE-001 —
 decide once for both dashboard products. Blocks: production deploy, not local build.
 
-## D-010 · Heavy-job worker runtime · **OPEN**
-GitHub Actions runners (PublishlyAI pattern) vs a small always-on VPS for heavy jobs (2,000-word
-blog gen, 500-page crawls, bulk pin rendering). Blocks: Phase 3 auto-blog at scale, not Phase 1.
+## D-010 · Heavy-job worker runtime · **RESOLVED → GitHub Actions (see D-189, 2026-07-11)**
+~~GitHub Actions runners (PublishlyAI pattern) vs a small always-on VPS for heavy jobs (2,000-word
+blog gen, 500-page crawls, bulk pin rendering). Blocks: Phase 3 auto-blog at scale, not Phase 1.~~
+Resolved at the M22-auto bulk pipeline round → **GitHub Actions**, `worker-cron.yml`. Platform-wide:
+every module's dormant worker-tier job type (SEO crawls, pin rendering, weekly digests, CRM
+dedupe, GDPR export/erase, automation execution, media auto-tagging, integration health checks)
+becomes live the moment this workflow merges — see D-189.
 
 ## D-011 · Email provider · **RESOLVED → SendGrid (see D-086, 2026-07-05)**
 ~~Resend vs SendGrid. Blocks: M04 email notifications and M16 campaigns wiring, not schema.~~ Resolved at
@@ -1477,6 +1481,51 @@ whenever not connected instead of showing "mockup mode"/"not connected" text (it
 click-handler wiring are untouched in every file — Gate 5 states (Definition of Done) still exist and are
 testable, just via the browser console (`state.previewState = 'empty'; render();`) rather than a visible
 button. New modules must follow this from the start — see `DEFINITION-OF-DONE-v1_0.md` Gate 5.
+
+## D-189 · Worker runtime → GitHub Actions worker-cron.yml (resolves D-010) · **LOCKED 2026-07-11**
+Workflow-only, no migration: `.github/workflows/worker-cron.yml` runs `node workers/worker.mjs
+--max=10` every 5 minutes against repo secrets `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`.
+`worker.mjs` gains a `--max=N` flag (claim/process up to N jobs, then exit) alongside the existing
+`--once`. Stale leases are already reclaimed by the core `*/1 * * * *` sweeper — no new reclaim
+logic needed. Chosen over a small always-on VPS because it needs zero new infrastructure and
+matches the "PublishlyAI pattern" D-010 already named.
+
+## D-190 · M22-auto real LLM generation wiring · **LOCKED 2026-07-11**
+Migration `0039_m22_bulk.sql`. `blog-pipeline.mjs`'s documented `generate_article_with_ai(ctx,
+callLlm)` stub is implemented for real via dependency injection: a new `workers/llm.mjs` (mirrors
+`_shared/llm.ts`'s Vault convention) supplies the actual Anthropic call, keeping
+`blog-pipeline.mjs` network-free and browser-importable. Default model **claude-sonnet-5**
+(long-form quality bar is higher than M20's funnel-copy use of Haiku); `claude-3-5-haiku-20241022`
+selectable per schedule/batch. `ai_tokens` is metered on the LLM call itself (platform convention,
+same as D-186), never on a later approval step. `blog_articles` gains
+`generation_source`/`llm_model`/`tokens_used` (mirrors D-186's `funnel_blueprints` columns
+exactly). No key configured → automatic fallback to the existing deterministic
+`build_article_html` path, never a hard error.
+
+## D-191 · IslamicInfo.org mandatory human review — server-side, not UI-only · **LOCKED 2026-07-11**
+Migration `0039_m22_bulk.sql`. New `site_brand_voice.review_required` column, enforced two ways:
+(1) a `decidePublishStep()` pure function in `blog-pipeline.mjs`, called by `worker.mjs`'s
+`blog.generate` handler, forces `step='review'` whenever `review_required=true` regardless of
+`content_schedules.auto_publish` or quality-gate scores; (2) a database trigger
+`enforce_review_lock()` rejects any `site_brand_voice` row update that sets
+`review_required=false` for a site whose `sites.style_preset='islamic'`. Neither guarantee
+depends on the UI — a bulk job, a misconfigured schedule, or a direct RPC call cannot bypass
+either layer.
+
+## D-192 · Bulk Content Creation architecture — extend, don't duplicate · **LOCKED 2026-07-11**
+Migration `0039_m22_bulk.sql`. Two new tables only: `content_templates` (variable-slot prompt
+templates) and `content_batch_jobs` (batch metadata, topics stored inline as jsonb — no separate
+staging table). `content_queue` gets three new columns (`batch_job_id`, `template_id`,
+`variables`) via the same `add column if not exists` pattern D-148 established — migration `0026`
+stays untouched. Bulk jobs get pacing separate from a site's day-to-day
+`content_schedules.max_posts_per_run` via a second loop appended to the existing
+`advance_content_pipeline()` cron function (a fixed per-tick cap, mirroring M20's D-186
+hardcoded 20/hour pattern) rather than a new quota-counter table. Duplicate detection is
+exact-keyword matching only, not the design doc's originally proposed pgvector cosine
+similarity — `blog_articles.embedding` has no writer anywhere in the codebase yet (confirmed
+dormant, D-124 scaffold), so a real semantic check isn't buildable today; faking one would
+violate this codebase's established honest-scaffold posture (D-147). Semantic dedup is a
+documented follow-up for whenever an embedding writer lands.
 
 ---
 

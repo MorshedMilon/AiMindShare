@@ -12,7 +12,7 @@ ends by updating it.**
 ## ⏳ Pre-Session-0 — human decisions & inputs
 
 - [ ] **D-009** Hosting: Cloudflare Pages + Access vs GitHub Pages (decide with D-CONSOLE-001)
-- [ ] **D-010** Worker runtime: GitHub Actions vs small VPS *(blocks Phase 3, not Session 0)*
+- [x] **D-010** Worker runtime: GitHub Actions vs small VPS *(blocks Phase 3, not Session 0)* — RESOLVED 2026-07-11 → GitHub Actions, see D-189
 - [x] **D-011** Email provider: **RESOLVED → SendGrid** (Session 17 / M16, D-086) — first email provider wired
 - [ ] **D-012** Theme key: shared `islamicinfo-theme` vs own `aimindshare-theme` (with D-CONSOLE-004)
 - [ ] Provide `QURANLYAI_DESIGN.md` + `publishlyai-command-center.html` to the doc pipeline so
