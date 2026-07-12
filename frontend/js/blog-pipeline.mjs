@@ -258,9 +258,14 @@ export async function generate_article_with_ai(ctx, callLlm) {
   const { keyword, brief, targetWordCount = 1200, brandVoice = "" } = ctx;
   const systemPrompt = buildArticleSystemPrompt(brandVoice, targetWordCount);
   const userPrompt = buildArticleUserPrompt(keyword, brief);
-  const result = await callLlm(systemPrompt, userPrompt);
-  if (result.kind !== "html" || !result.content_html || !result.content_html.trim()) {
-    return { kind: "unavailable", reason: result.reason || "bad_response" };
+  let result;
+  try {
+    result = await callLlm(systemPrompt, userPrompt);
+  } catch {
+    return { kind: "unavailable", reason: "bad_response" };
+  }
+  if (!result || result.kind !== "html" || !result.content_html || !result.content_html.trim()) {
+    return { kind: "unavailable", reason: result?.reason || "bad_response" };
   }
   return result;
 }

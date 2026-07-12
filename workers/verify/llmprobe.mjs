@@ -108,6 +108,12 @@ console.log("\n══ blog-pipeline.mjs — generate_article_with_ai + decidePub
   assert(result.kind === "unavailable" && result.reason === "bad_response",
     "generate_article_with_ai: blank HTML from the LLM is treated as bad_response");
 }
+{
+  const callLlm = async () => { throw new Error("network exploded"); };
+  const result = await generate_article_with_ai({ keyword: "x" }, callLlm);
+  assert(result.kind === "unavailable" && result.reason === "bad_response",
+    "generate_article_with_ai: callLlm throwing is caught, never propagates");
+}
 
 const sys = buildArticleSystemPrompt("warm and respectful", 1200);
 assert(sys.includes("warm and respectful") && sys.includes("1200"),
@@ -128,6 +134,8 @@ assert(decidePublishStep({ passes: true, autoPublish: true, reviewRequired: fals
   "decidePublishStep: passes + autoPublish + no review-lock → publish=true");
 assert(decidePublishStep({ passes: true, autoPublish: false, reviewRequired: false }).step === "review",
   "decidePublishStep: passes but autoPublish=false → review (existing M22-manual behaviour)");
+assert(decidePublishStep({ passes: true, autoPublish: false, reviewRequired: true }).step === "review",
+  "decidePublishStep: the realistic IslamicInfo config (review-required, auto-publish off) still routes to review");
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
