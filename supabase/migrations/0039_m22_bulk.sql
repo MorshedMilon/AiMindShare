@@ -63,3 +63,37 @@ begin
 end $$;
 revoke all on function public.create_generated_article(uuid,uuid,uuid,jsonb) from public;
 grant execute on function public.create_generated_article(uuid,uuid,uuid,jsonb) to service_role;
+
+-- ── Part B — site_brand_voice + the IslamicInfo mandatory-review lock (D-191) ──
+create table if not exists public.site_brand_voice (
+  site_id         uuid primary key references public.sites(id) on delete cascade,
+  workspace_id    uuid not null references public.workspaces(id) on delete cascade,
+  tone_prompt     text,
+  review_required boolean not null default false,
+  updated_at      timestamptz
+);
+create index if not exists site_brand_voice_ws_idx on public.site_brand_voice (workspace_id);
+alter table public.site_brand_voice enable row level security;
+create policy site_brand_voice_sel on public.site_brand_voice for select using ( public.has_role(workspace_id,'staff') );
+create policy site_brand_voice_ins on public.site_brand_voice for insert with check ( public.has_role(workspace_id,'staff') );
+create policy site_brand_voice_upd on public.site_brand_voice for update using ( public.has_role(workspace_id,'staff') ) with check ( public.has_role(workspace_id,'staff') );
+create policy site_brand_voice_del on public.site_brand_voice for delete using ( public.has_role(workspace_id,'manager') );
+create trigger site_brand_voice_set_updated_at before update on public.site_brand_voice
+  for each row execute function public.set_updated_at();
+
+-- enforce_review_lock — a bulk job, a misconfigured schedule, or a direct RPC call
+-- can never disable mandatory review for an 'islamic'-preset site (D-191). Tied to
+-- sites.style_preset, not a hardcoded site id, so it protects any future site with
+-- the same preset, not just IslamicInfo.org specifically.
+create or replace function public.enforce_review_lock() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.review_required = false and exists (
+    select 1 from public.sites where id = new.site_id and style_preset = 'islamic'
+  ) then
+    raise exception 'review_required cannot be disabled for an islamic-preset site';
+  end if;
+  return new;
+end $$;
+create trigger site_brand_voice_lock before insert or update on public.site_brand_voice
+  for each row execute function public.enforce_review_lock();

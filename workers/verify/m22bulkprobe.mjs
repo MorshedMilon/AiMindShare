@@ -2,7 +2,9 @@
 // (D-190/D-191/D-192). PGlite, no network. Loads the same curated migration chain
 // m22autoprobe.mjs uses (dependency order, not the full 0000-0039 range — several
 // migrations in between reference Supabase-managed schemas like storage/vault/cron
-// that don't exist in PGlite), plus 0039 itself once it exists.
+// that don't exist in PGlite), PLUS 0028_m19_sites_v2.sql (needed for
+// sites.style_preset, used by the IslamicInfo review-lock trigger test below) and
+// 0039 itself once it exists.
 import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -44,7 +46,7 @@ async function main() {
     "0010_m05_compliance.sql", "0013_m09_crm.sql", "0014_m11_pipeline.sql",
     "0015_m12_inbox.sql", "0016_m13_automations.sql", "0022_m19_sites.sql",
     "0025_m22_content.sql", "0026_m21_seo.sql", "0027_m22_auto.sql",
-    "0039_m22_bulk.sql",
+    "0028_m19_sites_v2.sql", "0039_m22_bulk.sql",
   ]) {
     await pg.exec(load(m));
   }
@@ -105,6 +107,31 @@ async function main() {
   assert(genArt.generation_source === "llm", "create_generated_article persists generation_source");
   assert(genArt.llm_model === "claude-sonnet-5", "create_generated_article persists llm_model");
   assert(Number(genArt.tokens_used) === 842, "create_generated_article persists tokens_used");
+
+  // ═══ 4 — site_brand_voice table + RLS + the IslamicInfo review-lock trigger ═══
+  await pg.exec(`update public.sites set style_preset='islamic' where id='a0000000-0000-0000-0000-000000000002'`);
+  await pg.exec(`insert into public.site_brand_voice (site_id, workspace_id, tone_prompt, review_required)
+    values ('a0000000-0000-0000-0000-000000000002','a0000000-0000-0000-0000-000000000001','warm and respectful', true)`);
+  assert(
+    (await pg.query(`select review_required from public.site_brand_voice where site_id='a0000000-0000-0000-0000-000000000002'`))
+      .rows[0].review_required === true,
+    "site_brand_voice row inserted with review_required=true"
+  );
+  assert(
+    await denied(pg, `update public.site_brand_voice set review_required=false
+      where site_id='a0000000-0000-0000-0000-000000000002'`),
+    "enforce_review_lock trigger REJECTS disabling review_required on an 'islamic'-preset site"
+  );
+  await pg.exec(`insert into public.sites (id, workspace_id, name, style_preset) values
+    ('a0000000-0000-0000-0000-000000000003','a0000000-0000-0000-0000-000000000001','Not Islamic','bold')
+    on conflict do nothing`);
+  await pg.exec(`insert into public.site_brand_voice (site_id, workspace_id, tone_prompt, review_required)
+    values ('a0000000-0000-0000-0000-000000000003','a0000000-0000-0000-0000-000000000001','upbeat', true)`);
+  assert(
+    !(await denied(pg, `update public.site_brand_voice set review_required=false
+      where site_id='a0000000-0000-0000-0000-000000000003'`)),
+    "enforce_review_lock trigger ALLOWS disabling review_required on a non-'islamic'-preset site"
+  );
 
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
