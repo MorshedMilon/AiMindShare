@@ -1,6 +1,9 @@
 // llmprobe.mjs — pure unit tests for workers/llm.mjs. No network, no PGlite: a fake
 // `db` stub and a fake `fetchImpl` are injected so this runs anywhere, instantly.
 import { resolveAnthropicKey, callAnthropicForArticle } from "../llm.mjs";
+import {
+  generate_article_with_ai, buildArticleSystemPrompt, buildArticleUserPrompt, decidePublishStep,
+} from "../../frontend/js/blog-pipeline.mjs";
 
 let pass = 0, fail = 0;
 const assert = (c, l) => c
@@ -77,6 +80,54 @@ console.log("══ workers/llm.mjs — Vault key resolution + Anthropic call �
   assert(result.kind === "unavailable" && result.reason === "bad_response",
     "callAnthropicForArticle: empty text → bad_response");
 }
+
+console.log("\n══ blog-pipeline.mjs — generate_article_with_ai + decidePublishStep ══");
+
+{
+  const result = await generate_article_with_ai({ keyword: "best dua for anxiety" }, null);
+  assert(result.kind === "unavailable" && result.reason === "no_key",
+    "generate_article_with_ai: no callLlm function → unavailable/no_key");
+}
+{
+  const callLlm = async () => ({ kind: "html", content_html: "<h1>Real</h1><p>Body</p>", tokensUsed: 300, model: "claude-sonnet-5" });
+  const result = await generate_article_with_ai(
+    { keyword: "best dua for anxiety", brief: { h2_sections: [], faqs: [] }, targetWordCount: 1200, brandVoice: "warm" },
+    callLlm);
+  assert(result.kind === "html" && result.content_html === "<h1>Real</h1><p>Body</p>",
+    "generate_article_with_ai: happy path passes the LLM's HTML through unchanged");
+}
+{
+  const callLlm = async () => ({ kind: "unavailable", reason: "timeout" });
+  const result = await generate_article_with_ai({ keyword: "x" }, callLlm);
+  assert(result.kind === "unavailable" && result.reason === "timeout",
+    "generate_article_with_ai: propagates the callLlm's unavailable reason");
+}
+{
+  const callLlm = async () => ({ kind: "html", content_html: "   " });
+  const result = await generate_article_with_ai({ keyword: "x" }, callLlm);
+  assert(result.kind === "unavailable" && result.reason === "bad_response",
+    "generate_article_with_ai: blank HTML from the LLM is treated as bad_response");
+}
+
+const sys = buildArticleSystemPrompt("warm and respectful", 1200);
+assert(sys.includes("warm and respectful") && sys.includes("1200"),
+  "buildArticleSystemPrompt embeds the brand voice and target word count");
+const usr = buildArticleUserPrompt("best dua for anxiety",
+  { h2_sections: [{ h2: "What is dua?", points: ["define it"] }], faqs: [{ q: "Is dua required?" }] });
+assert(usr.includes("best dua for anxiety") && usr.includes("What is dua?") && usr.includes("Is dua required?"),
+  "buildArticleUserPrompt includes the keyword, outline, and FAQ questions");
+
+// decidePublishStep — the IslamicInfo hard-gate invariant (D-191), unit-tested without a DB.
+assert(decidePublishStep({ passes: false, autoPublish: true, reviewRequired: false }).step === "review",
+  "decidePublishStep: below-threshold always routes to review, even with auto_publish on");
+assert(decidePublishStep({ passes: true, autoPublish: true, reviewRequired: true }).step === "review",
+  "decidePublishStep: reviewRequired forces review EVEN WHEN passes+autoPublish are both true");
+assert(decidePublishStep({ passes: true, autoPublish: true, reviewRequired: true }).publish === false,
+  "decidePublishStep: reviewRequired forces publish=false regardless of autoPublish");
+assert(decidePublishStep({ passes: true, autoPublish: true, reviewRequired: false }).publish === true,
+  "decidePublishStep: passes + autoPublish + no review-lock → publish=true");
+assert(decidePublishStep({ passes: true, autoPublish: false, reviewRequired: false }).step === "review",
+  "decidePublishStep: passes but autoPublish=false → review (existing M22-manual behaviour)");
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
