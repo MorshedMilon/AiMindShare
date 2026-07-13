@@ -103,6 +103,30 @@ async function main() {
   assert(await count(pg, `select count(*)::int n from pg_indexes where indexname='generation_jobs_one_pending_per_stage'`) === 1,
     "generation_jobs has the one-pending-per-stage partial unique index");
 
+  // ═══ 2 — start_generation_run ═══════════════════════════════════════════════
+  console.log("\nM22 Generation Studio · start_generation_run:");
+  await as(STAFF_A);
+  const run1 = (await pg.query(
+    `select * from public.start_generation_run($1,$2,$3)`, [wsA, siteA, kwA]
+  )).rows[0];
+  assert(!!run1.article_id, "start_generation_run returns an article_id");
+  assert(!!run1.generation_job_id, "start_generation_run returns the first generation_job_id");
+  await reset();
+
+  assert(await count(pg, `select count(*)::int n from public.blog_articles where id=$1 and status='draft'`, [run1.article_id]) === 1,
+    "the stub article is created with status='draft'");
+  assert(await count(pg, `select count(*)::int n from public.content_queue where article_id=$1 and keyword_id=$2`, [run1.article_id, kwA]) === 1,
+    "content_queue row carries both article_id and keyword_id");
+  assert(await count(pg, `select count(*)::int n from public.generation_jobs where id=$1 and stage='research' and status='pending'`, [run1.generation_job_id]) === 1,
+    "the first generation_jobs row is stage='research', status='pending'");
+  assert(await count(pg, `select count(*)::int n from public.jobs where type='generation.advance' and payload->>'generation_job_id'=$1::text`, [run1.generation_job_id]) === 1,
+    "a matching jobs row (type='generation.advance') is enqueued");
+
+  await as(CLIENT_A);
+  assert(await denied(pg, `select * from public.start_generation_run($1,$2,$3)`, [wsA, siteA, kwA]),
+    "client role cannot call start_generation_run");
+  await reset();
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 }

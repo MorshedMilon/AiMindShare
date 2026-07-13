@@ -70,3 +70,48 @@ create policy content_scores_sel on public.content_scores for select using (
   exists (select 1 from public.blog_articles a where a.id = content_scores.article_id and public.has_role(a.workspace_id,'staff'))
 );
 -- No client write policy: only the worker (service_role) writes content_scores.
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 5. start_generation_run — staff+ picks a keyword and starts a Generation
+--    Studio run: creates the content_queue bridge row (keyword_id set, D-134
+--    fix in effect), a blog_articles STUB (status='draft', empty content), the
+--    first generation_jobs row (stage='research', status='pending'), and the
+--    matching jobs row the worker will claim. Returns (article_id,
+--    generation_job_id) so the UI can navigate straight to the tracker.
+-- ═══════════════════════════════════════════════════════════════════════════
+create or replace function public.start_generation_run(p_ws uuid, p_site uuid, p_keyword_id uuid)
+returns table (article_id uuid, generation_job_id uuid)
+language plpgsql security definer set search_path = public as $$
+declare v_kw record; v_article uuid; v_gj uuid; v_slug text; v_base text; v_n int := 1;
+begin
+  if not public.has_role(p_ws,'staff') then raise exception 'forbidden: staff+ required'; end if;
+
+  select * into v_kw from public.keywords where id = p_keyword_id and workspace_id = p_ws;
+  if not found then raise exception 'keyword not found in this workspace'; end if;
+
+  v_base := regexp_replace(lower(trim(v_kw.keyword)), '[^a-z0-9]+', '-', 'g');
+  v_base := trim(both '-' from v_base);
+  if v_base = '' then v_base := 'generated-article'; end if;
+  v_slug := v_base;
+  while exists (select 1 from public.blog_articles where site_id = p_site and slug = v_slug) loop
+    v_slug := v_base || '-' || v_n; v_n := v_n + 1;
+  end loop;
+
+  insert into public.blog_articles (workspace_id, site_id, keyword, title, slug, status)
+  values (p_ws, p_site, v_kw.keyword, v_kw.keyword, v_slug, 'draft')
+  returning id into v_article;
+
+  insert into public.content_queue (workspace_id, site_id, keyword, keyword_id, article_id, status, source)
+  values (p_ws, p_site, v_kw.keyword, p_keyword_id, v_article, 'in_progress', 'generation-studio');
+
+  insert into public.generation_jobs (workspace_id, article_id, keyword_id, stage, status)
+  values (p_ws, v_article, p_keyword_id, 'research', 'pending')
+  returning id into v_gj;
+
+  insert into public.jobs (workspace_id, type, payload, status, idempotency_key)
+  values (p_ws, 'generation.advance', jsonb_build_object('generation_job_id', v_gj), 'queued', 'generation-' || v_gj);
+
+  return query select v_article, v_gj;
+end $$;
+revoke all on function public.start_generation_run(uuid,uuid,uuid) from public;
+grant execute on function public.start_generation_run(uuid,uuid,uuid) to authenticated, service_role;
