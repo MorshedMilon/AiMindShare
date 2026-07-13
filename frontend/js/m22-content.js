@@ -106,6 +106,32 @@ import { sanitizeHtml } from "./content-editor.mjs";
     ],
   };
 
+  // ── Bulk Content Creation mock state (mirrors seedArticles()'s honest-sample style) ─
+  const MOCK_BATCHES = [
+    { id: "b1", name: "Ramadan dua series", topic_source: "manual", status: "running",
+      total_items: 12, model: "claude-sonnet-5", created_at: "2026-07-09T10:00:00Z" },
+  ];
+  const MOCK_TEMPLATES = [
+    { id: "t1", name: "City travel guide", prompt_template: "A complete travel guide to [city] for [traveler_type]." },
+  ];
+
+  // Hand-rolled CSV parser, same quoting logic as frontend/js/m09-crm.js's parseCsvText —
+  // kept local (not imported) since M22 and M09 are independent modules.
+  function parseCsvText(text) {
+    const lines = text.trim().split(/\r?\n/).filter((l) => l.length);
+    if (!lines.length) return { headers: [], rows: [] };
+    const split = (line) => {
+      const out = []; let cur = "", q = false;
+      for (let i = 0; i < line.length; i++) { const ch = line[i];
+        if (q) { if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; } else if (ch === '"') q = false; else cur += ch; }
+        else { if (ch === '"') q = true; else if (ch === ",") { out.push(cur); cur = ""; } else cur += ch; } }
+      out.push(cur); return out.map((s) => s.trim());
+    };
+    const headers = split(lines[0]);
+    const rows = lines.slice(1).map(split);
+    return { headers, rows };
+  }
+
   // ── App state ───────────────────────────────────────────────────────────────
   const state = {
     route: "content", param: null,
@@ -115,6 +141,11 @@ import { sanitizeHtml } from "./content-editor.mjs";
     selected: new Set(),
     editing: null,              // working copy of the open article
     revs: [],
+    bulkExpanded: null,         // id of the batch job whose items panel is open, or null
+    bulkSelected: new Set(),    // content_queue item ids checked in the open items panel
+    bulkDraftBatchId: null,     // id of the in-progress (draft/previewing) batch job the wizard is building, or null
+    batchJobs: [], templates: [], // live-mode content_batch_jobs/content_templates rows (populated by loadLive())
+    bulkItemsCache: {},         // live-mode content_queue rows for an expanded batch, keyed by batch id (populated by fetchBatchItems())
   };
 
   function loadMock() {
@@ -126,12 +157,41 @@ import { sanitizeHtml } from "./content-editor.mjs";
     const c = client();
     const { data: ws } = await c.from("workspaces").select("id").order("created_at").limit(1);
     const wsId = ws?.[0]?.id; if (!wsId) throw new Error("no workspace");
-    const [{ data: arts }, { data: cats }, { data: authors }] = await Promise.all([
+    const [{ data: arts }, { data: cats }, { data: authors }, { data: batches }, { data: templates }] = await Promise.all([
       c.from("blog_articles").select("*").eq("workspace_id", wsId).order("updated_at", { ascending: false }).limit(500),
       c.from("article_categories").select("*").eq("workspace_id", wsId).order("name"),
       c.from("article_authors").select("*").eq("workspace_id", wsId).order("name"),
+      c.from("content_batch_jobs").select("*").eq("workspace_id", wsId).order("created_at", { ascending: false }).limit(200),
+      c.from("content_templates").select("*").eq("workspace_id", wsId).order("name"),
     ]);
     state.articles = arts || []; state.cats = cats || []; state.authors = authors || [];
+    state.batchJobs = batches || []; state.templates = templates || [];
+  }
+  // currentWorkspaceId — same lookup loadLive() does, exposed standalone because the
+  // Bulk wizard's RPCs (create_batch_job's has_role(p_ws,...) check) need a real
+  // workspace id threaded through at call time, not just at initial page load.
+  async function currentWorkspaceId() {
+    if (!connected()) return null;
+    const { data: ws } = await client().from("workspaces").select("id").order("created_at").limit(1);
+    return ws?.[0]?.id || null;
+  }
+  // fetchBatchItems — live-mode "Review items" drill-down data. content_queue already
+  // has a SELECT RLS policy from 0026_m21_seo.sql (staff+), so a direct table read works
+  // the same as the other direct-table reads in this file. Normalizes the DB's
+  // `is_duplicate` column to the `duplicate` field batchItemsPanel()'s row shape expects
+  // (matching MOCK_BATCH_ITEMS' shape) right here at the fetch boundary.
+  async function fetchBatchItems(batchId) {
+    const { data, error } = await client().from("content_queue")
+      .select("id, keyword, status, is_duplicate, article_id").eq("batch_job_id", batchId);
+    if (error) { toast("Could not load batch items: " + error.message, "danger"); return; }
+    state.bulkItemsCache[batchId] = (data || []).map((r) => (
+      { id: r.id, article_id: r.article_id, keyword: r.keyword, status: r.status, duplicate: !!r.is_duplicate }));
+  }
+  // currentBatchItems — same connected()-gated fallback shape viewBulk() uses for
+  // batches/templates: live rows from bulkItemsCache when connected, MOCK_BATCH_ITEMS
+  // otherwise.
+  function currentBatchItems(batchId) {
+    return connected() ? (state.bulkItemsCache[batchId] || []) : (MOCK_BATCH_ITEMS[batchId] || []);
   }
   const catName = (id) => (state.cats.find((c) => c.id === id) || {}).name || "—";
   const authorName = (id) => (state.authors.find((a) => a.id === id) || {}).name || "—";
@@ -164,6 +224,7 @@ import { sanitizeHtml } from "./content-editor.mjs";
         ${railItem("doc", "Articles", "content", state.route === "content")}
         ${railItem("queue", "Review queue", "content/review", state.route === "review")}
         ${railItem("tag", "Categories &amp; authors", "content/taxonomy", state.route === "taxonomy")}
+        ${railItem("sparkle", "Bulk create", "content/bulk", state.route === "bulk")}
       </div>
       <div class="nav-group">
         <div class="nav-group-label">Settings</div>
@@ -640,6 +701,263 @@ import { sanitizeHtml } from "./content-editor.mjs";
   }
 
   // ════════════════════════════════════════════════════════════════════════════
+  //  ROUTE: /content/bulk — Bulk Content Creation (Job Builder + Status Dashboard)
+  // ════════════════════════════════════════════════════════════════════════════
+  const MOCK_BATCH_ITEMS = {
+    b1: [
+      { id: "bi1", article_id: "a-bi1", keyword: "best dua for travel", status: "in_review", duplicate: false },
+      { id: "bi2", article_id: "a-bi2", keyword: "dua for anxiety", status: "in_review", duplicate: false },
+      { id: "bi3", article_id: "a-bi3", keyword: "dua for travel", status: "in_review", duplicate: true },
+    ],
+  };
+
+  function viewBulk() {
+    // Live-mode batch jobs/templates come from loadLive(); the mock fallback (MOCK_BATCHES/
+    // MOCK_TEMPLATES) only applies when disconnected — same connected()-gated fallback shape
+    // as the rest of this file uses for its RPC calls (see rpc()).
+    const batches = connected() ? state.batchJobs : MOCK_BATCHES;
+    const templates = connected() ? state.templates : MOCK_TEMPLATES;
+    const rows = batches.map((b) => {
+      const items = currentBatchItems(b.id);
+      const dupCount = items.filter((i) => i.duplicate).length;
+      return `<tr>
+      <td>${esc(b.name)}</td><td><span class="pill st-${esc(b.status)}">${esc(b.status)}</span></td>
+      <td>${b.total_items}</td><td>${esc(b.model)}</td>
+      <td>${dupCount ? `<span class="pill st-warn">${dupCount} dup</span>` : "—"}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-sm" data-review-batch="${b.id}">Review items</button>
+        <button class="btn btn-sm" data-schedule="${b.id}">Schedule spread</button>
+        <button class="btn btn-sm" data-rollback="${b.id}">Rollback</button>
+      </td>
+    </tr>${state.bulkExpanded === b.id ? `<tr><td colspan="6">${batchItemsPanel(b, items)}</td></tr>` : ""}`;
+    }).join("");
+    const dashboard = batches.length
+      ? `<table class="tbl"><thead><tr><th>Name</th><th>Status</th><th>Items</th><th>Model</th><th>Duplicates</th><th></th></tr></thead><tbody>${rows}</tbody></table>`
+      : `<div class="card panel"><div class="empty-state"><h3>No batch jobs yet</h3><p>Build your first batch below.</p></div></div>`;
+
+    const templateOpts = templates.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
+
+    return pageHead("Bulk", "Bulk create", "Generate a batch of articles from a topic list, a CSV, or an AI-expanded seed keyword — preview a few before committing the rest.", "")
+      + `<div class="card panel" style="margin-bottom:16px">
+        <h3 style="margin-top:0">New batch</h3>
+        <div class="form-field"><label>Batch name</label><input id="bName" placeholder="e.g. Ramadan dua series"></div>
+        <div class="form-field"><label>Topic source</label>
+          <select id="bSource"><option value="manual">Manual list</option><option value="csv">CSV upload</option><option value="ai_seed">AI-generate from seed keyword</option></select>
+        </div>
+        <div id="bSourceInputs">
+          <div class="form-field"><label>Topics (one per line)</label><textarea id="bManualTopics" rows="4" placeholder="best dua for travel&#10;dua for anxiety"></textarea></div>
+        </div>
+        <div class="form-field"><label>Template (optional)</label><select id="bTemplate"><option value="">None</option>${templateOpts}</select></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div class="form-field"><label>Model</label><select id="bModel"><option value="claude-sonnet-5">Claude Sonnet 5 (quality)</option><option value="claude-3-5-haiku-20241022">Claude Haiku (cheap)</option></select></div>
+          <div class="form-field"><label>Word count min</label><input id="bWordMin" type="number" value="800"></div>
+          <div class="form-field"><label>Word count max</label><input id="bWordMax" type="number" value="1600"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button class="btn" id="bEstimate">Estimate cost</button>
+          <button class="btn" id="bPreview">Generate 3 samples</button>
+          <button class="btn btn-primary" id="bCommit">Commit batch</button>
+        </div>
+        <div id="bEstimateOut" class="muted" style="margin-top:8px"></div>
+      </div>
+      <h3>Batch status</h3>${dashboard}`;
+  }
+
+  // batchItemsPanel — the Bulk Edit/Reject drill-down: one row per content_queue item
+  // this batch produced, with a checkbox + status + duplicate flag, and a toolbar that
+  // applies approve/reject to every checked row via the SAME per-article RPCs the
+  // Review queue already uses (approve_article/reject_article) — no new RPCs needed,
+  // this is just a multi-select wrapper around the existing single-article actions.
+  function batchItemsPanel(batch, items) {
+    const rows = items.map((i) => `<tr>
+      <td><input type="checkbox" data-bi-chk="${i.id}" ${state.bulkSelected.has(i.id) ? "checked" : ""}></td>
+      <td>${esc(i.keyword)}</td><td><span class="pill st-${esc(i.status)}">${esc(i.status)}</span></td>
+      <td>${i.duplicate ? `<span class="pill st-warn">possible duplicate</span>` : "—"}</td>
+    </tr>`).join("");
+    return `<div class="card panel" style="margin:8px 0">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button class="btn btn-sm" id="biApproveAll">Approve selected</button>
+        <button class="btn btn-sm" id="biRejectAll">Reject selected</button>
+      </div>
+      <table class="tbl"><thead><tr><th></th><th>Topic</th><th>Status</th><th>Duplicate</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+  }
+
+  function wireBulk() {
+    const src = $("#bSource"); if (src) src.onchange = () => {
+      const inputs = $("#bSourceInputs"); if (!inputs) return;
+      if (src.value === "csv") inputs.innerHTML = `<div class="form-field"><label>CSV file</label><input id="bCsvFile" type="file" accept=".csv"></div>`;
+      else if (src.value === "ai_seed") inputs.innerHTML = `<div class="form-field"><label>Seed keyword / category</label><input id="bSeed" placeholder="e.g. Ramadan content"></div><div class="form-field"><label>How many topics</label><input id="bSeedCount" type="number" value="20"></div>`;
+      else inputs.innerHTML = `<div class="form-field"><label>Topics (one per line)</label><textarea id="bManualTopics" rows="4" placeholder="best dua for travel&#10;dua for anxiety"></textarea></div>`;
+    };
+
+    // collectTopics — only ever called for the manual/ai_seed paths; the CSV path is
+    // fully owned by withCsvTopics() below (parsing a File requires FileReader, which
+    // is inherently async, so it can't be folded into this synchronous helper).
+    function collectTopics() {
+      const source = $("#bSource")?.value || "manual";
+      if (source === "ai_seed") {
+        const seed = $("#bSeed")?.value.trim(); if (!seed) return [];
+        const n = parseInt($("#bSeedCount")?.value || "20", 10);
+        return Array.from({ length: n }, (_, i) => ({ keyword: `${seed} — topic ${i + 1}` }));
+      }
+      const raw = $("#bManualTopics")?.value || "";
+      return raw.split("\n").map((s) => s.trim()).filter(Boolean).map((keyword) => ({ keyword }));
+    }
+
+    async function withCsvTopics(cb) {
+      const source = $("#bSource")?.value || "manual";
+      if (source !== "csv") return cb(collectTopics());
+      const file = $("#bCsvFile")?.files?.[0];
+      if (!file) { toast("Choose a CSV file first", "danger"); return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const { rows } = parseCsvText(String(reader.result || ""));
+        cb(rows.map((r) => ({ keyword: r[0] })).filter((t) => t.keyword));
+      };
+      reader.onerror = () => toast("Could not read the CSV file", "danger");
+      reader.readAsText(file);
+    }
+
+    // batchArgs — p_ws has no server-side session fallback: create_batch_job's
+    // has_role(p_ws,'staff') check compares this argument literally, so callers MUST
+    // resolve a real workspace id via currentWorkspaceId() first and pass it in here.
+    function batchArgs(wsId) {
+      return {
+        p_ws: wsId,
+        p_site: SITE.id, p_name: $("#bName")?.value.trim() || "Untitled batch",
+        p_topic_source: $("#bSource")?.value || "manual",
+        p_template: $("#bTemplate")?.value || null,
+        p_model: $("#bModel")?.value || "claude-sonnet-5",
+        p_word_min: parseInt($("#bWordMin")?.value || "800", 10),
+        p_word_max: parseInt($("#bWordMax")?.value || "1600", 10),
+      };
+    }
+
+    // ensureDraftBatchId — the wizard operates on ONE draft content_batch_jobs row across
+    // Estimate → Preview → Commit (estimate_batch_cost/generate_batch_preview/commit_batch_job
+    // all require an existing p_batch). Reuse state.bulkDraftBatchId if a draft already
+    // exists (e.g. Estimate was clicked first); otherwise create one now so Preview/Commit
+    // work even if the user skips straight to them.
+    async function ensureDraftBatchId(topics, wsId) {
+      if (state.bulkDraftBatchId) return state.bulkDraftBatchId;
+      const { data: id, error } = await client().rpc("create_batch_job", { ...batchArgs(wsId), p_topics: topics });
+      if (error) throw error;
+      state.bulkDraftBatchId = id;
+      return id;
+    }
+
+    const est = $("#bEstimate"); if (est) est.onclick = () => withCsvTopics(async (topics) => {
+      if (!topics.length) return toast("Add at least one topic first", "danger");
+      const out = $("#bEstimateOut");
+      if (connected()) {
+        try {
+          const wsId = await currentWorkspaceId();
+          const id = await ensureDraftBatchId(topics, wsId);
+          const { data: est2, error } = await client().rpc("estimate_batch_cost", { p_batch: id });
+          if (error) throw error;
+          if (out) out.textContent = `~${est2?.est_tokens ?? 0} tokens, ~$${est2?.est_cost_usd ?? 0} for ${topics.length} articles`;
+        } catch (e) { toast("Action failed: " + (e.message || "estimate_batch_cost"), "danger"); }
+      } else if (out) {
+        const roughTokens = Math.round(((parseInt($("#bWordMin").value,10)+parseInt($("#bWordMax").value,10))/2)*2.2*topics.length);
+        out.textContent = `~${roughTokens} tokens, ~$${(roughTokens/1000*0.009).toFixed(2)} for ${topics.length} articles (preview)`;
+      }
+    });
+
+    const prev = $("#bPreview"); if (prev) prev.onclick = () => withCsvTopics(async (topics) => {
+      if (!topics.length) return toast("Add at least one topic first", "danger");
+      if (connected()) {
+        try {
+          const wsId = await currentWorkspaceId();
+          const id = await ensureDraftBatchId(topics, wsId);
+          const { error } = await client().rpc("generate_batch_preview", { p_batch: id, p_n: 3 });
+          if (error) throw error;
+          toast("Generated 3 preview samples");
+        } catch (e) { toast("Action failed: " + (e.message || "generate_batch_preview"), "danger"); return; }
+      } else {
+        MOCK_BATCHES.unshift({ id: "b" + Math.random().toString(36).slice(2, 6), name: $("#bName").value || "Untitled batch",
+          topic_source: $("#bSource").value, status: "previewing", total_items: topics.length, model: $("#bModel").value, created_at: new Date().toISOString() });
+        toast("Generated 3 preview samples (preview)");
+      }
+      render();
+    });
+
+    const commit = $("#bCommit"); if (commit) commit.onclick = () => withCsvTopics(async (topics) => {
+      if (!topics.length) return toast("Add at least one topic first", "danger");
+      if (connected()) {
+        try {
+          const wsId = await currentWorkspaceId();
+          const id = await ensureDraftBatchId(topics, wsId);
+          const { error } = await client().rpc("commit_batch_job", { p_batch: id });
+          if (error) throw error;
+          state.bulkDraftBatchId = null; // this draft is now queued; the next Estimate/Preview/Commit starts a fresh batch
+          toast("Batch committed — generation will drain via the scheduler");
+        } catch (e) { toast("Action failed: " + (e.message || "commit_batch_job"), "danger"); return; }
+      } else {
+        const existing = MOCK_BATCHES.find((b) => b.status === "previewing");
+        if (existing) existing.status = "queued"; else MOCK_BATCHES.unshift({
+          id: "b" + Math.random().toString(36).slice(2, 6), name: $("#bName").value || "Untitled batch",
+          topic_source: $("#bSource").value, status: "queued", total_items: topics.length, model: $("#bModel").value, created_at: new Date().toISOString() });
+        toast("Batch committed — generation will drain via the scheduler (preview)");
+      }
+      render();
+    });
+
+    document.querySelectorAll("[data-rollback]").forEach((b) => b.onclick = async () => {
+      const id = b.getAttribute("data-rollback");
+      await rpc("rollback_batch_job", { p_batch: id }, () => {
+        const batch = MOCK_BATCHES.find((x) => x.id === id); if (batch) batch.status = "rolled_back";
+      }, "Batch rolled back"); render();
+    });
+
+    document.querySelectorAll("[data-review-batch]").forEach((b) => b.onclick = async () => {
+      const id = b.getAttribute("data-review-batch");
+      const opening = state.bulkExpanded !== id;
+      state.bulkExpanded = opening ? id : null;
+      state.bulkSelected.clear();
+      if (opening && connected()) await fetchBatchItems(id);
+      render();
+    });
+
+    document.querySelectorAll("[data-schedule]").forEach((b) => b.onclick = async () => {
+      const id = b.getAttribute("data-schedule");
+      const days = parseInt(prompt("Spread across how many days?", "7") || "0", 10);
+      const perDay = parseInt(prompt("How many per day?", "3") || "0", 10);
+      if (!days || !perDay) return;
+      await rpc("schedule_batch_publish_spread",
+        { p_batch: id, p_start: new Date().toISOString(), p_spread_days: days, p_per_day: perDay },
+        () => { const batch = MOCK_BATCHES.find((x) => x.id === id); if (batch) batch.status = "completed"; },
+        "Publish dates spread across the batch"); render();
+    });
+
+    document.querySelectorAll("[data-bi-chk]").forEach((n) => n.onclick = () => {
+      const id = n.getAttribute("data-bi-chk");
+      state.bulkSelected.has(id) ? state.bulkSelected.delete(id) : state.bulkSelected.add(id);
+    });
+
+    const approveAll = $("#biApproveAll"); if (approveAll) approveAll.onclick = async () => {
+      const items = currentBatchItems(state.bulkExpanded);
+      for (const id of state.bulkSelected) {
+        const item = items.find((i) => i.id === id);
+        if (item) await rpc("approve_article", { p_article: item.article_id }, () => { item.status = "published"; }, `Approved ${item.keyword}`);
+      }
+      state.bulkSelected.clear();
+      if (connected()) await fetchBatchItems(state.bulkExpanded);
+      render();
+    };
+    const rejectAll = $("#biRejectAll"); if (rejectAll) rejectAll.onclick = async () => {
+      const items = currentBatchItems(state.bulkExpanded);
+      for (const id of state.bulkSelected) {
+        const item = items.find((i) => i.id === id);
+        if (item) await rpc("reject_article", { p_article: item.article_id, p_feedback: "Bulk-rejected — please revise." }, () => { item.status = "draft"; }, `Sent back ${item.keyword}`);
+      }
+      state.bulkSelected.clear();
+      if (connected()) await fetchBatchItems(state.bulkExpanded);
+      render();
+    };
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
   //  ROUTE: /settings/content
   // ════════════════════════════════════════════════════════════════════════════
   function viewSettings() {
@@ -694,6 +1012,7 @@ import { sanitizeHtml } from "./content-editor.mjs";
       if (!parts[1]) return { route: "content" };
       if (parts[1] === "review") return { route: "review" };
       if (parts[1] === "taxonomy") return { route: "taxonomy" };
+      if (parts[1] === "bulk") return { route: "bulk" };
       return { route: "editor", param: parts[1] };
     }
     return { route: "content" };
@@ -710,6 +1029,7 @@ import { sanitizeHtml } from "./content-editor.mjs";
       content = viewEditor();
     } else if (r.route === "review") { state.route = "review"; content = viewReview(); }
     else if (r.route === "taxonomy") { state.route = "taxonomy"; content = viewTaxonomy(); }
+    else if (r.route === "bulk") { state.route = "bulk"; content = viewBulk(); }
     else if (r.route === "settings") { state.route = "settings"; content = viewSettings(); }
     else { state.route = "content"; content = viewList(); }
 
@@ -717,6 +1037,7 @@ import { sanitizeHtml } from "./content-editor.mjs";
     wireMockNote();
     if (r.route === "editor") wireEditor();
     else if (r.route === "review") wireReview();
+    else if (r.route === "bulk") wireBulk();
     else if (r.route === "taxonomy") wireTaxonomy();
     else if (r.route === "settings") wireSettings();
     else wireList();

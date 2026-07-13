@@ -226,16 +226,60 @@ export function build_schema(keyword, htmlMeta = {}) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// PROVIDER STUBS — the two OPEN gaps (D-147). NEVER called by this module or the
-// worker; they exist only as the documented wire-in point (see doc/PROMPT-LIBRARY.md).
+// REAL LLM WIRE-IN (D-190) — this module stays network-free and browser-importable;
+// the actual Anthropic call lives in workers/llm.mjs and is injected as `callLlm`
+// (systemPrompt, userPrompt) => Promise<{kind:'html',content_html,tokensUsed,model}
+// | {kind:'unavailable',reason}>. The deterministic brief/outline stays the contract
+// the LLM must follow (bounds cost, keeps SEO structure under our control) — only
+// the prose becomes real.
 // ═══════════════════════════════════════════════════════════════════════════════
-// eslint-disable-next-line no-unused-vars
-export async function generate_article_with_ai(ctx) {
-  // TODO(provider): wire real LLM, meter ai_tokens. GPT-4o / Claude / Gemini — an
-  // OPEN human-call decision (D-063 posture). Consumes the doc/PROMPT-LIBRARY.md
-  // templates (brief → article → regen). Until then this throws so it can never be
-  // silently mistaken for real generation.
-  throw new Error("generate_article_with_ai: no LLM provider wired (scaffold mode, D-147)");
+export function buildArticleSystemPrompt(brandVoice, targetWordCount) {
+  const voice = brandVoice && brandVoice.trim() ? brandVoice.trim() : "clear, helpful, and factual";
+  return `You are a content writer producing a blog article for a website. Write in this brand ` +
+    `voice: ${voice}. Target length: approximately ${targetWordCount} words. Follow the provided ` +
+    `outline (H2 sections and FAQs) exactly — do not add or remove sections. Output ONLY the ` +
+    `article body as clean semantic HTML (h2/h3/p/ul/li/div tags), no markdown fences, no <html> ` +
+    `or <body> wrapper, no commentary before or after the HTML.`;
+}
+
+export function buildArticleUserPrompt(keyword, brief) {
+  const sections = (brief?.h2_sections || []).map((s) => `- ${s.h2}: ${(s.points || []).join("; ")}`).join("\n");
+  const faqs = (brief?.faqs || []).map((f) => `- Q: ${f.q}`).join("\n");
+  return `Topic keyword: ${keyword}\n\nOutline:\n${sections}\n\nFAQ questions to answer:\n${faqs}\n\n` +
+    `Write the full article now.`;
+}
+
+// generate_article_with_ai — real implementation, dependency-injected. Returns the
+// same {kind:'html',...} / {kind:'unavailable',reason} shape callLlm returns, after
+// validating the HTML isn't blank. No `callLlm` (browser preview, or no key resolved
+// upstream) → unavailable/no_key, same semantics as every other module's LLM fallback.
+export async function generate_article_with_ai(ctx, callLlm) {
+  if (typeof callLlm !== "function") return { kind: "unavailable", reason: "no_key" };
+  const { keyword, brief, targetWordCount = 1200, brandVoice = "" } = ctx;
+  const systemPrompt = buildArticleSystemPrompt(brandVoice, targetWordCount);
+  const userPrompt = buildArticleUserPrompt(keyword, brief);
+  let result;
+  try {
+    result = await callLlm(systemPrompt, userPrompt);
+  } catch {
+    return { kind: "unavailable", reason: "bad_response" };
+  }
+  if (!result || result.kind !== "html" || !result.content_html || !result.content_html.trim()) {
+    return { kind: "unavailable", reason: result?.reason || "bad_response" };
+  }
+  return result;
+}
+
+// decidePublishStep — the ONE place that decides where a generated draft lands
+// (D-191). Pure and DB-free on purpose: this is the exact function
+// worker.mjs's blog.generate handler calls, so the IslamicInfo hard-gate invariant
+// (reviewRequired=true → never publish, no matter what else is true) is provable
+// without a live database.
+export function decidePublishStep({ passes, autoPublish, reviewRequired }) {
+  if (!passes) return { step: "review", fail_reason: "BELOW_THRESHOLD", publish: false };
+  if (reviewRequired) return { step: "review", fail_reason: null, publish: false };
+  if (autoPublish) return { step: "published", fail_reason: null, publish: true };
+  return { step: "review", fail_reason: null, publish: false };
 }
 
 // eslint-disable-next-line no-unused-vars

@@ -10,11 +10,15 @@
 import { createClient } from "@supabase/supabase-js";
 import { createAutomationEngine } from "./automation.mjs";
 import { crawlStep } from "./seo/crawler.mjs";
-// M22-auto · the pure, deterministic Auto-Blog pipeline (no provider, no network,
-// nothing metered — scaffold posture D-147). blog.generate drives these.
+import { callAnthropicForArticle } from "./llm.mjs";
+// M22-auto · the Auto-Blog pipeline. compute_topic_cluster/build_serp_brief/
+// build_article_html/score_article/suggest_internal_links/build_schema stay pure and
+// deterministic (D-147 scaffold, unchanged). generate_article_with_ai and
+// decidePublishStep are the D-190/D-191 real-LLM wire-in (see blog-pipeline.mjs).
 import {
   compute_topic_cluster, build_serp_brief, build_article_html,
   score_article, suggest_internal_links, build_schema,
+  generate_article_with_ai, decidePublishStep,
 } from "../frontend/js/blog-pipeline.mjs";
 
 const URL = process.env.SUPABASE_URL;
@@ -28,6 +32,8 @@ const db = createClient(URL, KEY, { auth: { persistSession: false } });
 const { automationExecute, automationDateSweep } = createAutomationEngine(db);
 const WORKER_ID = process.env.WORKER_ID || `worker-${process.pid}`;
 const ONCE = process.argv.includes("--once");
+const maxArg = process.argv.find((a) => a.startsWith("--max="));
+const MAX = maxArg ? parseInt(maxArg.split("=")[1], 10) : null;
 
 async function claim() {
   const { data, error } = await db.rpc("claim_job", { p_worker: WORKER_ID });
@@ -780,16 +786,20 @@ async function seoAuditCrawl(job) {
 }
 
 // M22-auto · blog.generate — turn a queued content_queue keyword into a SCORED,
-// internally-linked, JSON-LD blog_articles DRAFT via the deterministic
-// blog-pipeline.mjs SCAFFOLD (D-147). No provider, no network, NOTHING metered —
-// the two provider gaps (GPT prose + DALL·E/M35 images) are labelled stubs the
-// pipeline module never calls. Payload: {content_queue_id, workspace_id}. Flow:
-//   claim → load queue row + its site's content_schedules settings →
-//   compute_topic_cluster → build_serp_brief → build_article_html → score_article →
-//   suggest_internal_links → build_schema → create_generated_article (draft) →
-//   quality gate vs the schedule thresholds:
-//     below threshold          → item done, step='review', fail_reason='BELOW_THRESHOLD',
-//                                 article routed to the M22-manual review queue (in_review).
+// internally-linked, JSON-LD blog_articles DRAFT. Real Anthropic generation is
+// attempted first (D-190, via workers/llm.mjs's callAnthropicForArticle, gated by a
+// pre-flight ai_tokens meter_check and metered on success) and falls back to the
+// deterministic blog-pipeline.mjs scaffold (D-147) on no key / quota / provider
+// error / timeout — never a hard failure. Payload: {content_queue_id, workspace_id}.
+// Flow:
+//   claim → load queue row + its site's content_schedules + site_brand_voice settings →
+//   compute_topic_cluster → build_serp_brief → generate_article_with_ai (LLM) or
+//   build_article_html (fallback) → score_article → suggest_internal_links →
+//   build_schema → create_generated_article (draft, tagged generation_source) →
+//   decidePublishStep (D-191 — IslamicInfo/review-locked sites can never auto-publish,
+//   regardless of quality score or auto_publish):
+//     below threshold           → item done, step='review', fail_reason='BELOW_THRESHOLD'.
+//     review-locked site        → item done, step='review', fail_reason=null.
 //     pass + auto_publish=true  → _m22_publish (service-role publish), item step='published'.
 //     pass + auto_publish=false → item step='review', article in_review.
 //   On error → fail_content_item + rethrow so the worker's retry (×max_attempts) applies.
@@ -810,29 +820,75 @@ async function handleBlogGenerate(job) {
     if (!keyword) throw new Error("blog.generate: queue row has no keyword");
     if (!siteId) throw new Error("blog.generate: queue row has no site_id (assign a site before generating)");
 
-    // The per-site schedule carries the brand voice, target length, thresholds, and
-    // the auto_publish switch. Absent → conservative defaults.
+    // The per-site schedule carries the brand voice, target length, thresholds, the
+    // auto_publish switch, and (D-190) the generation model. Absent → conservative
+    // defaults.
     const { data: sched } = await db.from("content_schedules")
-      .select("id, auto_publish, min_seo_score, min_readability_score, target_word_count, brand_voice, niche")
+      .select("id, auto_publish, min_seo_score, min_readability_score, target_word_count, brand_voice, niche, model")
       .eq("site_id", siteId).maybeSingle();
     const minSeo = sched?.min_seo_score ?? 70;
     const minRead = sched?.min_readability_score ?? 50;
     const autoPublish = sched?.auto_publish ?? false;
 
-    // Run the deterministic pipeline (the two AI stubs are NEVER called here).
+    // Bulk items (item.batch_job_id set) carry their OWN model/word-count settings from
+    // the Job Builder wizard (content_batch_jobs), which must override the site's
+    // schedule defaults — otherwise every batch would silently generate using the
+    // site's settings regardless of what the user picked at estimate/commit time.
+    // Regular editorial items (batch_job_id null) keep the schedule-based behavior.
+    // NOTE: item.template_id/item.variables ([var]-slot substitution via
+    // content_templates) are intentionally NOT consumed here yet — that's a separate,
+    // larger template-rendering feature the design spec scaffolded tables/UI for but
+    // never specified substitution logic for (same "labelled scaffold" convention as
+    // generate_featured_image_with_ai's stub).
+    let model, targetWords;
+    if (item.batch_job_id) {
+      const { data: batch } = await db.from("content_batch_jobs")
+        .select("model, word_count_min, word_count_max").eq("id", item.batch_job_id).maybeSingle();
+      model = batch?.model || "claude-sonnet-5";
+      targetWords = batch ? Math.round((batch.word_count_min + batch.word_count_max) / 2) : 1200;
+    } else {
+      model = sched?.model || "claude-sonnet-5";
+      targetWords = sched?.target_word_count ?? 1200;
+    }
+
+    // D-191: the site's mandatory-review gate (IslamicInfo.org and any future
+    // 'islamic'-preset site). Absent row → not locked (defaults false).
+    const { data: voice } = await db.from("site_brand_voice")
+      .select("tone_prompt, review_required").eq("site_id", siteId).maybeSingle();
+    const reviewRequired = voice?.review_required ?? false;
+
+    // Run the deterministic scaffold first — brief/cluster/links/schema are always
+    // computed this way (D-147), regardless of whether a real LLM is available.
     const cluster = compute_topic_cluster(keyword, siteId);
     const brief = build_serp_brief(keyword, cluster);
-    const html = build_article_html(brief, cluster);
+
+    // D-190: attempt real generation. A rough tokens estimate (words × 2.2, input+
+    // output) gates a pre-flight meter_check so a workspace at its ai_tokens ceiling
+    // never starts a call it can't afford — same "automatic fallback, never a hard
+    // block" semantics D-186 established for M20.
+    const estimatedTokens = Math.round(targetWords * 2.2);
+    const { data: gate } = await db.rpc("meter_check", { p_workspace: ws, p_kind: "ai_tokens", p_qty: estimatedTokens });
+    const overQuota = gate?.over === true;
+
+    let html, generationSource = "deterministic", llmModel = null, tokensUsed = null;
+    if (!overQuota) {
+      const callLlm = (sys, usr) => callAnthropicForArticle(db, ws, sys, usr, model);
+      const aiResult = await generate_article_with_ai(
+        { keyword, cluster, brief, targetWordCount: targetWords, brandVoice: voice?.tone_prompt || "" }, callLlm);
+      if (aiResult.kind === "html") {
+        html = aiResult.content_html;
+        generationSource = "llm"; llmModel = aiResult.model; tokensUsed = aiResult.tokensUsed;
+        await db.rpc("meter_increment", { p_workspace: ws, p_kind: "ai_tokens", p_qty: tokensUsed, p_source: "m22-blog" });
+      }
+    }
+    if (!html) html = build_article_html(brief, cluster);   // deterministic fallback (D-147, unchanged)
+
     const scored = score_article(html, keyword);
-    // suggest_internal_links is already folded into the article HTML by build_article_html;
-    // we compute it explicitly so the tags carry the cluster/pillar linkage too.
     const links = suggest_internal_links(cluster);
     const schema = build_schema(keyword, { meta_title: brief.meta_title, meta_desc: brief.meta_desc, slug: brief.slug });
 
     // Featured image = STUB. Leave featured_image_url null; do NOT call the image stub.
     // TODO(M35): wire M35 Creative Studio → meter image_gen when it lands (D-152).
-    // TODO(provider): meter ai_tokens + image_gen when a real LLM/image provider is
-    // wired (JOBS §6). Scaffold posture = no billable action (Gate 3).
 
     const payload = {
       keyword,
@@ -850,6 +906,9 @@ async function handleBlogGenerate(job) {
       word_count: scored.word_count,
       cluster_slug: cluster.cluster_slug,
       pillar_slug: cluster.pillar_slug,
+      generation_source: generationSource,
+      llm_model: llmModel,
+      tokens_used: tokensUsed,
     };
 
     const { data: artId, error: aErr } = await db.rpc("create_generated_article", {
@@ -858,37 +917,31 @@ async function handleBlogGenerate(job) {
     if (aErr) throw new Error(`blog.generate create: ${aErr.message}`);
 
     const passes = scored.seo_score >= minSeo && scored.readability_score >= minRead;
+    // D-191: decidePublishStep is the ONE place that decides review vs publish — the
+    // IslamicInfo hard-gate lives here, unit-tested in a prior task, not re-derived inline.
+    const decision = decidePublishStep({ passes, autoPublish, reviewRequired });
 
-    if (!passes) {
-      // Below threshold → route to the M22-manual review queue (in_review), item done.
-      await db.from("blog_articles").update({ status: "in_review" }).eq("id", artId);
-      await db.rpc("complete_content_item", {
-        p_id: queueId, p_article: artId, p_step: "review", p_fail_reason: "BELOW_THRESHOLD",
-      });
-      return { content_queue_id: queueId, article_id: artId, outcome: "review",
-        reason: "below_threshold", seo_score: scored.seo_score, readability_score: scored.readability_score };
-    }
-
-    if (autoPublish) {
-      // Pass + auto_publish → publish via the INTERNAL side-effect (service-role; the
-      // manager-gated publish_article would fail with no auth.uid()). Builds JSON-LD,
-      // flips to published, fires the M13 article.published bus.
+    if (decision.publish) {
+      // Pass + auto_publish + not review-locked → publish via the INTERNAL side-effect
+      // (service-role; the manager-gated publish_article would fail with no auth.uid()).
       const { error: pErr } = await db.rpc("_m22_publish", { p_article: artId });
       if (pErr) throw new Error(`blog.generate publish: ${pErr.message}`);
       await db.rpc("complete_content_item", {
         p_id: queueId, p_article: artId, p_step: "published", p_fail_reason: null,
       });
       return { content_queue_id: queueId, article_id: artId, outcome: "published",
-        seo_score: scored.seo_score, readability_score: scored.readability_score };
+        generation_source: generationSource, seo_score: scored.seo_score, readability_score: scored.readability_score };
     }
 
-    // Pass + not auto_publish → send the draft to the review queue (in_review).
+    // Everything else → the review queue (in_review): below-threshold, review-locked
+    // site, or auto_publish simply off.
     await db.from("blog_articles").update({ status: "in_review" }).eq("id", artId);
     await db.rpc("complete_content_item", {
-      p_id: queueId, p_article: artId, p_step: "review", p_fail_reason: null,
+      p_id: queueId, p_article: artId, p_step: decision.step, p_fail_reason: decision.fail_reason,
     });
     return { content_queue_id: queueId, article_id: artId, outcome: "review",
-      seo_score: scored.seo_score, readability_score: scored.readability_score };
+      reason: decision.fail_reason || (reviewRequired ? "review_required" : "auto_publish_off"),
+      generation_source: generationSource, seo_score: scored.seo_score, readability_score: scored.readability_score };
   } catch (e) {
     // Record the failure on the queue row, then rethrow so the jobs-layer retry applies.
     await db.rpc("fail_content_item", { p_id: queueId, p_reason: String(e?.message || e).slice(0, 500) })
@@ -966,6 +1019,20 @@ async function processOne() {
 if (ONCE) {
   const did = await processOne();
   if (!did) { console.error("no queued job to claim"); process.exit(1); }
+  process.exit(0);
+} else if (maxArg && Number.isNaN(MAX)) {
+  console.error(`invalid --max value: ${maxArg}`);
+  process.exit(1);
+} else if (MAX !== null && !Number.isNaN(MAX)) {
+  // Claim up to MAX jobs then exit cleanly — the mode a scheduled CI runner needs
+  // (D-010/D-189): no infinite loop, no lingering process for the runner to kill.
+  let claimedCount = 0;
+  for (let i = 0; i < MAX; i++) {
+    const did = await processOne();
+    if (!did) break;
+    claimedCount++;
+  }
+  console.log(`${WORKER_ID} processed ${claimedCount}/${MAX} job(s), exiting`);
   process.exit(0);
 } else {
   console.log(`${WORKER_ID} polling for jobs…`);

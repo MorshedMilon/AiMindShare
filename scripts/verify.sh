@@ -102,6 +102,12 @@ echo; echo "══ +  M22-auto pipeline: pure deterministic blog-pipeline.mjs (c
 echo; echo "══ +  M22-auto DB: content_schedules + content_queue extension + cluster cols + leak/role matrix + worker-RPC service-role wall + enqueue idempotency + pipeline path (draft/score/schema/links) + review-vs-autopublish gate + advance_content_pipeline scheduler (PGlite) ══"
 ( cd workers && node verify/m22autoprobe.mjs ) || fails=$((fails+1))
 
+echo; echo "══ +  M22-auto: real LLM adapter (unit, no network) ══"
+( cd workers && node verify/llmprobe.mjs ) || fails=$((fails+1))
+
+echo; echo "══ +  M22-auto: Bulk Content Creation schema + RLS + RPCs (PGlite) ══"
+( cd workers && node verify/m22bulkprobe.mjs ) || fails=$((fails+1))
+
 echo; echo "══ +  M21 SEO Engine: 8-table leak + operator-ceiling role matrix + worker-write posture + keyword cache TTL/scope + send-to-queue + rank delta/major-move emit + rank_history + audit_score + daily/weekly cron enqueue + grants (PGlite) ══"
 ( cd workers && node verify/m21probe.mjs ) || fails=$((fails+1))
 
