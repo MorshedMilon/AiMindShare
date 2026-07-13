@@ -1082,6 +1082,24 @@ import { sanitizeHtml } from "./content-editor.mjs";
   }
 
   function wireStudioTracker(articleId) {
+    function wireRetryButtons() {
+      document.querySelectorAll("[data-retry]").forEach((btn) => {
+        btn.onclick = async () => {
+          btn.disabled = true; btn.textContent = "Retrying…";
+          if (!connected()) { toast("Retry (preview) — connect a project to run this for real"); return; }
+          try {
+            const { error } = await client().rpc("retry_generation_stage", {
+              p_generation_job_id: btn.getAttribute("data-retry"),
+            });
+            if (error) throw error;
+            refresh();
+          } catch (e) {
+            toast("Retry failed: " + (e.message || e), "danger");
+            btn.disabled = false; btn.textContent = "Retry";
+          }
+        };
+      });
+    }
     async function refresh() {
       if (!connected()) return; // mock mode: state.studioJobs was seeded complete already, nothing to poll
       const { data, error } = await client().from("generation_jobs")
@@ -1090,29 +1108,13 @@ import { sanitizeHtml } from "./content-editor.mjs";
       state.studioJobs = data || [];
       if (state.route === "studio" && state.studioArticleId === articleId) {
         shell(viewStudioTracker(articleId));
-        wireStudioTracker(articleId);
+        wireRetryButtons();   // only re-wire the retry buttons — do NOT call wireStudioTracker again
       }
     }
     if (state.studioPollTimer) clearInterval(state.studioPollTimer);
     if (connected()) state.studioPollTimer = setInterval(refresh, 15000);
     refresh();
-
-    document.querySelectorAll("[data-retry]").forEach((btn) => {
-      btn.onclick = async () => {
-        btn.disabled = true; btn.textContent = "Retrying…";
-        if (!connected()) { toast("Retry (preview) — connect a project to run this for real"); return; }
-        try {
-          const { error } = await client().rpc("retry_generation_stage", {
-            p_generation_job_id: btn.getAttribute("data-retry"),
-          });
-          if (error) throw error;
-          refresh();
-        } catch (e) {
-          toast("Retry failed: " + (e.message || e), "danger");
-          btn.disabled = false; btn.textContent = "Retry";
-        }
-      };
-    });
+    wireRetryButtons();   // wire the buttons on the already-rendered DOM from the initial render() call
   }
 
   // ════════════════════════════════════════════════════════════════════════════
