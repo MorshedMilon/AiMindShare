@@ -171,6 +171,107 @@ async function main() {
     "a new content_batch_jobs row defaults to status='draft'"
   );
 
+  // ═══ 6 — batch RPCs: create → estimate → preview → commit → schedule → rollback ═══
+  // The five RPCs below gate on public.has_role(), which resolves off auth.uid()
+  // (a session GUC), not off Postgres role membership — no earlier block in this
+  // file needed it because sections 1-5 only exercised CHECK constraints/triggers
+  // and direct table access under the migration-owning connection (which bypasses
+  // RLS as table owner). Here we set request.jwt.claim.sub to the 'owner' member
+  // inserted in ═══ 3 ═══ so has_role(ws,'staff'/'manager') resolves true inside
+  // these functions; we deliberately do NOT `set role authenticated`, so the direct
+  // table statements below (the duplicate-keyword insert and the linking CTE) keep
+  // running as the table-owning connection and are unaffected by content_queue
+  // having no UPDATE policy (0026 only defined sel/ins/del for it).
+  await pg.exec(`select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',false);`);
+
+  const batchRow = await pg.query(
+    `select public.create_batch_job($1,$2,$3,$4,$5,null,$6,$7,$8) as id`,
+    ['a0000000-0000-0000-0000-000000000001','a0000000-0000-0000-0000-000000000002','Dua batch','manual',
+     JSON.stringify([{ keyword: "dua for travel" }, { keyword: "dua for anxiety" }, { keyword: "dua before sleep" }]),
+     'claude-sonnet-5', 800, 1600]
+  );
+  const batchId = batchRow.rows[0].id;
+  assert(!!batchId, "create_batch_job returns a new batch id");
+  assert(
+    (await pg.query(`select total_items from public.content_batch_jobs where id=$1`, [batchId])).rows[0].total_items === 3,
+    "create_batch_job sets total_items from the topics array length"
+  );
+
+  const est = (await pg.query(`select public.estimate_batch_cost($1) as e`, [batchId])).rows[0].e;
+  assert(est.total_items === 3 && est.est_tokens > 0 && est.est_cost_usd >= 0,
+    "estimate_batch_cost returns total_items/est_tokens/est_cost_usd with no provider call");
+
+  const preview = (await pg.query(`select public.generate_batch_preview($1, 1) as p`, [batchId])).rows[0].p;
+  assert(preview.count === 1, "generate_batch_preview(batch, 1) creates exactly 1 content_queue row");
+  assert(
+    (await pg.query(`select status, preview_count from public.content_batch_jobs where id=$1`, [batchId])).rows[0].status === 'previewing',
+    "generate_batch_preview flips the batch job to status='previewing'"
+  );
+
+  const commit = (await pg.query(`select public.commit_batch_job($1) as c`, [batchId])).rows[0].c;
+  assert(commit.inserted === 2, "commit_batch_job inserts the REMAINING 2 topics (3 total - 1 preview)");
+  assert(
+    (await pg.query(`select count(*)::int as n from public.content_queue where batch_job_id=$1`, [batchId])).rows[0].n === 3,
+    "content_queue now has all 3 topics (1 preview + 2 committed) tagged with batch_job_id"
+  );
+  assert(
+    await denied(pg, `select public.commit_batch_job($1)`, [batchId]),
+    "commit_batch_job refuses to run twice on the same batch (status is no longer draft/previewing)"
+  );
+
+  // duplicate-keyword flagging (exact match, D-192's honest downgrade from pgvector)
+  await pg.exec(`insert into public.blog_articles (workspace_id, site_id, title, slug, keyword)
+    values ('a0000000-0000-0000-0000-000000000001','a0000000-0000-0000-0000-000000000002','Existing','existing-dup','dua for travel')`);
+  const dupBatch = (await pg.query(
+    `select public.create_batch_job($1,$2,$3,$4,$5) as id`,
+    ['a0000000-0000-0000-0000-000000000001','a0000000-0000-0000-0000-000000000002','Dup test','manual',
+     JSON.stringify([{ keyword: "dua for travel" }])]
+  )).rows[0].id;
+  const dupCommit = (await pg.query(`select public.commit_batch_job($1) as c`, [dupBatch])).rows[0].c;
+  assert(dupCommit.duplicate_flagged === 1, "commit_batch_job flags an exact-keyword duplicate against existing blog_articles");
+
+  // schedule spread + rollback — mark the queue rows' articles in_review first (mimics
+  // what handleBlogGenerate would have done after generation completed). The plan's
+  // literal snippet embedded a bare `insert ... returning id` as a scalar subquery in
+  // an `update ... set article_id = (...)`, which is invalid Postgres (INSERT is a
+  // statement, not an expression). Fixed here with a data-modifying CTE: the INSERT's
+  // SELECT derives each new article's slug from the originating content_queue row's id
+  // ('gen-' || cq.id), giving a reliable 1:1 join key back to that same row — so each
+  // of the batch's 3 content_queue rows gets its OWN distinct new blog_articles.id,
+  // never a shared id or a cross join.
+  await pg.query(
+    `with new_articles as (
+       insert into public.blog_articles (workspace_id, site_id, title, slug, status)
+       select cq.workspace_id, cq.site_id, 'Generated: ' || cq.keyword, 'gen-' || cq.id, 'in_review'
+       from public.content_queue cq
+       where cq.batch_job_id = $1
+       returning id, slug
+     )
+     update public.content_queue cq
+        set article_id = na.id
+       from new_articles na
+      where cq.batch_job_id = $1
+        and na.slug = 'gen-' || cq.id`,
+    [batchId]
+  );
+
+  const scheduled = (await pg.query(
+    `select public.schedule_batch_publish_spread($1, now(), 5, 2) as n`, [batchId]
+  )).rows[0].n;
+  assert(scheduled === 3, "schedule_batch_publish_spread schedules all 3 in_review articles from this batch");
+  assert(
+    (await pg.query(`select status from public.content_batch_jobs where id=$1`, [batchId])).rows[0].status === 'completed',
+    "schedule_batch_publish_spread flips the batch job to status='completed'"
+  );
+  const rolledBack = (await pg.query(`select public.rollback_batch_job($1) as n`, [batchId])).rows[0].n;
+  assert(rolledBack === 3, "rollback_batch_job reverts all 3 scheduled articles back to draft");
+  assert(
+    (await pg.query(`select count(*)::int as n from public.blog_articles
+       where id in (select article_id from public.content_queue where batch_job_id=$1) and status='draft'`, [batchId]))
+      .rows[0].n === 3,
+    "rollback_batch_job leaves the articles as drafts (no hard delete)"
+  );
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 }

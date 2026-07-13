@@ -175,3 +175,154 @@ alter table public.content_queue add column if not exists batch_job_id uuid refe
 alter table public.content_queue add column if not exists template_id  uuid references public.content_templates(id) on delete set null;
 alter table public.content_queue add column if not exists variables    jsonb not null default '{}';
 create index if not exists content_queue_batch_idx on public.content_queue (batch_job_id, status);
+
+-- ── Part D — batch RPCs (D-192) ─────────────────────────────────────────────────
+create or replace function public.create_batch_job(
+  p_ws uuid, p_site uuid, p_name text, p_topic_source text, p_topics jsonb,
+  p_template uuid default null, p_model text default 'claude-sonnet-5',
+  p_word_min int default 800, p_word_max int default 1600)
+returns uuid language plpgsql security definer set search_path = public as $$
+declare v_id uuid;
+begin
+  if not public.has_role(p_ws,'staff') then raise exception 'forbidden: staff+ required'; end if;
+  if p_topic_source not in ('manual','csv','ai_seed') then raise exception 'invalid topic_source'; end if;
+  insert into public.content_batch_jobs
+    (workspace_id, site_id, name, topic_source, template_id, model, word_count_min, word_count_max, total_items, topics, status)
+  values
+    (p_ws, p_site, p_name, p_topic_source, p_template, p_model, p_word_min, p_word_max,
+     coalesce(jsonb_array_length(p_topics),0), coalesce(p_topics,'[]'::jsonb), 'draft')
+  returning id into v_id;
+  return v_id;
+end $$;
+revoke all on function public.create_batch_job(uuid,uuid,text,text,jsonb,uuid,text,int,int) from public;
+grant execute on function public.create_batch_job(uuid,uuid,text,text,jsonb,uuid,text,int,int) to authenticated, service_role;
+
+create or replace function public.estimate_batch_cost(p_batch uuid)
+returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare b record; v_tokens_per_item numeric; v_rate numeric; v_est_tokens numeric; v_est_cost numeric;
+begin
+  select * into b from public.content_batch_jobs where id = p_batch;
+  if not found then raise exception 'batch job not found'; end if;
+  if not public.has_role(b.workspace_id,'staff') then raise exception 'forbidden: staff+ required'; end if;
+
+  v_tokens_per_item := ((b.word_count_min + b.word_count_max) / 2.0) * 2.2;
+  v_rate := case b.model when 'claude-sonnet-5' then 0.009 else 0.0025 end;
+  v_est_tokens := v_tokens_per_item * b.total_items;
+  v_est_cost := round((v_est_tokens / 1000.0) * v_rate, 2);
+  return jsonb_build_object('total_items', b.total_items, 'est_tokens', round(v_est_tokens),
+    'est_cost_usd', v_est_cost, 'model', b.model);
+end $$;
+revoke all on function public.estimate_batch_cost(uuid) from public;
+grant execute on function public.estimate_batch_cost(uuid) to authenticated, service_role;
+
+create or replace function public.generate_batch_preview(p_batch uuid, p_n int default 3)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare b record; v_topic jsonb; v_idx int := 0; v_qid uuid; v_ids uuid[] := '{}';
+begin
+  select * into b from public.content_batch_jobs where id = p_batch;
+  if not found then raise exception 'batch job not found'; end if;
+  if not public.has_role(b.workspace_id,'staff') then raise exception 'forbidden: staff+ required'; end if;
+  if b.status <> 'draft' then raise exception 'preview only allowed from draft status'; end if;
+
+  for v_topic in
+    select value from jsonb_array_elements(b.topics) with ordinality as t(value, idx) where idx <= p_n
+  loop
+    insert into public.content_queue
+      (workspace_id, site_id, keyword, status, source, batch_job_id, template_id, variables)
+    values
+      (b.workspace_id, b.site_id, v_topic->>'keyword', 'queued', 'bulk-preview',
+       b.id, b.template_id, coalesce(v_topic->'variables','{}'::jsonb))
+    returning id into v_qid;
+    v_ids := array_append(v_ids, v_qid);
+    perform public.enqueue_content_generation(v_qid);
+    v_idx := v_idx + 1;
+  end loop;
+
+  update public.content_batch_jobs set status = 'previewing', preview_count = v_idx where id = b.id;
+  return jsonb_build_object('preview_queue_ids', v_ids, 'count', v_idx);
+end $$;
+revoke all on function public.generate_batch_preview(uuid,int) from public;
+grant execute on function public.generate_batch_preview(uuid,int) to authenticated, service_role;
+
+create or replace function public.commit_batch_job(p_batch uuid)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare b record; v_topic jsonb; v_kw text; v_inserted int := 0; v_flagged int := 0;
+begin
+  select * into b from public.content_batch_jobs where id = p_batch;
+  if not found then raise exception 'batch job not found'; end if;
+  if not public.has_role(b.workspace_id,'staff') then raise exception 'forbidden: staff+ required'; end if;
+  if b.status not in ('draft','previewing') then raise exception 'batch job already committed'; end if;
+
+  for v_topic in
+    select value from jsonb_array_elements(b.topics) with ordinality as t(value, idx) where idx > b.preview_count
+  loop
+    v_kw := lower(trim(v_topic->>'keyword'));
+    insert into public.content_queue
+      (workspace_id, site_id, keyword, status, source, batch_job_id, template_id, variables)
+    values
+      (b.workspace_id, b.site_id, v_topic->>'keyword', 'queued', 'bulk-' || b.topic_source,
+       b.id, b.template_id, coalesce(v_topic->'variables','{}'::jsonb));
+    v_inserted := v_inserted + 1;
+
+    if exists (select 1 from public.blog_articles where site_id = b.site_id and lower(trim(keyword)) = v_kw)
+       or exists (select 1 from public.content_queue where site_id = b.site_id and batch_job_id is distinct from b.id and lower(trim(keyword)) = v_kw)
+    then
+      v_flagged := v_flagged + 1;
+    end if;
+  end loop;
+
+  update public.content_batch_jobs set status = 'queued' where id = b.id;
+  return jsonb_build_object('inserted', v_inserted, 'duplicate_flagged', v_flagged);
+end $$;
+revoke all on function public.commit_batch_job(uuid) from public;
+grant execute on function public.commit_batch_job(uuid) to authenticated, service_role;
+
+create or replace function public.schedule_batch_publish_spread(
+  p_batch uuid, p_start timestamptz, p_spread_days int, p_per_day int default 3)
+returns int language plpgsql security definer set search_path = public as $$
+declare b record; a record; v_idx int := 0; v_day int; v_slot_time timestamptz; v_count int := 0;
+begin
+  select * into b from public.content_batch_jobs where id = p_batch;
+  if not found then raise exception 'batch job not found'; end if;
+  if not public.has_role(b.workspace_id,'manager') then raise exception 'forbidden: manager+ required'; end if;
+
+  for a in
+    select ba.id from public.blog_articles ba
+      join public.content_queue cq on cq.article_id = ba.id
+     where cq.batch_job_id = p_batch and ba.status = 'in_review'
+     order by ba.created_at asc
+  loop
+    v_day := v_idx / greatest(p_per_day,1);
+    v_slot_time := p_start + (v_day || ' days')::interval + ((v_idx % greatest(p_per_day,1)) || ' hours')::interval;
+    update public.blog_articles set status = 'scheduled', scheduled_at = v_slot_time where id = a.id;
+    v_idx := v_idx + 1; v_count := v_count + 1;
+  end loop;
+
+  update public.content_batch_jobs set status = 'completed' where id = b.id;
+  return v_count;
+end $$;
+revoke all on function public.schedule_batch_publish_spread(uuid,timestamptz,int,int) from public;
+grant execute on function public.schedule_batch_publish_spread(uuid,timestamptz,int,int) to authenticated, service_role;
+
+create or replace function public.rollback_batch_job(p_batch uuid)
+returns int language plpgsql security definer set search_path = public as $$
+declare b record; v_count int;
+begin
+  select * into b from public.content_batch_jobs where id = p_batch;
+  if not found then raise exception 'batch job not found'; end if;
+  if not public.has_role(b.workspace_id,'manager') then raise exception 'forbidden: manager+ required'; end if;
+
+  with affected as (
+    select ba.id from public.blog_articles ba
+      join public.content_queue cq on cq.article_id = ba.id
+     where cq.batch_job_id = p_batch and ba.status in ('published','scheduled')
+  )
+  update public.blog_articles set status = 'draft', published_at = null, scheduled_at = null
+   where id in (select id from affected);
+  get diagnostics v_count = row_count;
+
+  update public.content_batch_jobs set status = 'rolled_back' where id = b.id;
+  return v_count;
+end $$;
+revoke all on function public.rollback_batch_job(uuid) from public;
+grant execute on function public.rollback_batch_job(uuid) to authenticated, service_role;
