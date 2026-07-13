@@ -215,6 +215,10 @@ async function main() {
     "content_queue now has all 3 topics (1 preview + 2 committed) tagged with batch_job_id"
   );
   assert(
+    (await pg.query(`select count(*)::int as n from public.content_queue where batch_job_id=$1 and is_duplicate=false`, [batchId])).rows[0].n === 3,
+    "commit_batch_job persists is_duplicate=false on non-duplicate rows (Fix, code review)"
+  );
+  assert(
     await denied(pg, `select public.commit_batch_job($1)`, [batchId]),
     "commit_batch_job refuses to run twice on the same batch (status is no longer draft/previewing)"
   );
@@ -229,6 +233,10 @@ async function main() {
   )).rows[0].id;
   const dupCommit = (await pg.query(`select public.commit_batch_job($1) as c`, [dupBatch])).rows[0].c;
   assert(dupCommit.duplicate_flagged === 1, "commit_batch_job flags an exact-keyword duplicate against existing blog_articles");
+  assert(
+    (await pg.query(`select is_duplicate from public.content_queue where batch_job_id=$1`, [dupBatch])).rows[0].is_duplicate === true,
+    "commit_batch_job persists is_duplicate=true on the flagged row (Fix, code review)"
+  );
 
   // regression (fix #2): same-batch duplicate keywords must now be flagged too. The
   // duplicate check used to exclude `batch_job_id is distinct from b.id`, which
@@ -245,6 +253,17 @@ async function main() {
   assert(
     dupCommit2.duplicate_flagged >= 2,
     "commit_batch_job flags same-batch duplicate keywords (2nd 'dup test' + 'DUP Test ' variant against the 1st), not just cross-batch ones"
+  );
+  const dupBatch2Rows = (await pg.query(
+    `select keyword, is_duplicate from public.content_queue where batch_job_id=$1 order by created_at asc`, [dupBatch2]
+  )).rows;
+  assert(
+    dupBatch2Rows[0].is_duplicate === false,
+    "commit_batch_job persists is_duplicate=false on the FIRST occurrence of a same-batch duplicate keyword (Fix, code review)"
+  );
+  assert(
+    dupBatch2Rows[1].is_duplicate === true && dupBatch2Rows[2].is_duplicate === true,
+    "commit_batch_job persists is_duplicate=true on subsequent same-batch duplicate keyword occurrences (Fix, code review)"
   );
 
   // regression (fix #1): generate_batch_preview / commit_batch_job now SELECT their

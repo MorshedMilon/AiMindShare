@@ -174,6 +174,7 @@ create trigger content_batch_jobs_set_updated_at before update on public.content
 alter table public.content_queue add column if not exists batch_job_id uuid references public.content_batch_jobs(id) on delete set null;
 alter table public.content_queue add column if not exists template_id  uuid references public.content_templates(id) on delete set null;
 alter table public.content_queue add column if not exists variables    jsonb not null default '{}';
+alter table public.content_queue add column if not exists is_duplicate boolean not null default false;
 create index if not exists content_queue_batch_idx on public.content_queue (batch_job_id, status);
 
 -- ── Part D — batch RPCs (D-192) ─────────────────────────────────────────────────
@@ -251,7 +252,7 @@ grant execute on function public.generate_batch_preview(uuid,int) to authenticat
 
 create or replace function public.commit_batch_job(p_batch uuid)
 returns jsonb language plpgsql security definer set search_path = public as $$
-declare b record; v_topic jsonb; v_kw text; v_qid uuid; v_inserted int := 0; v_flagged int := 0;
+declare b record; v_topic jsonb; v_kw text; v_qid uuid; v_inserted int := 0; v_flagged int := 0; v_is_dup boolean;
 begin
   select * into b from public.content_batch_jobs where id = p_batch for update;
   if not found then raise exception 'batch job not found'; end if;
@@ -262,22 +263,25 @@ begin
     select value from jsonb_array_elements(b.topics) with ordinality as t(value, idx) where idx > b.preview_count
   loop
     v_kw := lower(trim(v_topic->>'keyword'));
+
+    -- Duplicate check runs BEFORE the insert below, so the row being committed can
+    -- never match itself — no id<>self exclusion needed. It still covers ALL other
+    -- content_queue rows for the site regardless of batch (including earlier rows
+    -- from THIS batch, fixing the same-batch dedup gap), because each iteration's
+    -- insert has already landed by the time the next iteration's check runs.
+    v_is_dup :=
+      exists (select 1 from public.blog_articles where site_id = b.site_id and lower(trim(keyword)) = v_kw)
+      or exists (select 1 from public.content_queue where site_id = b.site_id and lower(trim(keyword)) = v_kw);
+
     insert into public.content_queue
-      (workspace_id, site_id, keyword, status, source, batch_job_id, template_id, variables)
+      (workspace_id, site_id, keyword, status, source, batch_job_id, template_id, variables, is_duplicate)
     values
       (b.workspace_id, b.site_id, v_topic->>'keyword', 'queued', 'bulk-' || b.topic_source,
-       b.id, b.template_id, coalesce(v_topic->'variables','{}'::jsonb))
+       b.id, b.template_id, coalesce(v_topic->'variables','{}'::jsonb), v_is_dup)
     returning id into v_qid;
     v_inserted := v_inserted + 1;
 
-    -- Duplicate check covers ALL other content_queue rows for the site regardless of
-    -- batch (including earlier rows from THIS batch, fixing the same-batch dedup gap)
-    -- but excludes the row just inserted above by id, not by batch_job_id — matching
-    -- on keyword alone (without the id<>v_qid exclusion) would make every row match
-    -- itself and flag 100% of commits as duplicates every time.
-    if exists (select 1 from public.blog_articles where site_id = b.site_id and lower(trim(keyword)) = v_kw)
-       or exists (select 1 from public.content_queue where site_id = b.site_id and id <> v_qid and lower(trim(keyword)) = v_kw)
-    then
+    if v_is_dup then
       v_flagged := v_flagged + 1;
     end if;
   end loop;

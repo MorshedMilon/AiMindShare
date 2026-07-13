@@ -145,6 +145,7 @@ import { sanitizeHtml } from "./content-editor.mjs";
     bulkSelected: new Set(),    // content_queue item ids checked in the open items panel
     bulkDraftBatchId: null,     // id of the in-progress (draft/previewing) batch job the wizard is building, or null
     batchJobs: [], templates: [], // live-mode content_batch_jobs/content_templates rows (populated by loadLive())
+    bulkItemsCache: {},         // live-mode content_queue rows for an expanded batch, keyed by batch id (populated by fetchBatchItems())
   };
 
   function loadMock() {
@@ -173,6 +174,24 @@ import { sanitizeHtml } from "./content-editor.mjs";
     if (!connected()) return null;
     const { data: ws } = await client().from("workspaces").select("id").order("created_at").limit(1);
     return ws?.[0]?.id || null;
+  }
+  // fetchBatchItems — live-mode "Review items" drill-down data. content_queue already
+  // has a SELECT RLS policy from 0026_m21_seo.sql (staff+), so a direct table read works
+  // the same as the other direct-table reads in this file. Normalizes the DB's
+  // `is_duplicate` column to the `duplicate` field batchItemsPanel()'s row shape expects
+  // (matching MOCK_BATCH_ITEMS' shape) right here at the fetch boundary.
+  async function fetchBatchItems(batchId) {
+    const { data, error } = await client().from("content_queue")
+      .select("id, keyword, status, is_duplicate, article_id").eq("batch_job_id", batchId);
+    if (error) { toast("Could not load batch items: " + error.message, "danger"); return; }
+    state.bulkItemsCache[batchId] = (data || []).map((r) => (
+      { id: r.id, article_id: r.article_id, keyword: r.keyword, status: r.status, duplicate: !!r.is_duplicate }));
+  }
+  // currentBatchItems — same connected()-gated fallback shape viewBulk() uses for
+  // batches/templates: live rows from bulkItemsCache when connected, MOCK_BATCH_ITEMS
+  // otherwise.
+  function currentBatchItems(batchId) {
+    return connected() ? (state.bulkItemsCache[batchId] || []) : (MOCK_BATCH_ITEMS[batchId] || []);
   }
   const catName = (id) => (state.cats.find((c) => c.id === id) || {}).name || "—";
   const authorName = (id) => (state.authors.find((a) => a.id === id) || {}).name || "—";
@@ -699,7 +718,7 @@ import { sanitizeHtml } from "./content-editor.mjs";
     const batches = connected() ? state.batchJobs : MOCK_BATCHES;
     const templates = connected() ? state.templates : MOCK_TEMPLATES;
     const rows = batches.map((b) => {
-      const items = MOCK_BATCH_ITEMS[b.id] || [];
+      const items = currentBatchItems(b.id);
       const dupCount = items.filter((i) => i.duplicate).length;
       return `<tr>
       <td>${esc(b.name)}</td><td><span class="pill st-${esc(b.status)}">${esc(b.status)}</span></td>
@@ -891,10 +910,13 @@ import { sanitizeHtml } from "./content-editor.mjs";
       }, "Batch rolled back"); render();
     });
 
-    document.querySelectorAll("[data-review-batch]").forEach((b) => b.onclick = () => {
+    document.querySelectorAll("[data-review-batch]").forEach((b) => b.onclick = async () => {
       const id = b.getAttribute("data-review-batch");
-      state.bulkExpanded = state.bulkExpanded === id ? null : id;
-      state.bulkSelected.clear(); render();
+      const opening = state.bulkExpanded !== id;
+      state.bulkExpanded = opening ? id : null;
+      state.bulkSelected.clear();
+      if (opening && connected()) await fetchBatchItems(id);
+      render();
     });
 
     document.querySelectorAll("[data-schedule]").forEach((b) => b.onclick = async () => {
@@ -914,18 +936,24 @@ import { sanitizeHtml } from "./content-editor.mjs";
     });
 
     const approveAll = $("#biApproveAll"); if (approveAll) approveAll.onclick = async () => {
+      const items = currentBatchItems(state.bulkExpanded);
       for (const id of state.bulkSelected) {
-        const item = (MOCK_BATCH_ITEMS[state.bulkExpanded] || []).find((i) => i.id === id);
+        const item = items.find((i) => i.id === id);
         if (item) await rpc("approve_article", { p_article: item.article_id }, () => { item.status = "published"; }, `Approved ${item.keyword}`);
       }
-      state.bulkSelected.clear(); render();
+      state.bulkSelected.clear();
+      if (connected()) await fetchBatchItems(state.bulkExpanded);
+      render();
     };
     const rejectAll = $("#biRejectAll"); if (rejectAll) rejectAll.onclick = async () => {
+      const items = currentBatchItems(state.bulkExpanded);
       for (const id of state.bulkSelected) {
-        const item = (MOCK_BATCH_ITEMS[state.bulkExpanded] || []).find((i) => i.id === id);
+        const item = items.find((i) => i.id === id);
         if (item) await rpc("reject_article", { p_article: item.article_id, p_feedback: "Bulk-rejected — please revise." }, () => { item.status = "draft"; }, `Sent back ${item.keyword}`);
       }
-      state.bulkSelected.clear(); render();
+      state.bulkSelected.clear();
+      if (connected()) await fetchBatchItems(state.bulkExpanded);
+      render();
     };
   }
 
