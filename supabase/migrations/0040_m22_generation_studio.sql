@@ -115,3 +115,33 @@ begin
 end $$;
 revoke all on function public.start_generation_run(uuid,uuid,uuid) from public;
 grant execute on function public.start_generation_run(uuid,uuid,uuid) to authenticated, service_role;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 6. retry_generation_stage — staff+ retries a FAILED stage: inserts a fresh
+--    pending generation_jobs row for the SAME stage (prior stages' stage_output
+--    untouched) + the matching jobs row. The partial unique index
+--    (generation_jobs_one_pending_per_stage) makes a second concurrent retry
+--    for the same article+stage raise a unique-violation instead of creating a
+--    duplicate in-flight row — the UI surfaces that as "already retrying".
+--    Returns the new generation_jobs id.
+-- ═══════════════════════════════════════════════════════════════════════════
+create or replace function public.retry_generation_stage(p_generation_job_id uuid)
+returns uuid language plpgsql security definer set search_path = public as $$
+declare g record; v_new uuid;
+begin
+  select * into g from public.generation_jobs where id = p_generation_job_id;
+  if not found then raise exception 'generation_jobs row not found'; end if;
+  if not public.has_role(g.workspace_id,'staff') then raise exception 'forbidden: staff+ required'; end if;
+  if g.status <> 'failed' then raise exception 'only a failed stage can be retried'; end if;
+
+  insert into public.generation_jobs (workspace_id, article_id, keyword_id, stage, status, attempts)
+  values (g.workspace_id, g.article_id, g.keyword_id, g.stage, 'pending', g.attempts + 1)
+  returning id into v_new;
+
+  insert into public.jobs (workspace_id, type, payload, status, idempotency_key)
+  values (g.workspace_id, 'generation.advance', jsonb_build_object('generation_job_id', v_new), 'queued', 'generation-' || v_new);
+
+  return v_new;
+end $$;
+revoke all on function public.retry_generation_stage(uuid) from public;
+grant execute on function public.retry_generation_stage(uuid) to authenticated, service_role;

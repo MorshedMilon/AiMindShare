@@ -127,6 +127,29 @@ async function main() {
     "client role cannot call start_generation_run");
   await reset();
 
+  // ═══ 3 — retry_generation_stage ═════════════════════════════════════════════
+  console.log("\nM22 Generation Studio · retry_generation_stage:");
+  // Simulate the research stage having failed (as the worker would mark it).
+  await pg.query(`update public.generation_jobs set status='failed', error='boom', error_type='transient' where id=$1`, [run1.generation_job_id]);
+
+  await as(STAFF_A);
+  const retried = (await pg.query(`select public.retry_generation_stage($1) as id`, [run1.generation_job_id])).rows[0].id;
+  await reset();
+  assert(!!retried && retried !== run1.generation_job_id, "retry_generation_stage returns a NEW generation_jobs id");
+  assert(await count(pg, `select count(*)::int n from public.generation_jobs where id=$1 and status='pending' and stage='research'`, [retried]) === 1,
+    "the retried row is a fresh pending 'research' row");
+  assert(await count(pg, `select count(*)::int n from public.jobs where payload->>'generation_job_id'=$1::text`, [retried]) === 1,
+    "a matching jobs row is enqueued for the retry");
+
+  // Concurrency guard: a second retry attempt while the first retry is still
+  // pending must be rejected (unique partial index), not create a duplicate row.
+  await as(STAFF_A);
+  const dupeRejected = await denied(pg, `select public.retry_generation_stage($1)`, [run1.generation_job_id]);
+  await reset();
+  assert(dupeRejected, "a second concurrent retry for the same failed stage is rejected, not a duplicate row");
+  assert(await count(pg, `select count(*)::int n from public.generation_jobs where article_id=$1 and stage='research' and status='pending'`, [run1.article_id]) === 1,
+    "still exactly one pending 'research' row after the rejected duplicate retry");
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 }
