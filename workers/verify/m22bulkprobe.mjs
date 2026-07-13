@@ -271,7 +271,10 @@ async function main() {
   // SELECT derives each new article's slug from the originating content_queue row's id
   // ('gen-' || cq.id), giving a reliable 1:1 join key back to that same row — so each
   // of the batch's 3 content_queue rows gets its OWN distinct new blog_articles.id,
-  // never a shared id or a cross join.
+  // never a shared id or a cross join. Also flips content_queue.status to 'done'
+  // (mirroring what complete_content_item does in production alongside article_id) —
+  // needed so Fix 1's "no queued rows left" completion check below sees this batch
+  // as fully drained, same as every real completed row would be.
   await pg.query(
     `with new_articles as (
        insert into public.blog_articles (workspace_id, site_id, title, slug, status)
@@ -281,7 +284,7 @@ async function main() {
        returning id, slug
      )
      update public.content_queue cq
-        set article_id = na.id
+        set article_id = na.id, status = 'done'
        from new_articles na
       where cq.batch_job_id = $1
         and na.slug = 'gen-' || cq.id`,
@@ -327,6 +330,76 @@ async function main() {
   assert(
     (await pg.query(`select status from public.content_batch_jobs where id=$1`, [paceBatch])).rows[0].status === 'running',
     "advance_content_pipeline flips the batch job to status='running' once it starts draining"
+  );
+
+  // ═══ 8 — schedule_batch_publish_spread no longer strands undrained batches (Fix 1, code review) ═══
+  const spreadBatch = (await pg.query(
+    `select public.create_batch_job($1,$2,$3,$4,$5) as id`,
+    ['a0000000-0000-0000-0000-000000000001','a0000000-0000-0000-0000-000000000002','Spread test','manual',
+     JSON.stringify(Array.from({ length: 4 }, (_, i) => ({ keyword: `spread topic ${i}` })))]
+  )).rows[0].id;
+  await pg.query(`select public.commit_batch_job($1)`, [spreadBatch]);
+
+  // Link the FIRST 2 content_queue rows to newly-generated in_review articles (mimics
+  // what complete_content_item does: article_id set + status='done'), leaving the
+  // other 2 rows still status='queued' — a normal "first wave ready, rest still
+  // drip-feeding" mid-batch state.
+  await pg.query(
+    `with two_rows as (
+       select id, workspace_id, site_id, keyword from public.content_queue
+        where batch_job_id = $1 order by created_at asc limit 2
+     ),
+     new_articles as (
+       insert into public.blog_articles (workspace_id, site_id, title, slug, status)
+       select tr.workspace_id, tr.site_id, 'Generated: ' || tr.keyword, 'gen3-' || tr.id, 'in_review'
+       from two_rows tr
+       returning id, slug
+     )
+     update public.content_queue cq
+        set article_id = na.id, status = 'done'
+       from new_articles na
+      where na.slug = 'gen3-' || cq.id`,
+    [spreadBatch]
+  );
+
+  const spreadCount1 = (await pg.query(
+    `select public.schedule_batch_publish_spread($1, now(), 5, 2) as n`, [spreadBatch]
+  )).rows[0].n;
+  assert(spreadCount1 === 2, "schedule_batch_publish_spread schedules the 2 ready (in_review) articles from the first wave");
+  assert(
+    (await pg.query(`select status from public.content_batch_jobs where id=$1`, [spreadBatch])).rows[0].status !== 'completed',
+    "Fix 1: scheduling the first wave does NOT complete the batch while 2 content_queue rows are still queued (undrained)"
+  );
+
+  // Now simulate the remaining 2 items finishing WITHOUT ever being scheduled (e.g.
+  // rejected/failed) by moving them off 'queued' directly — nothing left queued.
+  await pg.query(
+    `update public.content_queue set status = 'failed', fail_reason = 'test: simulate drained'
+       where batch_job_id = $1 and status = 'queued'`, [spreadBatch]
+  );
+  const spreadCount2 = (await pg.query(
+    `select public.schedule_batch_publish_spread($1, now(), 5, 2) as n`, [spreadBatch]
+  )).rows[0].n;
+  assert(spreadCount2 === 0, "second schedule_batch_publish_spread call finds no new in_review articles to schedule");
+  assert(
+    (await pg.query(`select status from public.content_batch_jobs where id=$1`, [spreadBatch])).rows[0].status === 'completed',
+    "Fix 1: once no content_queue rows remain queued, schedule_batch_publish_spread DOES finalize the batch as 'completed'"
+  );
+
+  // ═══ 9 — advance_content_pipeline auto-completes a fully-drained running batch (Fix 2, code review) ═══
+  // Simulate ALL of paceBatch's still-queued content_queue rows finishing (moved off
+  // 'queued'), without ever calling schedule_batch_publish_spread on it — e.g. every
+  // remaining item ends up rejected/failed rather than scheduled. Nothing else
+  // transitions a 'running' batch to 'completed' in that scenario except the
+  // auto-detection added to advance_content_pipeline's bulk loop.
+  await pg.query(
+    `update public.content_queue set status = 'failed', fail_reason = 'test: simulate full drain'
+       where batch_job_id = $1 and status = 'queued'`, [paceBatch]
+  );
+  await pg.query(`select public.advance_content_pipeline()`);
+  assert(
+    (await pg.query(`select status from public.content_batch_jobs where id=$1`, [paceBatch])).rows[0].status === 'completed',
+    "Fix 2: advance_content_pipeline auto-completes a 'running' batch once it drains to zero queued items, even without schedule_batch_publish_spread ever being called"
   );
 
   console.log(`\n${pass} passed, ${fail} failed`);

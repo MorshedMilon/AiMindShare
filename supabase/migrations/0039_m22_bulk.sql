@@ -310,7 +310,17 @@ begin
     v_idx := v_idx + 1; v_count := v_count + 1;
   end loop;
 
-  update public.content_batch_jobs set status = 'completed' where id = b.id;
+  -- Fix (code review, D-192): only finalize the batch once every content_queue row
+  -- has left the 'queued' state. A large batch drip-feeds through the bulk lane over
+  -- many ticks, so scheduling the currently in_review wave must not strand whatever
+  -- is still queued behind it — that content_batch_jobs row has to stay 'running'/
+  -- 'queued' so advance_content_pipeline() keeps draining it, and a manager can call
+  -- this again later for the next wave.
+  if not exists (
+    select 1 from public.content_queue where batch_job_id = p_batch and status = 'queued'
+  ) then
+    update public.content_batch_jobs set status = 'completed' where id = b.id;
+  end if;
   return v_count;
 end $$;
 revoke all on function public.schedule_batch_publish_spread(uuid,timestamptz,int,int) from public;
@@ -397,6 +407,15 @@ begin
     end loop;
     if b.status = 'queued' then
       update public.content_batch_jobs set status = 'running' where id = b.id;
+    elsif not exists (
+      select 1 from public.content_queue where batch_job_id = b.id and status = 'queued'
+    ) then
+      -- Companion fix (code review, D-192): a batch that was already 'running' and has
+      -- now drained to zero queued items auto-completes here, even if a manager never
+      -- calls schedule_batch_publish_spread (e.g. all items end up rejected/failed
+      -- rather than scheduled). The `elsif` guards this from firing on the SAME tick a
+      -- batch just flipped to 'running' above.
+      update public.content_batch_jobs set status = 'completed' where id = b.id;
     end if;
   end loop;
 
