@@ -1078,6 +1078,18 @@ async function handleGenerationAdvance(job) {
   const { data: article } = await db.from("blog_articles").select("id, workspace_id, site_id, keyword").eq("id", gj.article_id).maybeSingle();
   if (!article) throw new Error("generation.advance: article not found");
 
+  // ready_for_review is a terminal marker stage, not a runGenerationStage
+  // dispatch target — runGenerationStage has no branch for it (calling it
+  // would throw "unknown stage" and get miscategorized as a stage failure).
+  // Handle the terminal transition directly here instead.
+  if (gj.stage === "ready_for_review") {
+    await db.from("generation_jobs").update({
+      status: "complete", stage_output: { done: true }, completed_at: new Date().toISOString(),
+    }).eq("id", genJobId);
+    await db.from("blog_articles").update({ status: "in_review" }).eq("id", gj.article_id);
+    return { generation_job_id: genJobId, stage: gj.stage, outcome: "pipeline_complete" };
+  }
+
   let briefText = null;
   if (gj.stage === "outline") {
     const { data: briefRow } = await db.from("generation_jobs")
@@ -1107,11 +1119,6 @@ async function handleGenerationAdvance(job) {
     await db.from("blog_articles").update({ used_fallback: true }).eq("id", gj.article_id);
   }
 
-  if (gj.stage === "ready_for_review") {
-    await db.from("blog_articles").update({ status: "in_review" }).eq("id", gj.article_id);
-    return { generation_job_id: genJobId, stage: gj.stage, outcome: "pipeline_complete" };
-  }
-
   const next = nextStage(gj.stage);
   const { data: newRow, error: insErr } = await db.from("generation_jobs").insert({
     workspace_id: gj.workspace_id, article_id: gj.article_id, keyword_id: gj.keyword_id,
@@ -1119,11 +1126,12 @@ async function handleGenerationAdvance(job) {
   }).select("id").single();
   if (insErr) throw new Error(`generation.advance enqueue next stage: ${insErr.message}`);
 
-  await db.from("jobs").insert({
+  const { error: jobInsErr } = await db.from("jobs").insert({
     workspace_id: gj.workspace_id, type: "generation.advance",
     payload: { generation_job_id: newRow.id }, status: "queued",
     idempotency_key: `generation-${newRow.id}`,
   });
+  if (jobInsErr) throw new Error(`generation.advance enqueue next stage job: ${jobInsErr.message}`);
 
   return { generation_job_id: genJobId, stage: gj.stage, outcome: "advanced", next_stage: next };
 }
