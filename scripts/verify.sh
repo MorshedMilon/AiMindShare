@@ -108,6 +108,12 @@ echo; echo "══ +  M22-auto: real LLM adapter (unit, no network) ══"
 echo; echo "══ +  M22-auto: Bulk Content Creation schema + RLS + RPCs (PGlite) ══"
 ( cd workers && node verify/m22bulkprobe.mjs ) || fails=$((fails+1))
 
+echo; echo "══ M22 Generation Studio pipeline probe (no PGlite) ══════════════════"
+( cd workers && node verify/genstudiopipelineprobe.mjs ) || fails=$((fails+1))
+
+echo; echo "══ M22 Generation Studio schema/RPC probe (PGlite) ═══════════════════"
+( cd workers && node verify/m22genstudioprobe.mjs ) || fails=$((fails+1))
+
 echo; echo "══ +  M21 SEO Engine: 8-table leak + operator-ceiling role matrix + worker-write posture + keyword cache TTL/scope + send-to-queue + rank delta/major-move emit + rank_history + audit_score + daily/weekly cron enqueue + grants (PGlite) ══"
 ( cd workers && node verify/m21probe.mjs ) || fails=$((fails+1))
 
