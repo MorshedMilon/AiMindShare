@@ -274,7 +274,14 @@ async function main() {
   // actually race against, so a literal concurrency test wouldn't prove anything —
   // instead this confirms the row lock is present in the DEPLOYED function body
   // (via pg_get_functiondef, not just grepping the migration source text).
-  for (const fn of ["generate_batch_preview(uuid,int)", "commit_batch_job(uuid)"]) {
+  // regression (fix #4, final code review): rollback_batch_job / schedule_batch_publish_spread
+  // were reading content_batch_jobs WITHOUT "for update", unlike generate_batch_preview/
+  // commit_batch_job above — same functiondef-inspection approach (PGlite has no second
+  // session to actually race against here).
+  for (const fn of [
+    "generate_batch_preview(uuid,int)", "commit_batch_job(uuid)",
+    "rollback_batch_job(uuid)", "schedule_batch_publish_spread(uuid,timestamptz,int,int)",
+  ]) {
     const def = (await pg.query(`select pg_get_functiondef($1::regprocedure) as d`, [fn])).rows[0].d;
     assert(
       /for update/i.test(def),
@@ -419,6 +426,29 @@ async function main() {
   assert(
     (await pg.query(`select status from public.content_batch_jobs where id=$1`, [paceBatch])).rows[0].status === 'completed',
     "Fix 2: advance_content_pipeline auto-completes a 'running' batch once it drains to zero queued items, even without schedule_batch_publish_spread ever being called"
+  );
+
+  // ═══ 10 — rollback_batch_job marks leftover 'queued' content_queue rows 'skipped' (Fix, code review) ═══
+  // A batch committed but never drained at all (nothing generated yet, everything still
+  // 'queued') — the realistic "changed my mind right after commit" rollback scenario.
+  const rbBatch = (await pg.query(
+    `select public.create_batch_job($1,$2,$3,$4,$5) as id`,
+    ['a0000000-0000-0000-0000-000000000001','a0000000-0000-0000-0000-000000000002','Rollback skip test','manual',
+     JSON.stringify(Array.from({ length: 3 }, (_, i) => ({ keyword: `rollback topic ${i}` })))]
+  )).rows[0].id;
+  await pg.query(`select public.commit_batch_job($1)`, [rbBatch]);
+  assert(
+    (await pg.query(`select count(*)::int as n from public.content_queue where batch_job_id=$1 and status='queued'`, [rbBatch])).rows[0].n === 3,
+    "rollback-skip test setup: all 3 committed rows start status='queued'"
+  );
+  await pg.query(`select public.rollback_batch_job($1)`, [rbBatch]);
+  assert(
+    (await pg.query(`select count(*)::int as n from public.content_queue where batch_job_id=$1 and status='skipped'`, [rbBatch])).rows[0].n === 3,
+    "rollback_batch_job marks leftover 'queued' content_queue rows as 'skipped'"
+  );
+  assert(
+    (await pg.query(`select count(*)::int as n from public.content_queue where batch_job_id=$1 and status='queued'`, [rbBatch])).rows[0].n === 0,
+    "rollback_batch_job leaves no 'queued' rows behind for this batch"
   );
 
   console.log(`\n${pass} passed, ${fail} failed`);

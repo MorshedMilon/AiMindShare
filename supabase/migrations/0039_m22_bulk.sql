@@ -297,7 +297,7 @@ create or replace function public.schedule_batch_publish_spread(
 returns int language plpgsql security definer set search_path = public as $$
 declare b record; a record; v_idx int := 0; v_day int; v_slot_time timestamptz; v_count int := 0;
 begin
-  select * into b from public.content_batch_jobs where id = p_batch;
+  select * into b from public.content_batch_jobs where id = p_batch for update;
   if not found then raise exception 'batch job not found'; end if;
   if not public.has_role(b.workspace_id,'manager') then raise exception 'forbidden: manager+ required'; end if;
 
@@ -334,7 +334,7 @@ create or replace function public.rollback_batch_job(p_batch uuid)
 returns int language plpgsql security definer set search_path = public as $$
 declare b record; v_count int;
 begin
-  select * into b from public.content_batch_jobs where id = p_batch;
+  select * into b from public.content_batch_jobs where id = p_batch for update;
   if not found then raise exception 'batch job not found'; end if;
   if not public.has_role(b.workspace_id,'manager') then raise exception 'forbidden: manager+ required'; end if;
 
@@ -346,6 +346,17 @@ begin
   update public.blog_articles set status = 'draft', published_at = null, scheduled_at = null
    where id in (select id from affected);
   get diagnostics v_count = row_count;
+
+  -- Mark any leftover still-'queued' content_queue rows for this batch as 'skipped' so
+  -- they're unambiguously excluded from ever being drained by advance_content_pipeline's
+  -- bulk lane, even if a future code path's status filter changes (the lane already
+  -- filters on content_batch_jobs.status in ('queued','running'), which a rolled-back
+  -- batch never satisfies again — this is belt-and-suspenders, not a behavior fix).
+  -- NOTE: this does NOT cancel a blog.generate job already claimed/running for an item
+  -- at rollback time — this codebase's job system (JOBS-AND-WORKERS-SPEC-v1_0.md) has
+  -- no cancellation mechanism anywhere, so an in-flight generation will still complete;
+  -- this only prevents the bulk lane from enqueueing NEW work for a rolled-back batch.
+  update public.content_queue set status = 'skipped' where batch_job_id = p_batch and status = 'queued';
 
   update public.content_batch_jobs set status = 'rolled_back' where id = b.id;
   return v_count;
