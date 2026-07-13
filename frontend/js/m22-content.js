@@ -1044,14 +1044,76 @@ import { sanitizeHtml } from "./content-editor.mjs";
     });
   }
 
-  // viewStudioTracker()/wireStudioTracker() — placeholder stubs. The real per-stage
-  // progress tracker (#/content/studio/<article_id>) is Task 7's job; these exist so
-  // navigating here after a Generate click doesn't throw a ReferenceError. Task 7
-  // replaces these two functions with the full implementation (does not duplicate them).
+  // viewStudioTracker()/wireStudioTracker() — the live per-stage progress tracker
+  // (#/content/studio/<article_id>). Polls generation_jobs (written by the Task 5
+  // worker pipeline) every 15s when connected, and offers a per-stage Retry button
+  // for stages that failed with a transient error (wired to Task 3's
+  // retry_generation_stage RPC). Mock mode seeds a fully-complete run (see
+  // wireStudio() above), so there's nothing to poll there.
   function viewStudioTracker(articleId) {
-    return `<div class="studio-view"><p class="muted">Loading tracker for ${esc(articleId)}… (Task 7 not yet implemented)</p></div>`;
+    const jobs = (state.studioJobs || []).filter((j) => j.article_id === articleId);
+    const byStage = {};
+    for (const j of jobs) {
+      // keep only the latest attempt per stage (created_at desc already sorted server-side)
+      if (!byStage[j.stage]) byStage[j.stage] = j;
+    }
+    const article = (state.articles || []).find((a) => a.id === articleId);
+
+    const pills = STAGE_ORDER_UI.map((stage) => {
+      const j = byStage[stage];
+      const status = j ? j.status : "pending";
+      let extra = "";
+      if (status === "failed") {
+        if (j.error_type === "transient") {
+          extra = `<div class="stage-error">${esc(j.error || "")}</div><button class="btn btn-sm" data-retry="${esc(j.id)}">Retry</button>`;
+        } else {
+          extra = `<div class="stage-error">${esc(j.error || "")}</div><div class="stage-hint">Check API key configuration</div>`;
+        }
+      }
+      return `<div class="stage-pill st-${status}"><span>${STAGE_LABEL[stage]}</span><small>${status}</small>${extra}</div>`;
+    }).join("");
+
+    const done = byStage.ready_for_review && byStage.ready_for_review.status === "complete";
+
+    return pageHead("Generation Studio", `Generating: ${esc(article?.keyword || "")}`,
+        "Each stage runs on the background worker — this can take a few minutes per stage.", "")
+      + `<div class="stage-pills">${pills}</div>`
+      + (done ? `<a class="btn btn-primary" href="#/content/review">View in Review Queue</a>` : "");
   }
-  function wireStudioTracker(articleId) { /* Task 7 will wire this */ }
+
+  function wireStudioTracker(articleId) {
+    async function refresh() {
+      if (!connected()) return; // mock mode: state.studioJobs was seeded complete already, nothing to poll
+      const { data, error } = await client().from("generation_jobs")
+        .select("*").eq("article_id", articleId).order("created_at", { ascending: false });
+      if (error) { toast("Could not refresh generation status: " + error.message, "danger"); return; }
+      state.studioJobs = data || [];
+      if (state.route === "studio" && state.studioArticleId === articleId) {
+        shell(viewStudioTracker(articleId));
+        wireStudioTracker(articleId);
+      }
+    }
+    if (state.studioPollTimer) clearInterval(state.studioPollTimer);
+    if (connected()) state.studioPollTimer = setInterval(refresh, 15000);
+    refresh();
+
+    document.querySelectorAll("[data-retry]").forEach((btn) => {
+      btn.onclick = async () => {
+        btn.disabled = true; btn.textContent = "Retrying…";
+        if (!connected()) { toast("Retry (preview) — connect a project to run this for real"); return; }
+        try {
+          const { error } = await client().rpc("retry_generation_stage", {
+            p_generation_job_id: btn.getAttribute("data-retry"),
+          });
+          if (error) throw error;
+          refresh();
+        } catch (e) {
+          toast("Retry failed: " + (e.message || e), "danger");
+          btn.disabled = false; btn.textContent = "Retry";
+        }
+      };
+    });
+  }
 
   // ════════════════════════════════════════════════════════════════════════════
   //  ROUTE: /settings/content
@@ -1117,6 +1179,7 @@ import { sanitizeHtml } from "./content-editor.mjs";
 
   function render() {
     const r = parseHash(); state.route = r.route === "editor" ? "content" : r.route; state.param = r.param || null;
+    if (state.studioPollTimer && state.route !== "studio") { clearInterval(state.studioPollTimer); state.studioPollTimer = null; }
     let content = "";
     if (r.route === "editor") {
       state.editing = state.articles.find((a) => a.id === r.param);

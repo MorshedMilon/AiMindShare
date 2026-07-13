@@ -213,3 +213,21 @@ fieldset.locked{border:none;padding:0;margin:0;opacity:.55;pointer-events:none}
   .ed-canvas{padding:20px 18px}
   .toolbar .inp-search{min-width:0;flex:1}
 }
+
+/* ── Base table styling — .tbl had no rules anywhere reachable by this module;
+   shared here so both the Bulk view's tables and the Generation Studio
+   keyword-picker table (which reuse the class, see viewStudio()) get styled. ── */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th,.tbl td{padding:10px 12px;text-align:left;border-bottom:.5px solid var(--line)}
+.tbl th{font-weight:600;color:var(--ink-400)}
+
+/* ── Generation Studio: live run tracker (viewStudioTracker) ───────────────── */
+.stage-pills{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.stage-pill{flex:1 1 120px;min-width:120px;border:.5px solid var(--line);border-radius:var(--r-lg);padding:10px 12px}
+.stage-pill span{display:block;font-weight:600}
+.stage-pill small{color:var(--ink-400);text-transform:capitalize}
+.stage-pill.st-complete{border-color:var(--status-success)}
+.stage-pill.st-failed{border-color:var(--status-danger)}
+.stage-pill.st-running{border-color:var(--status-info)}
+.stage-error{font-size:.85em;color:var(--status-danger);margin-top:6px}
+.stage-hint{font-size:.85em;color:var(--ink-400);margin-top:4px}
