@@ -42,6 +42,11 @@ alter table content_queue
 -- nullable: existing rows predate this link; populated going forward when
 -- Studio queues a keyword by id instead of by raw text.
 
+alter table blog_articles
+  add column if not exists used_fallback boolean not null default false;
+-- true if ANY stage in a Generation Studio run used the deterministic
+-- fallback — distinct from generation_source, which reflects Draft only.
+
 create table generation_jobs (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references workspaces(id),
@@ -96,38 +101,53 @@ first; only add a new column if it can't represent "mixed/fallback" cleanly.
 
 ## Pipeline architecture
 
-**Dispatcher:** a new cron tick (`m22-generation-studio`, every 1 minute —
-tighter than the existing 15-min content-scheduler since this is an
-interactive, user-watched flow) scans `generation_jobs` for `pending` rows and
-either invokes the matching Edge Function directly, or — for `draft` — leaves
-the row for the existing GH Actions worker to claim (same
-`claim_content_item`-style claim pattern, applied to `generation_jobs`
-instead of `content_queue`).
+**Correction (found during implementation planning):** this repo has no
+mechanism for pg_cron to invoke a Supabase Edge Function directly (no
+`pg_net`/`pg_http` anywhere in the codebase) — every existing "cron →
+generation" flow actually goes through the Node worker (`workers/worker.mjs`,
+run by the GH Actions cron every 5 min per D-189), which claims a `jobs` row
+and does the work in Node. There is no standalone "cron calls Edge Function"
+path to reuse. Additionally, only Brief/Outline/Draft actually need an LLM
+call — Research/Auto-Link are no-op stubs, and Score's logic
+(`content-seo.mjs`'s `scoreArticle()`) is already pure, DOM-free JS that runs
+directly in Node (the existing `m22seoprobe` imports it as-is — resolves
+open item #1 below). Given that, **all 7 stages route through the existing
+worker** rather than splitting across Edge Functions — zero new
+infrastructure, fully server-side (survives the user closing the tab),
+reusing `workers/llm.mjs`'s `callAnthropicForArticle` for Brief/Outline/Draft
+and `content-seo.mjs`'s `scoreArticle` directly for Score. Trade-off: the
+tracker updates on the worker's ~5-minute poll cycle rather than feeling
+instant — matches the latency the existing M22-auto pipeline already has for
+Draft generation.
 
-**Runtime split** (Edge Functions have a short timeout; full-article Draft
-generation was already routed off Edge Functions once, for D-190, to avoid
-exactly this):
-- Research, Brief, Outline, Auto-Link, Score → Supabase Edge Functions.
-- Draft → claimed and run by the existing GH Actions cron worker
-  (`workers/llm.mjs`'s `callAnthropicForArticle`, 20s timeout,
-  `claude-sonnet-5` default).
+**Dispatcher:** the existing `jobs` table + `claim_job()` pattern. Creating a
+`generation_jobs` row also inserts a `jobs` row (`type: 'generation.advance'`,
+payload `{generation_job_id}`, idempotency key `generation-<generation_job_id>`
+— same convention as `enqueue_content_generation`'s `bloggen-<queue_id>`). The
+GH Actions worker claims it via a new `handleGenerationAdvance` handler in
+`workers/worker.mjs`, runs that stage's logic, and — on success — inserts the
+next stage's `generation_jobs` + `jobs` row itself, so a run advances across
+ticks with no browser involvement.
+
+**Runtime:** every stage runs inside `workers/worker.mjs`, on the same GH
+Actions cron cadence as the rest of M22-auto. No Edge Functions, no pg_net.
 
 **Stage behavior:**
 - **Research, Auto-Link** — honest no-op stubs. Mark `complete` immediately
   with `stage_output: {stub: true}`, `used_fallback: false`. No LLM call, no
   real work — their real implementations slot in later (Deep Research /
   Sitemap-Aware Linking specs) without changing the state machine shape.
-- **Brief, Outline** — Edge Functions, reuse the `_shared/llm.ts` pattern
-  (Vault-stored Anthropic key, `claude-3-5-haiku`, ~10s timeout). No key
-  configured → deterministic fallback text, `used_fallback: true`, stage
-  still completes (never a hard error — D-063 posture). Key configured but
-  the call errors/times out → stage `failed` with `error_type` set.
-- **Draft** — worker-claimed, writes to `blog_articles.content_html` with
-  `status='draft'`. Same fallback/failure semantics as above.
-- **Score** — Edge Function, calls the existing `content-seo.mjs` scoring
-  logic (verify during implementation that it's DOM-free and can run
-  server-side; extract if not) and inserts exactly one `content_scores` row
-  for the article, on successful completion only.
+- **Brief, Outline** — reuse `workers/llm.mjs`'s `callAnthropicForArticle`
+  (Vault-stored Anthropic key, 20s timeout). No key configured →
+  deterministic fallback text, `used_fallback: true`, stage still completes
+  (never a hard error — D-063 posture). Key configured but the call
+  errors/times out → stage `failed` with `error_type` set.
+- **Draft** — writes to `blog_articles.content_html` with `status='draft'`.
+  Same fallback/failure semantics as above.
+- **Score** — calls `content-seo.mjs`'s `scoreArticle()` directly (already
+  pure/Node-importable, confirmed via its existing use in `m22seoprobe` — no
+  extraction needed) and inserts exactly one `content_scores` row for the
+  article, on successful completion only.
 - **Ready for Review** — terminal stage; flips `blog_articles.status` so the
   article surfaces in the existing Review Queue. No changes needed there.
 
@@ -150,9 +170,12 @@ creating a duplicate in-flight row for the same article+stage.
   navigates to the **live tracker view**.
 - **Live tracker**: 7 stage pills (Research→Brief→Outline→Draft→Auto-Link→
   Score→Ready for Review), each pending/running/complete/failed, polling
-  `generation_jobs` every few seconds — matching the existing poll style
-  already used for autosave in `m22-content.js` (no new Supabase Realtime
-  subscription; nothing else in M22 uses one).
+  `generation_jobs` periodically — matching the existing poll style already
+  used for autosave in `m22-content.js` (no new Supabase Realtime
+  subscription; nothing else in M22 uses one). Since every stage now runs on
+  the worker's cron cadence (~5 min per stage, not near-instant), the tracker
+  copy should set that expectation (e.g. "this can take a few minutes per
+  stage") rather than implying live sub-second progress.
 - Failed pill shows the error inline; **Retry** button only if
   `error_type='transient'`, otherwise a "Check API key configuration"
   message linking to workspace LLM settings.
@@ -182,10 +205,15 @@ Extend the existing M22 probe suite (currently 46/46 + 22/22) with:
 Full `verify.sh` + Gate-8 must stay green. Preview-check the new Studio page
 (0 horizontal scroll, both themes), matching prior M22 work.
 
-## Open items to resolve during implementation planning
+## Resolved during implementation planning
 
-1. Whether `content-seo.mjs`'s scoring logic is DOM-free and can run
-   server-side as-is for the Score Edge Function, or needs extraction first.
-2. Exact shape of article-level fallback flagging (extend
-   `blog_articles.generation_source` vs. add a new column) — depends on
-   `generation_source`'s current value set.
+1. `content-seo.mjs`'s `scoreArticle()` is already pure/DOM-free (confirmed:
+   `m22seoprobe` already imports it directly in Node) — no extraction needed,
+   no Edge Function needed for Score.
+2. Article-level fallback flagging: `blog_articles.generation_source`
+   (existing, from 0039) only has two values (`llm`/`deterministic`) and
+   reflects the Draft stage specifically. Since Brief/Outline can use
+   fallback even when Draft itself succeeds with a real LLM call, migration
+   0040 adds a separate `blog_articles.used_fallback boolean not null
+   default false`, set to `true` if *any* stage in the run used fallback —
+   distinct from and additive to `generation_source`.
