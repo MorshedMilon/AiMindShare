@@ -143,6 +143,8 @@ import { sanitizeHtml } from "./content-editor.mjs";
     revs: [],
     bulkExpanded: null,         // id of the batch job whose items panel is open, or null
     bulkSelected: new Set(),    // content_queue item ids checked in the open items panel
+    bulkDraftBatchId: null,     // id of the in-progress (draft/previewing) batch job the wizard is building, or null
+    batchJobs: [], templates: [], // live-mode content_batch_jobs/content_templates rows (populated by loadLive())
   };
 
   function loadMock() {
@@ -154,12 +156,23 @@ import { sanitizeHtml } from "./content-editor.mjs";
     const c = client();
     const { data: ws } = await c.from("workspaces").select("id").order("created_at").limit(1);
     const wsId = ws?.[0]?.id; if (!wsId) throw new Error("no workspace");
-    const [{ data: arts }, { data: cats }, { data: authors }] = await Promise.all([
+    const [{ data: arts }, { data: cats }, { data: authors }, { data: batches }, { data: templates }] = await Promise.all([
       c.from("blog_articles").select("*").eq("workspace_id", wsId).order("updated_at", { ascending: false }).limit(500),
       c.from("article_categories").select("*").eq("workspace_id", wsId).order("name"),
       c.from("article_authors").select("*").eq("workspace_id", wsId).order("name"),
+      c.from("content_batch_jobs").select("*").eq("workspace_id", wsId).order("created_at", { ascending: false }).limit(200),
+      c.from("content_templates").select("*").eq("workspace_id", wsId).order("name"),
     ]);
     state.articles = arts || []; state.cats = cats || []; state.authors = authors || [];
+    state.batchJobs = batches || []; state.templates = templates || [];
+  }
+  // currentWorkspaceId — same lookup loadLive() does, exposed standalone because the
+  // Bulk wizard's RPCs (create_batch_job's has_role(p_ws,...) check) need a real
+  // workspace id threaded through at call time, not just at initial page load.
+  async function currentWorkspaceId() {
+    if (!connected()) return null;
+    const { data: ws } = await client().from("workspaces").select("id").order("created_at").limit(1);
+    return ws?.[0]?.id || null;
   }
   const catName = (id) => (state.cats.find((c) => c.id === id) || {}).name || "—";
   const authorName = (id) => (state.authors.find((a) => a.id === id) || {}).name || "—";
@@ -680,7 +693,12 @@ import { sanitizeHtml } from "./content-editor.mjs";
   };
 
   function viewBulk() {
-    const rows = MOCK_BATCHES.map((b) => {
+    // Live-mode batch jobs/templates come from loadLive(); the mock fallback (MOCK_BATCHES/
+    // MOCK_TEMPLATES) only applies when disconnected — same connected()-gated fallback shape
+    // as the rest of this file uses for its RPC calls (see rpc()).
+    const batches = connected() ? state.batchJobs : MOCK_BATCHES;
+    const templates = connected() ? state.templates : MOCK_TEMPLATES;
+    const rows = batches.map((b) => {
       const items = MOCK_BATCH_ITEMS[b.id] || [];
       const dupCount = items.filter((i) => i.duplicate).length;
       return `<tr>
@@ -694,11 +712,11 @@ import { sanitizeHtml } from "./content-editor.mjs";
       </td>
     </tr>${state.bulkExpanded === b.id ? `<tr><td colspan="6">${batchItemsPanel(b, items)}</td></tr>` : ""}`;
     }).join("");
-    const dashboard = MOCK_BATCHES.length
+    const dashboard = batches.length
       ? `<table class="tbl"><thead><tr><th>Name</th><th>Status</th><th>Items</th><th>Model</th><th>Duplicates</th><th></th></tr></thead><tbody>${rows}</tbody></table>`
       : `<div class="card panel"><div class="empty-state"><h3>No batch jobs yet</h3><p>Build your first batch below.</p></div></div>`;
 
-    const templateOpts = MOCK_TEMPLATES.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
+    const templateOpts = templates.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
 
     return pageHead("Bulk", "Bulk create", "Generate a batch of articles from a topic list, a CSV, or an AI-expanded seed keyword — preview a few before committing the rest.", "")
       + `<div class="card panel" style="margin-bottom:16px">
@@ -754,15 +772,11 @@ import { sanitizeHtml } from "./content-editor.mjs";
       else inputs.innerHTML = `<div class="form-field"><label>Topics (one per line)</label><textarea id="bManualTopics" rows="4" placeholder="best dua for travel&#10;dua for anxiety"></textarea></div>`;
     };
 
+    // collectTopics — only ever called for the manual/ai_seed paths; the CSV path is
+    // fully owned by withCsvTopics() below (parsing a File requires FileReader, which
+    // is inherently async, so it can't be folded into this synchronous helper).
     function collectTopics() {
       const source = $("#bSource")?.value || "manual";
-      if (source === "csv") {
-        const file = $("#bCsvFile")?.files?.[0];
-        if (!file) return [];
-        return []; // resolved asynchronously via FileReader in a real commit handler; the
-                   // wizard's Estimate/Preview/Commit buttons below call this synchronously
-                   // for manual/ai_seed and separately await CSV parsing when a file is present.
-      }
       if (source === "ai_seed") {
         const seed = $("#bSeed")?.value.trim(); if (!seed) return [];
         const n = parseInt($("#bSeedCount")?.value || "20", 10);
@@ -782,12 +796,16 @@ import { sanitizeHtml } from "./content-editor.mjs";
         const { rows } = parseCsvText(String(reader.result || ""));
         cb(rows.map((r) => ({ keyword: r[0] })).filter((t) => t.keyword));
       };
+      reader.onerror = () => toast("Could not read the CSV file", "danger");
       reader.readAsText(file);
     }
 
-    function batchArgs() {
+    // batchArgs — p_ws has no server-side session fallback: create_batch_job's
+    // has_role(p_ws,'staff') check compares this argument literally, so callers MUST
+    // resolve a real workspace id via currentWorkspaceId() first and pass it in here.
+    function batchArgs(wsId) {
       return {
-        p_ws: null, // resolved server-side by has_role() against the caller's session in live mode
+        p_ws: wsId,
         p_site: SITE.id, p_name: $("#bName")?.value.trim() || "Untitled batch",
         p_topic_source: $("#bSource")?.value || "manual",
         p_template: $("#bTemplate")?.value || null,
@@ -797,13 +815,30 @@ import { sanitizeHtml } from "./content-editor.mjs";
       };
     }
 
+    // ensureDraftBatchId — the wizard operates on ONE draft content_batch_jobs row across
+    // Estimate → Preview → Commit (estimate_batch_cost/generate_batch_preview/commit_batch_job
+    // all require an existing p_batch). Reuse state.bulkDraftBatchId if a draft already
+    // exists (e.g. Estimate was clicked first); otherwise create one now so Preview/Commit
+    // work even if the user skips straight to them.
+    async function ensureDraftBatchId(topics, wsId) {
+      if (state.bulkDraftBatchId) return state.bulkDraftBatchId;
+      const { data: id, error } = await client().rpc("create_batch_job", { ...batchArgs(wsId), p_topics: topics });
+      if (error) throw error;
+      state.bulkDraftBatchId = id;
+      return id;
+    }
+
     const est = $("#bEstimate"); if (est) est.onclick = () => withCsvTopics(async (topics) => {
       if (!topics.length) return toast("Add at least one topic first", "danger");
       const out = $("#bEstimateOut");
       if (connected()) {
-        const { data: id } = await client().rpc("create_batch_job", { ...batchArgs(), p_topics: topics });
-        const { data: est2 } = await client().rpc("estimate_batch_cost", { p_batch: id });
-        if (out) out.textContent = `~${est2?.est_tokens ?? 0} tokens, ~$${est2?.est_cost_usd ?? 0} for ${topics.length} articles`;
+        try {
+          const wsId = await currentWorkspaceId();
+          const id = await ensureDraftBatchId(topics, wsId);
+          const { data: est2, error } = await client().rpc("estimate_batch_cost", { p_batch: id });
+          if (error) throw error;
+          if (out) out.textContent = `~${est2?.est_tokens ?? 0} tokens, ~$${est2?.est_cost_usd ?? 0} for ${topics.length} articles`;
+        } catch (e) { toast("Action failed: " + (e.message || "estimate_batch_cost"), "danger"); }
       } else if (out) {
         const roughTokens = Math.round(((parseInt($("#bWordMin").value,10)+parseInt($("#bWordMax").value,10))/2)*2.2*topics.length);
         out.textContent = `~${roughTokens} tokens, ~$${(roughTokens/1000*0.009).toFixed(2)} for ${topics.length} articles (preview)`;
@@ -812,20 +847,41 @@ import { sanitizeHtml } from "./content-editor.mjs";
 
     const prev = $("#bPreview"); if (prev) prev.onclick = () => withCsvTopics(async (topics) => {
       if (!topics.length) return toast("Add at least one topic first", "danger");
-      await rpc("generate_batch_preview", { p_n: 3 }, () => {
+      if (connected()) {
+        try {
+          const wsId = await currentWorkspaceId();
+          const id = await ensureDraftBatchId(topics, wsId);
+          const { error } = await client().rpc("generate_batch_preview", { p_batch: id, p_n: 3 });
+          if (error) throw error;
+          toast("Generated 3 preview samples");
+        } catch (e) { toast("Action failed: " + (e.message || "generate_batch_preview"), "danger"); return; }
+      } else {
         MOCK_BATCHES.unshift({ id: "b" + Math.random().toString(36).slice(2, 6), name: $("#bName").value || "Untitled batch",
           topic_source: $("#bSource").value, status: "previewing", total_items: topics.length, model: $("#bModel").value, created_at: new Date().toISOString() });
-      }, "Generated 3 preview samples"); render();
+        toast("Generated 3 preview samples (preview)");
+      }
+      render();
     });
 
     const commit = $("#bCommit"); if (commit) commit.onclick = () => withCsvTopics(async (topics) => {
       if (!topics.length) return toast("Add at least one topic first", "danger");
-      await rpc("commit_batch_job", {}, () => {
+      if (connected()) {
+        try {
+          const wsId = await currentWorkspaceId();
+          const id = await ensureDraftBatchId(topics, wsId);
+          const { error } = await client().rpc("commit_batch_job", { p_batch: id });
+          if (error) throw error;
+          state.bulkDraftBatchId = null; // this draft is now queued; the next Estimate/Preview/Commit starts a fresh batch
+          toast("Batch committed — generation will drain via the scheduler");
+        } catch (e) { toast("Action failed: " + (e.message || "commit_batch_job"), "danger"); return; }
+      } else {
         const existing = MOCK_BATCHES.find((b) => b.status === "previewing");
         if (existing) existing.status = "queued"; else MOCK_BATCHES.unshift({
           id: "b" + Math.random().toString(36).slice(2, 6), name: $("#bName").value || "Untitled batch",
           topic_source: $("#bSource").value, status: "queued", total_items: topics.length, model: $("#bModel").value, created_at: new Date().toISOString() });
-      }, "Batch committed — generation will drain via the scheduler"); render();
+        toast("Batch committed — generation will drain via the scheduler (preview)");
+      }
+      render();
     });
 
     document.querySelectorAll("[data-rollback]").forEach((b) => b.onclick = async () => {
