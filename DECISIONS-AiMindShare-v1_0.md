@@ -1519,8 +1519,11 @@ staging table). `content_queue` gets three new columns (`batch_job_id`, `templat
 `variables`) via the same `add column if not exists` pattern D-148 established — migration `0026`
 stays untouched. Bulk jobs get pacing separate from a site's day-to-day
 `content_schedules.max_posts_per_run` via a second loop appended to the existing
-`advance_content_pipeline()` cron function (a fixed per-tick cap, mirroring M20's D-186
-hardcoded 20/hour pattern) rather than a new quota-counter table. Duplicate detection is
+`advance_content_pipeline()` cron function — a fixed per-tick cap of 10 items per active
+batch, drained by the pre-existing `m22-content-scheduler` cron (currently once-daily per
+`0027_m22_auto.sql` — NOT hourly; a batch of significant size will take multiple days to
+fully drain at this cadence). This cadence mismatch between the docs and the actual
+registered cron predates this branch and is tracked separately for reconciliation. Duplicate detection is
 exact-keyword matching only, not the design doc's originally proposed pgvector cosine
 similarity — `blog_articles.embedding` has no writer anywhere in the codebase yet (confirmed
 dormant, D-124 scaffold), so a real semantic check isn't buildable today; faking one would
