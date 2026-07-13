@@ -829,8 +829,27 @@ async function handleBlogGenerate(job) {
     const minSeo = sched?.min_seo_score ?? 70;
     const minRead = sched?.min_readability_score ?? 50;
     const autoPublish = sched?.auto_publish ?? false;
-    const targetWords = sched?.target_word_count ?? 1200;
-    const model = sched?.model || "claude-sonnet-5";
+
+    // Bulk items (item.batch_job_id set) carry their OWN model/word-count settings from
+    // the Job Builder wizard (content_batch_jobs), which must override the site's
+    // schedule defaults — otherwise every batch would silently generate using the
+    // site's settings regardless of what the user picked at estimate/commit time.
+    // Regular editorial items (batch_job_id null) keep the schedule-based behavior.
+    // NOTE: item.template_id/item.variables ([var]-slot substitution via
+    // content_templates) are intentionally NOT consumed here yet — that's a separate,
+    // larger template-rendering feature the design spec scaffolded tables/UI for but
+    // never specified substitution logic for (same "labelled scaffold" convention as
+    // generate_featured_image_with_ai's stub).
+    let model, targetWords;
+    if (item.batch_job_id) {
+      const { data: batch } = await db.from("content_batch_jobs")
+        .select("model, word_count_min, word_count_max").eq("id", item.batch_job_id).maybeSingle();
+      model = batch?.model || "claude-sonnet-5";
+      targetWords = batch ? Math.round((batch.word_count_min + batch.word_count_max) / 2) : 1200;
+    } else {
+      model = sched?.model || "claude-sonnet-5";
+      targetWords = sched?.target_word_count ?? 1200;
+    }
 
     // D-191: the site's mandatory-review gate (IslamicInfo.org and any future
     // 'islamic'-preset site). Absent row → not locked (defaults false).
