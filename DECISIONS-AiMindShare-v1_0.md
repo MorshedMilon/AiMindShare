@@ -1530,6 +1530,23 @@ dormant, D-124 scaffold), so a real semantic check isn't buildable today; faking
 violate this codebase's established honest-scaffold posture (D-147). Semantic dedup is a
 documented follow-up for whenever an embedding writer lands.
 
+## D-193 · M22 Generation Studio pipeline runtime — no pg_net, all stages via the existing worker · **LOCKED 2026-07-13**
+Migration `0040_m22_generation_studio.sql`. Adds the keyword_id link `content_queue` was
+missing since M21 (D-134 gap), `blog_articles.used_fallback`, `generation_jobs` (one row per
+pipeline stage ATTEMPT — retries insert a fresh row, never mutate a failed one), and
+`content_scores` (one persisted snapshot per successful Score stage). All 7 stages
+(Research→Brief→Outline→Draft→Auto-Link→Score→Ready for Review) run inside the existing
+`workers/worker.mjs` (GH Actions cron, D-189) via a new `generation.advance` job type that
+chases itself through the pipeline — no Supabase Edge Functions and no pg_net are introduced;
+this repo has no cron-to-Edge-Function mechanism today, and Brief/Outline/Draft already have a
+working Node-side Anthropic caller (`workers/llm.mjs`, D-190) while Score reuses
+`content-seo.mjs`'s pure `scoreArticle` directly. Stage failures classify as transient (Retry
+helps: timeouts, 5xx, 429) or permanent (Retry won't help: 401/403/400 — "check API key
+configuration" instead), and retries are manual-only via `retry_generation_stage`, guarded by a
+partial unique index against duplicate concurrent retries. Content Score Engine factor
+extensions, Auto-Rewrite Loop, Sitemap-Aware Internal Linking, Deep Research/Citations, and
+Media Auto-Attach are explicitly out of scope — separate future specs (see the design doc).
+
 ---
 
 *AiMindShare.com · Decisions Log v1.0 · D-001…D-085 recorded (D-008 superseded by D-014; M09 added
@@ -1552,6 +1569,7 @@ Funnel Studio + Operations Workspace depth + AI Optimization advisories, migrati
 D-182…D-185 (M29 Affiliate Hub Phase 1a + the Funnels↔Affiliate-Hub bridge, migration `0037_m29_affiliate_hub.sql`)
 then D-186 (M20 AI Funnel Studio Phase 1: real Anthropic provider layer, migration `0038_m20_funnels_v3d.sql`)
 then D-187 (M20 AI Funnel Studio Phase 2: prompt-first hero redesign, frontend-only, no migration) then
-D-188 (site-wide: "mockup mode" banner/pill hidden from view in every module, frontend-only, no migration),
+D-188 (site-wide: "mockup mode" banner/pill hidden from view in every module, frontend-only, no migration)
+then D-193 (M22 Generation Studio core pipeline, migration 0040_m22_generation_studio.sql),
 5 OPEN. Append-only.
 LOCKED entries bind Claude Code; OPEN entries are human calls to be flagged, not resolved, in build sessions.*
