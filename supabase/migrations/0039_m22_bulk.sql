@@ -177,6 +177,11 @@ alter table public.content_queue add column if not exists variables    jsonb not
 create index if not exists content_queue_batch_idx on public.content_queue (batch_job_id, status);
 
 -- ── Part D — batch RPCs (D-192) ─────────────────────────────────────────────────
+-- Supports the per-topic duplicate-keyword lookup commit_batch_job does below
+-- (filtered scan on site_id + lower(trim(keyword)) without these would be a seq scan).
+create index if not exists blog_articles_site_keyword_idx on public.blog_articles (site_id, lower(trim(keyword)));
+create index if not exists content_queue_site_keyword_idx on public.content_queue (site_id, lower(trim(keyword)));
+
 create or replace function public.create_batch_job(
   p_ws uuid, p_site uuid, p_name text, p_topic_source text, p_topics jsonb,
   p_template uuid default null, p_model text default 'claude-sonnet-5',
@@ -219,7 +224,7 @@ create or replace function public.generate_batch_preview(p_batch uuid, p_n int d
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare b record; v_topic jsonb; v_idx int := 0; v_qid uuid; v_ids uuid[] := '{}';
 begin
-  select * into b from public.content_batch_jobs where id = p_batch;
+  select * into b from public.content_batch_jobs where id = p_batch for update;
   if not found then raise exception 'batch job not found'; end if;
   if not public.has_role(b.workspace_id,'staff') then raise exception 'forbidden: staff+ required'; end if;
   if b.status <> 'draft' then raise exception 'preview only allowed from draft status'; end if;
@@ -246,9 +251,9 @@ grant execute on function public.generate_batch_preview(uuid,int) to authenticat
 
 create or replace function public.commit_batch_job(p_batch uuid)
 returns jsonb language plpgsql security definer set search_path = public as $$
-declare b record; v_topic jsonb; v_kw text; v_inserted int := 0; v_flagged int := 0;
+declare b record; v_topic jsonb; v_kw text; v_qid uuid; v_inserted int := 0; v_flagged int := 0;
 begin
-  select * into b from public.content_batch_jobs where id = p_batch;
+  select * into b from public.content_batch_jobs where id = p_batch for update;
   if not found then raise exception 'batch job not found'; end if;
   if not public.has_role(b.workspace_id,'staff') then raise exception 'forbidden: staff+ required'; end if;
   if b.status not in ('draft','previewing') then raise exception 'batch job already committed'; end if;
@@ -261,11 +266,17 @@ begin
       (workspace_id, site_id, keyword, status, source, batch_job_id, template_id, variables)
     values
       (b.workspace_id, b.site_id, v_topic->>'keyword', 'queued', 'bulk-' || b.topic_source,
-       b.id, b.template_id, coalesce(v_topic->'variables','{}'::jsonb));
+       b.id, b.template_id, coalesce(v_topic->'variables','{}'::jsonb))
+    returning id into v_qid;
     v_inserted := v_inserted + 1;
 
+    -- Duplicate check covers ALL other content_queue rows for the site regardless of
+    -- batch (including earlier rows from THIS batch, fixing the same-batch dedup gap)
+    -- but excludes the row just inserted above by id, not by batch_job_id — matching
+    -- on keyword alone (without the id<>v_qid exclusion) would make every row match
+    -- itself and flag 100% of commits as duplicates every time.
     if exists (select 1 from public.blog_articles where site_id = b.site_id and lower(trim(keyword)) = v_kw)
-       or exists (select 1 from public.content_queue where site_id = b.site_id and batch_job_id is distinct from b.id and lower(trim(keyword)) = v_kw)
+       or exists (select 1 from public.content_queue where site_id = b.site_id and id <> v_qid and lower(trim(keyword)) = v_kw)
     then
       v_flagged := v_flagged + 1;
     end if;
@@ -293,7 +304,8 @@ begin
      order by ba.created_at asc
   loop
     v_day := v_idx / greatest(p_per_day,1);
-    v_slot_time := p_start + (v_day || ' days')::interval + ((v_idx % greatest(p_per_day,1)) || ' hours')::interval;
+    v_slot_time := p_start + (v_day || ' days')::interval
+      + (((v_idx % greatest(p_per_day,1)) * (24.0 / greatest(p_per_day,1))) || ' hours')::interval;
     update public.blog_articles set status = 'scheduled', scheduled_at = v_slot_time where id = a.id;
     v_idx := v_idx + 1; v_count := v_count + 1;
   end loop;

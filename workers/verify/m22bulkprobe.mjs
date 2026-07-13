@@ -230,6 +230,39 @@ async function main() {
   const dupCommit = (await pg.query(`select public.commit_batch_job($1) as c`, [dupBatch])).rows[0].c;
   assert(dupCommit.duplicate_flagged === 1, "commit_batch_job flags an exact-keyword duplicate against existing blog_articles");
 
+  // regression (fix #2): same-batch duplicate keywords must now be flagged too. The
+  // duplicate check used to exclude `batch_job_id is distinct from b.id`, which
+  // skipped every row from the CURRENT batch, so two identical topics in one messy
+  // CSV upload both sailed through unflagged. The fix widens the check to cover all
+  // OTHER content_queue rows for the site (any batch, including this one), excluded
+  // by row id rather than batch id so a row never matches itself.
+  const dupBatch2 = (await pg.query(
+    `select public.create_batch_job($1,$2,$3,$4,$5) as id`,
+    ['a0000000-0000-0000-0000-000000000001','a0000000-0000-0000-0000-000000000002','Same-batch dup test','manual',
+     JSON.stringify([{ keyword: "dup test" }, { keyword: "dup test" }, { keyword: "DUP Test " }])]
+  )).rows[0].id;
+  const dupCommit2 = (await pg.query(`select public.commit_batch_job($1) as c`, [dupBatch2])).rows[0].c;
+  assert(
+    dupCommit2.duplicate_flagged >= 2,
+    "commit_batch_job flags same-batch duplicate keywords (2nd 'dup test' + 'DUP Test ' variant against the 1st), not just cross-batch ones"
+  );
+
+  // regression (fix #1): generate_batch_preview / commit_batch_job now SELECT their
+  // content_batch_jobs row FOR UPDATE, closing a race where two concurrent calls on
+  // the same batch could both pass the status check and both run their full side
+  // effects (double preview generation/token spend, double-committed queue rows).
+  // PGlite here is a single, sequential connection with no second session to
+  // actually race against, so a literal concurrency test wouldn't prove anything —
+  // instead this confirms the row lock is present in the DEPLOYED function body
+  // (via pg_get_functiondef, not just grepping the migration source text).
+  for (const fn of ["generate_batch_preview(uuid,int)", "commit_batch_job(uuid)"]) {
+    const def = (await pg.query(`select pg_get_functiondef($1::regprocedure) as d`, [fn])).rows[0].d;
+    assert(
+      /for update/i.test(def),
+      `${fn} selects its content_batch_jobs row "for update" (row lock against concurrent double-processing)`
+    );
+  }
+
   // schedule spread + rollback — mark the queue rows' articles in_review first (mimics
   // what handleBlogGenerate would have done after generation completed). The plan's
   // literal snippet embedded a bare `insert ... returning id` as a scalar subquery in
