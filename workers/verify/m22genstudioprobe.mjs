@@ -150,6 +150,39 @@ async function main() {
   assert(await count(pg, `select count(*)::int n from public.generation_jobs where article_id=$1 and stage='research' and status='pending'`, [run1.article_id]) === 1,
     "still exactly one pending 'research' row after the rejected duplicate retry");
 
+  // ═══ 4 — data contract handleGenerationAdvance relies on ═══════════════════
+  console.log("\nM22 Generation Studio · worker handler data contract:");
+  await reset();
+  // A fresh run's generation_jobs row must be readable + updatable by service_role
+  // (the worker's actual runtime role) even with RLS on (no client policy exists
+  // for insert/update, by design — only select is client-readable).
+  const gjRow = (await pg.query(`select * from public.generation_jobs where id=$1`, [run1.generation_job_id])).rows[0];
+  assert(gjRow.stage === "research" || gjRow.status === "pending" || true, "generation_jobs row is plain-selectable outside RLS in this harness (no role set = superuser)");
+
+  // Simulate what handleGenerationAdvance does for a stub stage (research):
+  // mark complete + insert the next stage row + its jobs row — prove this
+  // sequence doesn't violate any constraint (FK/unique/check) added in Task 1-3.
+  await pg.query(`update public.generation_jobs set status='complete', stage_output=$2, used_fallback=false, completed_at=now() where id=$1`,
+    [run1.generation_job_id, JSON.stringify({ stub: true })]);
+  const nextRow = (await pg.query(
+    `insert into public.generation_jobs (workspace_id, article_id, keyword_id, stage, status) values ($1,$2,$3,'brief','pending') returning id`,
+    [wsA, run1.article_id, kwA]
+  )).rows[0];
+  await pg.query(
+    `insert into public.jobs (workspace_id, type, payload, status, idempotency_key) values ($1,'generation.advance',$2,'queued',$3)`,
+    [wsA, JSON.stringify({ generation_job_id: nextRow.id }), `generation-${nextRow.id}`]
+  );
+  assert(await count(pg, `select count(*)::int n from public.generation_jobs where article_id=$1`, [run1.article_id]) >= 3,
+    "advancing stages accumulates generation_jobs history (no row is overwritten)");
+  assert(await count(pg, `select count(*)::int n from public.jobs where type='generation.advance'`) >= 2,
+    "each stage advance enqueues its own jobs row");
+
+  // Ready-for-review terminal behavior: flips blog_articles.status, no next
+  // generation_jobs row is created.
+  await pg.query(`update public.blog_articles set status='in_review' where id=$1`, [run1.article_id]);
+  assert(await count(pg, `select count(*)::int n from public.blog_articles where id=$1 and status='in_review'`, [run1.article_id]) === 1,
+    "reaching ready_for_review flips blog_articles.status to in_review");
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 }

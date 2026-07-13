@@ -20,6 +20,16 @@ import {
   score_article, suggest_internal_links, build_schema,
   generate_article_with_ai, decidePublishStep,
 } from "../frontend/js/blog-pipeline.mjs";
+// M22 Generation Studio · the interactive keyword->article pipeline (Task 5).
+// STAGE_ORDER/nextStage/classifyLlmError + the Brief/Outline generators stay
+// pure (no DOM/network) in generation-studio-pipeline.mjs; scoreArticle is
+// content-seo.mjs's pure on-page rubric (already Node-importable, shared with
+// the editor's live SEO sidebar).
+import {
+  STAGE_ORDER, nextStage, classifyLlmError,
+  generate_brief_with_ai, generate_outline_with_ai,
+} from "../frontend/js/generation-studio-pipeline.mjs";
+import { scoreArticle } from "../frontend/js/content-seo.mjs";
 
 const URL = process.env.SUPABASE_URL;
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -950,6 +960,174 @@ async function handleBlogGenerate(job) {
   }
 }
 
+// M22 Generation Studio · generation.advance — process ONE stage of an
+// interactive keyword->article run and, on success, enqueue the next stage
+// itself (chases through all 7 stages across ticks, no browser involvement —
+// see docs/superpowers/specs/2026-07-13-m22-generation-studio-design.md).
+// Brief/Outline/Draft reuse callAnthropicForArticle; Score reuses
+// content-seo.mjs's scoreArticle directly (pure, already Node-importable).
+// A stage failure (transient/permanent, classified by classifyLlmError) is
+// recorded on the generation_jobs row WITHOUT rethrowing — Generation Studio
+// retries are manual-only (the Retry button calls retry_generation_stage),
+// so the outer jobs-layer backoff/retry must never kick in here.
+const GENSTUDIO_MODEL_BRIEF_OUTLINE = "claude-3-5-haiku-20241022";
+const GENSTUDIO_MODEL_DRAFT = "claude-sonnet-5";
+
+// Rough tokens-per-call estimate for the pre-flight quota gate, mirroring
+// handleBlogGenerate's `Math.round(targetWords * 2.2)` convention but scaled
+// down for the much shorter Brief/Outline prompts.
+const GENSTUDIO_ESTIMATED_TOKENS = { brief: 300, outline: 300, draft: Math.round(1200 * 2.2) };
+
+async function runGenerationStage(stage, ctx) {
+  const { ws, article, briefText } = ctx;
+  const callLlm = (model) => (sys, usr) => callAnthropicForArticle(db, ws, sys, usr, model);
+
+  if (stage === "research" || stage === "auto_link") {
+    return { kind: "ok", stage_output: { stub: true }, used_fallback: false };
+  }
+
+  // Pre-flight ai_tokens quota gate (same "automatic fallback, never a hard
+  // block" semantics as handleBlogGenerate/D-186): a workspace already over
+  // its ceiling gets the deterministic fallback for this stage instead of an
+  // LLM call it can't afford — this is NOT a failure, so no error_type here.
+  let overQuota = false;
+  if (GENSTUDIO_ESTIMATED_TOKENS[stage]) {
+    const { data: gate } = await db.rpc("meter_check", { p_workspace: ws, p_kind: "ai_tokens", p_qty: GENSTUDIO_ESTIMATED_TOKENS[stage] });
+    overQuota = gate?.over === true;
+  }
+
+  if (stage === "brief") {
+    if (overQuota) return { kind: "ok", stage_output: { text: "(no brief — quota exceeded)" }, used_fallback: true };
+    const result = await generate_brief_with_ai({ keyword: article.keyword }, callLlm(GENSTUDIO_MODEL_BRIEF_OUTLINE));
+    if (result.kind === "text") {
+      await db.rpc("meter_increment", { p_workspace: ws, p_kind: "ai_tokens", p_qty: result.tokensUsed, p_source: "m22-generation-studio" });
+      return { kind: "ok", stage_output: { text: result.text }, used_fallback: false };
+    }
+    const errType = classifyLlmError(result.reason, result.status);
+    if (errType === null) return { kind: "ok", stage_output: { text: "(no brief — AI not configured)" }, used_fallback: true };
+    return { kind: "failed", error: `brief generation: ${result.reason}`, error_type: errType };
+  }
+
+  if (stage === "outline") {
+    if (overQuota) return { kind: "ok", stage_output: { text: "(no outline — quota exceeded)" }, used_fallback: true };
+    const result = await generate_outline_with_ai({ keyword: article.keyword, briefText }, callLlm(GENSTUDIO_MODEL_BRIEF_OUTLINE));
+    if (result.kind === "text") {
+      await db.rpc("meter_increment", { p_workspace: ws, p_kind: "ai_tokens", p_qty: result.tokensUsed, p_source: "m22-generation-studio" });
+      return { kind: "ok", stage_output: { text: result.text }, used_fallback: false };
+    }
+    const errType = classifyLlmError(result.reason, result.status);
+    if (errType === null) return { kind: "ok", stage_output: { text: "(no outline — AI not configured)" }, used_fallback: true };
+    return { kind: "failed", error: `outline generation: ${result.reason}`, error_type: errType };
+  }
+
+  if (stage === "draft") {
+    const cluster = compute_topic_cluster(article.keyword, article.site_id);
+    const brief = build_serp_brief(article.keyword, cluster);
+    if (overQuota) {
+      const html = build_article_html(brief, cluster);
+      await db.from("blog_articles").update({ content_html: html, generation_source: "deterministic" }).eq("id", article.id);
+      return { kind: "ok", stage_output: { word_count: html.split(/\s+/).length }, used_fallback: true };
+    }
+    const aiResult = await generate_article_with_ai(
+      { keyword: article.keyword, cluster, brief, targetWordCount: 1200, brandVoice: "" },
+      callLlm(GENSTUDIO_MODEL_DRAFT));
+    if (aiResult.kind === "html") {
+      await db.from("blog_articles").update({
+        content_html: aiResult.content_html, generation_source: "llm",
+        llm_model: aiResult.model, tokens_used: aiResult.tokensUsed,
+      }).eq("id", article.id);
+      await db.rpc("meter_increment", { p_workspace: ws, p_kind: "ai_tokens", p_qty: aiResult.tokensUsed, p_source: "m22-generation-studio" });
+      return { kind: "ok", stage_output: { word_count: aiResult.content_html.split(/\s+/).length }, used_fallback: false };
+    }
+    const errType = classifyLlmError(aiResult.reason, aiResult.status);
+    if (errType === null) {
+      const html = build_article_html(brief, cluster);
+      await db.from("blog_articles").update({ content_html: html, generation_source: "deterministic" }).eq("id", article.id);
+      return { kind: "ok", stage_output: { word_count: html.split(/\s+/).length }, used_fallback: true };
+    }
+    return { kind: "failed", error: `draft generation: ${aiResult.reason}`, error_type: errType };
+  }
+
+  if (stage === "score") {
+    const { data: full } = await db.from("blog_articles")
+      .select("content_html, title, keyword, meta_title, meta_desc").eq("id", article.id).maybeSingle();
+    const scored = scoreArticle({
+      html: full?.content_html || "", title: full?.title || "", keyword: full?.keyword || "",
+      metaTitle: full?.meta_title || "", metaDesc: full?.meta_desc || "", targetWords: 1200,
+    });
+    await db.from("content_scores").insert({
+      article_id: article.id, score: scored.score, factor_breakdown: scored,
+    });
+    await db.from("blog_articles").update({ seo_score: scored.score, readability_score: scored.readability, word_count: scored.wordCount }).eq("id", article.id);
+    return { kind: "ok", stage_output: { score: scored.score }, used_fallback: false };
+  }
+
+  throw new Error(`generation.advance: unknown stage '${stage}'`);
+}
+
+async function handleGenerationAdvance(job) {
+  const genJobId = job.payload?.generation_job_id;
+  if (!genJobId) throw new Error("generation.advance: missing generation_job_id");
+
+  const { data: gj, error: gjErr } = await db.from("generation_jobs").select("*").eq("id", genJobId).maybeSingle();
+  if (gjErr) throw new Error(`generation.advance read: ${gjErr.message}`);
+  if (!gj || gj.status !== "pending") return { generation_job_id: genJobId, skipped: gj ? gj.status : "row_gone" };
+
+  await db.from("generation_jobs").update({ status: "running", started_at: new Date().toISOString() }).eq("id", genJobId);
+
+  const { data: article } = await db.from("blog_articles").select("id, workspace_id, site_id, keyword").eq("id", gj.article_id).maybeSingle();
+  if (!article) throw new Error("generation.advance: article not found");
+
+  let briefText = null;
+  if (gj.stage === "outline") {
+    const { data: briefRow } = await db.from("generation_jobs")
+      .select("stage_output").eq("article_id", gj.article_id).eq("stage", "brief").eq("status", "complete")
+      .order("completed_at", { ascending: false }).limit(1).maybeSingle();
+    briefText = briefRow?.stage_output?.text || "";
+  }
+
+  let outcome;
+  try {
+    outcome = await runGenerationStage(gj.stage, { ws: gj.workspace_id, article, briefText });
+  } catch (e) {
+    outcome = { kind: "failed", error: String(e?.message || e).slice(0, 500), error_type: "transient" };
+  }
+
+  if (outcome.kind === "failed") {
+    await db.from("generation_jobs").update({ status: "failed", error: outcome.error, error_type: outcome.error_type }).eq("id", genJobId);
+    return { generation_job_id: genJobId, stage: gj.stage, outcome: "failed", error_type: outcome.error_type };
+  }
+
+  await db.from("generation_jobs").update({
+    status: "complete", stage_output: outcome.stage_output, used_fallback: outcome.used_fallback,
+    completed_at: new Date().toISOString(),
+  }).eq("id", genJobId);
+
+  if (outcome.used_fallback) {
+    await db.from("blog_articles").update({ used_fallback: true }).eq("id", gj.article_id);
+  }
+
+  if (gj.stage === "ready_for_review") {
+    await db.from("blog_articles").update({ status: "in_review" }).eq("id", gj.article_id);
+    return { generation_job_id: genJobId, stage: gj.stage, outcome: "pipeline_complete" };
+  }
+
+  const next = nextStage(gj.stage);
+  const { data: newRow, error: insErr } = await db.from("generation_jobs").insert({
+    workspace_id: gj.workspace_id, article_id: gj.article_id, keyword_id: gj.keyword_id,
+    stage: next, status: "pending",
+  }).select("id").single();
+  if (insErr) throw new Error(`generation.advance enqueue next stage: ${insErr.message}`);
+
+  await db.from("jobs").insert({
+    workspace_id: gj.workspace_id, type: "generation.advance",
+    payload: { generation_job_id: newRow.id }, status: "queued",
+    idempotency_key: `generation-${newRow.id}`,
+  });
+
+  return { generation_job_id: genJobId, stage: gj.stage, outcome: "advanced", next_stage: next };
+}
+
 // Route a job by type.
 async function run(job) {
   switch (job.type) {
@@ -995,6 +1173,8 @@ async function run(job) {
       return await seoAuditCrawl(job);
     case "blog.generate":
       return await handleBlogGenerate(job);
+    case "generation.advance":
+      return await handleGenerationAdvance(job);
     default:
       throw new Error(`unknown job type: ${job.type}`);
   }
