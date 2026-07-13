@@ -49,7 +49,7 @@ export async function callAnthropicForArticle(db, workspaceId, systemPrompt, use
       }),
       signal: controller.signal,
     });
-    if (!resp.ok) return { kind: "unavailable", reason: "provider_error" };
+    if (!resp.ok) return { kind: "unavailable", reason: "provider_error", status: resp.status };
 
     const body = await resp.json().catch(() => null);
     const text = body?.content?.[0]?.text;
