@@ -41,6 +41,13 @@ import { sanitizeHtml } from "./content-editor.mjs";
   const fmtDate = (d) => { if (!d) return "—"; try { return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); } catch { return String(d); } };
   const relTime = (d) => { if (!d) return ""; const s = (Date.now() - new Date(d).getTime()) / 1000; if (s < 60) return "just now"; if (s < 3600) return Math.floor(s / 60) + "m ago"; if (s < 86400) return Math.floor(s / 3600) + "h ago"; return Math.floor(s / 86400) + "d ago"; };
   const STATUS_LABEL = { draft: "Draft", in_review: "In review", scheduled: "Scheduled", published: "Published", archived: "Archived" };
+  // Generation Studio pipeline stages (D-189+, migration 0040) — shared between the
+  // keyword-picker's mock-mode seeding below and the Task 7 tracker view (viewStudioTracker).
+  const STAGE_LABEL = {
+    research: "Research", brief: "Brief", outline: "Outline", draft: "Draft",
+    auto_link: "Auto-Link", score: "Score", ready_for_review: "Ready for Review",
+  };
+  const STAGE_ORDER_UI = ["research", "brief", "outline", "draft", "auto_link", "score", "ready_for_review"];
 
   function toast(msg, kind) {
     const wrap = $("#toasts"); if (!wrap) return;
@@ -80,6 +87,13 @@ import { sanitizeHtml } from "./content-editor.mjs";
     { id: "c-1", name: "Guides", slug: "guides", site_id: "site-acme" },
     { id: "c-2", name: "Product", slug: "product", site_id: "site-acme" },
     { id: "c-3", name: "Wellness", slug: "wellness", site_id: "site-acme" },
+  ];
+  // Generation Studio keyword-picker mock seed (Task 6) — stands in for keywords already
+  // researched by the M21 SEO Engine, awaiting a generation run.
+  const MOCK_KEYWORDS = [
+    { id: "kw-1", keyword: "best dua for travel", volume: 480, difficulty: 22, intent: "informational" },
+    { id: "kw-2", keyword: "islamic wedding traditions", volume: 210, difficulty: 35, intent: "informational" },
+    { id: "kw-3", keyword: "how to perform wudu", volume: 890, difficulty: 18, intent: "informational" },
   ];
   const BODY_1 = `<p>Building a consistent <a href="/blog/content-calendar">content calendar</a> is the single highest-leverage habit for organic growth. In this guide we walk through a repeatable weekly cadence that keeps your blog fresh without burning out your team.</p>
 <h2>Why cadence beats intensity</h2><p>Search engines reward freshness and depth over time. A steady two-posts-a-week rhythm compounds far faster than an occasional burst. We recommend blocking the same two mornings each week for drafting.</p>
@@ -146,10 +160,14 @@ import { sanitizeHtml } from "./content-editor.mjs";
     bulkDraftBatchId: null,     // id of the in-progress (draft/previewing) batch job the wizard is building, or null
     batchJobs: [], templates: [], // live-mode content_batch_jobs/content_templates rows (populated by loadLive())
     bulkItemsCache: {},         // live-mode content_queue rows for an expanded batch, keyed by batch id (populated by fetchBatchItems())
+    keywords: [],               // researched keywords available for Generation Studio (populated by loadMock()/loadLive())
+    studioJobs: [],             // live-mode generation_jobs rows for the article currently open in the Studio tracker
+    studioArticleId: null,      // article id when on the #/content/studio/<id> tracker route, else null
   };
 
   function loadMock() {
     state.articles = seedArticles(); state.authors = AUTHORS.slice(); state.cats = CATS.slice();
+    state.keywords = MOCK_KEYWORDS.slice();
   }
 
   // ── live data layer (best-effort; falls back to mock on any failure) ────────
@@ -157,15 +175,17 @@ import { sanitizeHtml } from "./content-editor.mjs";
     const c = client();
     const { data: ws } = await c.from("workspaces").select("id").order("created_at").limit(1);
     const wsId = ws?.[0]?.id; if (!wsId) throw new Error("no workspace");
-    const [{ data: arts }, { data: cats }, { data: authors }, { data: batches }, { data: templates }] = await Promise.all([
+    const [{ data: arts }, { data: cats }, { data: authors }, { data: batches }, { data: templates }, { data: keywords }] = await Promise.all([
       c.from("blog_articles").select("*").eq("workspace_id", wsId).order("updated_at", { ascending: false }).limit(500),
       c.from("article_categories").select("*").eq("workspace_id", wsId).order("name"),
       c.from("article_authors").select("*").eq("workspace_id", wsId).order("name"),
       c.from("content_batch_jobs").select("*").eq("workspace_id", wsId).order("created_at", { ascending: false }).limit(200),
       c.from("content_templates").select("*").eq("workspace_id", wsId).order("name"),
+      c.from("keywords").select("*").eq("workspace_id", wsId).order("created_at", { ascending: false }).limit(200),
     ]);
     state.articles = arts || []; state.cats = cats || []; state.authors = authors || [];
     state.batchJobs = batches || []; state.templates = templates || [];
+    state.keywords = keywords || [];
   }
   // currentWorkspaceId — same lookup loadLive() does, exposed standalone because the
   // Bulk wizard's RPCs (create_batch_job's has_role(p_ws,...) check) need a real
@@ -225,6 +245,7 @@ import { sanitizeHtml } from "./content-editor.mjs";
         ${railItem("queue", "Review queue", "content/review", state.route === "review")}
         ${railItem("tag", "Categories &amp; authors", "content/taxonomy", state.route === "taxonomy")}
         ${railItem("sparkle", "Bulk create", "content/bulk", state.route === "bulk")}
+        ${railItem("star", "Generation Studio", "content/studio", state.route === "studio")}
       </div>
       <div class="nav-group">
         <div class="nav-group-label">Settings</div>
@@ -958,6 +979,81 @@ import { sanitizeHtml } from "./content-editor.mjs";
   }
 
   // ════════════════════════════════════════════════════════════════════════════
+  //  ROUTE: /content/studio — Generation Studio (keyword picker + run tracker)
+  // ════════════════════════════════════════════════════════════════════════════
+  // viewStudio() — the landing/keyword-picker view (#/content/studio). Lists researched
+  // keywords (M21 SEO Engine's `keywords` table) that don't already have an article
+  // queued, same connected()-gated mock fallback shape as viewBulk() uses for
+  // batches/templates above. When state.studioArticleId is set (route
+  // #/content/studio/<id>) it defers entirely to the tracker view instead.
+  function viewStudio() {
+    if (state.studioArticleId) return viewStudioTracker(state.studioArticleId);
+
+    const queuedKeywords = new Set((state.articles || []).map((a) => a.keyword).filter(Boolean));
+    const available = (state.keywords || []).filter((k) => !queuedKeywords.has(k.keyword));
+
+    const rows = available.map((k) => `
+      <tr>
+        <td>${esc(k.keyword)}</td>
+        <td>${k.volume ?? "—"}</td>
+        <td>${k.difficulty ?? "—"}</td>
+        <td>${esc(k.intent || "—")}</td>
+        <td><button class="btn btn-primary btn-sm" data-generate="${esc(k.id)}">Generate</button></td>
+      </tr>`).join("");
+
+    return pageHead("Generation Studio", "Generation Studio", "Pick a researched keyword to run the full generation pipeline.", "")
+      + (available.length === 0
+          ? `<div class="card panel"><div class="empty-state"><h3>No un-queued keywords available</h3><p>Research more in the SEO Engine first.</p></div></div>`
+          : `<table class="tbl"><thead><tr><th>Keyword</th><th>Volume</th><th>Difficulty</th><th>Intent</th><th></th></tr></thead><tbody>${rows}</tbody></table>`);
+  }
+
+  function wireStudio() {
+    if (state.studioArticleId) return wireStudioTracker(state.studioArticleId);
+    document.querySelectorAll("[data-generate]").forEach((btn) => {
+      btn.onclick = async () => {
+        const kw = (state.keywords || []).find((k) => k.id === btn.getAttribute("data-generate"));
+        if (!kw) return;
+        btn.disabled = true; btn.textContent = "Starting…";
+        if (connected()) {
+          try {
+            const wsId = await currentWorkspaceId();
+            const { data, error } = await client().rpc("start_generation_run", {
+              p_ws: wsId, p_site: SITE.id, p_keyword_id: kw.id,
+            });
+            if (error) throw error;
+            const row = Array.isArray(data) ? data[0] : data;
+            location.hash = `#/content/studio/${row.article_id}`;
+          } catch (e) {
+            toast("Could not start generation: " + (e.message || e), "danger");
+            btn.disabled = false; btn.textContent = "Generate";
+          }
+        } else {
+          // Mock mode: no live pipeline to poll, so seed a fully-complete run
+          // (matches how MOCK_BATCHES simulates instant completion elsewhere).
+          const articleId = "a-studio-" + Math.random().toString(36).slice(2, 8);
+          state.articles.push({ id: articleId, site_id: SITE.id, title: kw.keyword, slug: slugify(kw.keyword),
+            keyword: kw.keyword, content_html: "", status: "in_review", word_count: 0, seo_score: 0,
+            readability_score: 0, tags: [], schema: {}, updated_at: new Date().toISOString() });
+          state.studioJobs = STAGE_ORDER_UI.map((stage) => ({
+            id: "gj-" + stage, article_id: articleId, stage, status: "complete", error: null, error_type: null,
+          }));
+          toast("Generated (preview)");
+          location.hash = `#/content/studio/${articleId}`;
+        }
+      };
+    });
+  }
+
+  // viewStudioTracker()/wireStudioTracker() — placeholder stubs. The real per-stage
+  // progress tracker (#/content/studio/<article_id>) is Task 7's job; these exist so
+  // navigating here after a Generate click doesn't throw a ReferenceError. Task 7
+  // replaces these two functions with the full implementation (does not duplicate them).
+  function viewStudioTracker(articleId) {
+    return `<div class="studio-view"><p class="muted">Loading tracker for ${esc(articleId)}… (Task 7 not yet implemented)</p></div>`;
+  }
+  function wireStudioTracker(articleId) { /* Task 7 will wire this */ }
+
+  // ════════════════════════════════════════════════════════════════════════════
   //  ROUTE: /settings/content
   // ════════════════════════════════════════════════════════════════════════════
   function viewSettings() {
@@ -1013,6 +1109,7 @@ import { sanitizeHtml } from "./content-editor.mjs";
       if (parts[1] === "review") return { route: "review" };
       if (parts[1] === "taxonomy") return { route: "taxonomy" };
       if (parts[1] === "bulk") return { route: "bulk" };
+      if (parts[1] === "studio") return { route: "studio", param: parts[2] || null };
       return { route: "editor", param: parts[1] };
     }
     return { route: "content" };
@@ -1030,6 +1127,7 @@ import { sanitizeHtml } from "./content-editor.mjs";
     } else if (r.route === "review") { state.route = "review"; content = viewReview(); }
     else if (r.route === "taxonomy") { state.route = "taxonomy"; content = viewTaxonomy(); }
     else if (r.route === "bulk") { state.route = "bulk"; content = viewBulk(); }
+    else if (r.route === "studio") { state.route = "studio"; state.studioArticleId = r.param; content = viewStudio(); }
     else if (r.route === "settings") { state.route = "settings"; content = viewSettings(); }
     else { state.route = "content"; content = viewList(); }
 
@@ -1038,6 +1136,7 @@ import { sanitizeHtml } from "./content-editor.mjs";
     if (r.route === "editor") wireEditor();
     else if (r.route === "review") wireReview();
     else if (r.route === "bulk") wireBulk();
+    else if (r.route === "studio") wireStudio();
     else if (r.route === "taxonomy") wireTaxonomy();
     else if (r.route === "settings") wireSettings();
     else wireList();
