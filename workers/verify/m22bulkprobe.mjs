@@ -305,6 +305,30 @@ async function main() {
     "rollback_batch_job leaves the articles as drafts (no hard delete)"
   );
 
+  // ═══ 7 — advance_content_pipeline() drains batch-sourced content_queue rows too ═══
+  const paceBatch = (await pg.query(
+    `select public.create_batch_job($1,$2,$3,$4,$5) as id`,
+    ['a0000000-0000-0000-0000-000000000001','a0000000-0000-0000-0000-000000000002','Pace test','manual',
+     JSON.stringify(Array.from({ length: 15 }, (_, i) => ({ keyword: `pace topic ${i}` })))]
+  )).rows[0].id;
+  await pg.query(`select public.commit_batch_job($1)`, [paceBatch]);
+  const before = (await pg.query(
+    `select count(*)::int as n from public.jobs where type='blog.generate' and payload->>'content_queue_id' in
+       (select id::text from public.content_queue where batch_job_id=$1)`, [paceBatch]
+  )).rows[0].n;
+  assert(before === 0, "no blog.generate jobs enqueued yet for the batch (only commit_batch_job ran)");
+
+  await pg.query(`select public.advance_content_pipeline()`);
+  const afterOne = (await pg.query(
+    `select count(*)::int as n from public.jobs where type='blog.generate' and payload->>'content_queue_id' in
+       (select id::text from public.content_queue where batch_job_id=$1)`, [paceBatch]
+  )).rows[0].n;
+  assert(afterOne > 0 && afterOne <= 10, "advance_content_pipeline enqueues UP TO the per-tick bulk cap (10), not all 15 at once");
+  assert(
+    (await pg.query(`select status from public.content_batch_jobs where id=$1`, [paceBatch])).rows[0].status === 'running',
+    "advance_content_pipeline flips the batch job to status='running' once it starts draining"
+  );
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 }

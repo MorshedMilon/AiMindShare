@@ -338,3 +338,69 @@ begin
 end $$;
 revoke all on function public.rollback_batch_job(uuid) from public;
 grant execute on function public.rollback_batch_job(uuid) to authenticated, service_role;
+
+-- ── Part E — advance_content_pipeline() gains a bulk-pacing pass (D-192) ────────
+-- create or replace over 0027's version: the existing per-schedule loop is UNCHANGED
+-- (editorial content_queue rows keep pacing at max_posts_per_run per their cadence).
+-- A second loop is appended that drains batch_job_id-tagged rows at a fixed per-tick
+-- cap, independent of the owning site's schedule — this is the "separate lane" bulk
+-- jobs need (D-192) without a new usage_events counter table.
+create or replace function public.advance_content_pipeline()
+returns int language plpgsql security definer set search_path = public as $$
+declare s record; q record; b record; n int := 0; v_cadence interval;
+  v_bulk_cap constant int := 10;   -- per-tick cap per active batch job (mirrors D-186's hardcoded 20/hour pattern)
+begin
+  for s in select * from public.content_schedules where active and site_id is not null loop
+    v_cadence := case s.frequency
+                   when 'daily'  then interval '1 day'
+                   when 'weekly' then interval '7 days'
+                   else interval '1 day'
+                 end;
+    if s.last_run_at is not null and s.last_run_at > now() - v_cadence then
+      continue;
+    end if;
+
+    for q in
+      select id from public.content_queue
+       where site_id = s.site_id and workspace_id = s.workspace_id and status = 'queued'
+         and batch_job_id is null   -- editorial-only lane; batch rows are paced below
+       order by priority desc, created_at asc
+       limit s.max_posts_per_run
+    loop
+      insert into public.jobs (workspace_id, type, payload, status, idempotency_key)
+      values (s.workspace_id, 'blog.generate',
+              jsonb_build_object('content_queue_id', q.id, 'workspace_id', s.workspace_id),
+              'queued', 'bloggen-' || q.id)
+      on conflict (workspace_id, type, idempotency_key) where idempotency_key is not null do nothing;
+      if found then n := n + 1; end if;
+    end loop;
+
+    update public.content_schedules set last_run_at = now() where id = s.id;
+  end loop;
+
+  -- Bulk lane: every active batch job (queued or already running) drains up to
+  -- v_bulk_cap of its own still-queued items per tick, regardless of that site's
+  -- editorial max_posts_per_run.
+  for b in select * from public.content_batch_jobs where status in ('queued','running') loop
+    for q in
+      select id from public.content_queue
+       where batch_job_id = b.id and status = 'queued'
+       order by created_at asc
+       limit v_bulk_cap
+    loop
+      insert into public.jobs (workspace_id, type, payload, status, idempotency_key)
+      values (b.workspace_id, 'blog.generate',
+              jsonb_build_object('content_queue_id', q.id, 'workspace_id', b.workspace_id),
+              'queued', 'bloggen-' || q.id)
+      on conflict (workspace_id, type, idempotency_key) where idempotency_key is not null do nothing;
+      if found then n := n + 1; end if;
+    end loop;
+    if b.status = 'queued' then
+      update public.content_batch_jobs set status = 'running' where id = b.id;
+    end if;
+  end loop;
+
+  return n;
+end $$;
+revoke all on function public.advance_content_pipeline() from public;
+grant execute on function public.advance_content_pipeline() to service_role;
