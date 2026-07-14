@@ -142,3 +142,25 @@ export async function generateAiHeroImage(prompt, harness = {}) {
 
   return { url: body.url, photographer: null, attributionHtml: null, source: "sdxl" };
 }
+
+export const PLACEHOLDER_IMAGE = { url: null, photographer: null, attributionHtml: null, source: "placeholder" };
+
+export async function getBlogImage(query, config = {}, harness = {}) {
+  const { tier, provider } = resolveProvider("imageGen", config.userConfig ?? {});
+  if (tier === "paid") {
+    throw new Error(`getBlogImage: paid provider "${provider.name}" is registered but not implemented yet`);
+  }
+
+  const stock = await getStockImage(query, harness);
+  if (stock) return stock;
+
+  const unsplash = await getUnsplashImage(query, harness);
+  if (unsplash) return unsplash;
+
+  if (config.highPriority) {
+    const aiHero = await generateAiHeroImage(query, harness);
+    if (aiHero) return aiHero;
+  }
+
+  return PLACEHOLDER_IMAGE;
+}

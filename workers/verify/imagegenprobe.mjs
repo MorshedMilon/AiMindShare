@@ -3,7 +3,7 @@
 // fakes, dispatched by URL so Pexels/Unsplash/SDXL can be scripted
 // independently within a single getBlogImage call.
 import { PROVIDER_CONFIG, resolveProvider, RateLimiter } from "../config/providers.js";
-import { getStockImage, getUnsplashImage, generateAiHeroImage } from "../providers/imageGen.js";
+import { getStockImage, getUnsplashImage, generateAiHeroImage, getBlogImage, PLACEHOLDER_IMAGE } from "../providers/imageGen.js";
 
 let pass = 0, fail = 0;
 const assert = (c, l) => c
@@ -67,6 +67,7 @@ const UNSPLASH_OK = jsonResponse(200, {
   }],
 });
 const SDXL_OK = jsonResponse(200, { url: "https://sdxl.local/generated/3.png" });
+const SERVER_ERROR = jsonResponse(500, { error: "down" });
 
 console.log("══ workers/config/providers.js — imageGen config reconciled with the new adapter ══");
 
@@ -153,6 +154,42 @@ console.log("\n══ workers/providers/imageGen.js — generateAiHeroImage (SDX
   const h = fakeHarness({}, { sdxlEndpointUrl: "" });
   const result = await generateAiHeroImage("a majestic mountain at sunrise, digital art", h);
   assert(result === null, "no SDXL_ENDPOINT_URL configured: returns null without attempting a fetch");
+}
+
+console.log("\n══ workers/providers/imageGen.js — getBlogImage (fallback chain) ══");
+
+{
+  const h = fakeHarness({ pexels: [PEXELS_OK] });
+  const result = await getBlogImage("mountain sunrise", {}, h);
+  assert(result.source === "pexels", "pexels available: getBlogImage returns the pexels result directly");
+}
+{
+  const h = fakeHarness({ pexels: [PEXELS_EMPTY], unsplash: [UNSPLASH_OK] });
+  const result = await getBlogImage("mountain sunrise", {}, h);
+  assert(result.source === "unsplash", "pexels has no match: falls back to unsplash");
+}
+{
+  const h = fakeHarness({ pexels: [PEXELS_EMPTY], unsplash: [SERVER_ERROR], sdxl: [SDXL_OK] });
+  const result = await getBlogImage("mountain sunrise", { highPriority: true }, h);
+  assert(result.source === "sdxl", "pexels+unsplash both fail, highPriority=true: falls to sdxl");
+}
+{
+  const h = fakeHarness({ pexels: [PEXELS_EMPTY], unsplash: [SERVER_ERROR], sdxl: [SDXL_OK] });
+  const result = await getBlogImage("mountain sunrise", { highPriority: false }, h);
+  assert(result === PLACEHOLDER_IMAGE, "pexels+unsplash both fail, highPriority=false: skips sdxl, returns placeholder");
+}
+{
+  const h = fakeHarness({ pexels: [PEXELS_EMPTY], unsplash: [SERVER_ERROR] }, { sdxlEndpointUrl: "" });
+  const result = await getBlogImage("mountain sunrise", { highPriority: true }, h);
+  assert(result === PLACEHOLDER_IMAGE, "all sources unavailable: returns the honest placeholder");
+}
+{
+  let threw = null;
+  try {
+    await getBlogImage("mountain sunrise", { userConfig: { apiKey: "sk-live", provider: "dalle" } }, fakeHarness({}));
+  } catch (e) { threw = e; }
+  assert(threw && /dalle/.test(threw.message) && /not implemented/i.test(threw.message),
+    "BYOK paid tier (dalle) is registered but throws a clear 'not implemented yet' error");
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
