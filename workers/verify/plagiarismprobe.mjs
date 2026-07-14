@@ -26,4 +26,40 @@ console.log("══ workers/providers/plagiarism.js — splitSentences + cosineS
   assert(b < 0.1, "cosineSimilarity of unrelated text is ~0");
 }
 
+console.log("\n══ workers/providers/plagiarism.js — checkOriginality: plagiarismScore ══");
+
+{
+  const corpus = [{ id: "prior-article-1", text: "The quick brown fox jumps over the lazy dog every single morning." }];
+  const result = await checkOriginality(
+    "The quick brown fox jumps over the lazy dog every single morning. This second sentence is completely original content.",
+    { corpus });
+  assert(result.plagiarismScore > 0, "checkOriginality with a matching corpus sentence reports plagiarismScore > 0");
+  assert(result.flaggedSentences.length === 1, "checkOriginality flags exactly the matching sentence");
+  assert(result.flaggedSentences[0].matchedSource === "prior-article-1",
+    "flagged sentence's matchedSource is the corpus entry's id");
+}
+{
+  const result = await checkOriginality("Only one unique sentence here with no match.", { corpus: [{ id: "x", text: "Nothing like this at all." }] });
+  assert(result.plagiarismScore === 0, "checkOriginality with a corpus but no match reports plagiarismScore === 0");
+  assert(result.flaggedSentences.length === 0, "no corpus match means no flagged sentences");
+}
+{
+  const result = await checkOriginality(
+    "This sentence repeats verbatim in this text. Something else entirely different here. This sentence repeats verbatim in this text.");
+  assert(result.plagiarismScore > 0, "checkOriginality with no corpus falls back to internal near-duplicate detection");
+  assert(result.flaggedSentences.some((f) => f.matchedSource === "internal-duplicate"),
+    "internal-duplicate detection tags matchedSource as 'internal-duplicate'");
+}
+{
+  const result = await checkOriginality("Every sentence here is totally unrelated to every other one. Purple elephants dance in the moonlight. Quantum spreadsheets calculate joy.");
+  assert(result.plagiarismScore === 0, "checkOriginality with no corpus and no internal repetition reports plagiarismScore === 0");
+}
+{
+  const result = await checkOriginality("Anything.", { apiKey: "sk-test", provider: "copyleaks" });
+  assert(result.unavailable === true && result.reason === "adapter_not_implemented",
+    "checkOriginality with a selected-but-unimplemented paid provider returns an honest unavailable result, never a throw");
+  assert(result.provider === "copyleaks" && result.plagiarismScore === null && result.aiLikelihoodScore === null,
+    "the unavailable result names the selected provider and reports null scores rather than fake numbers");
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);

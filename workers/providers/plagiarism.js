@@ -45,11 +45,57 @@ export function cosineSimilarity(sentenceA, sentenceB) {
   return dot / (Math.sqrt(magA) * Math.sqrt(magB));
 }
 
-// Placeholder only: plagiarismprobe.mjs imports checkOriginality via a named
-// ESM import (Task 3+ tests use it), and Node throws a hard SyntaxError at
-// link time if a named import has no matching export — this isn't a lazy
-// "unused import" warning, the module fails to load at all without this.
-// Real implementation lands in Task 3; do not call this yet.
-export function checkOriginality() {
-  throw new Error("checkOriginality is not implemented yet (see Task 3)");
+const DEFAULT_SENTENCE_THRESHOLD = 0.5;
+
+function scorePlagiarism(sentences, corpus, sentenceThreshold) {
+  const flagged = [];
+  sentences.forEach((sentence, index) => {
+    let bestScore = 0;
+    let bestSource = null;
+
+    if (corpus && corpus.length > 0) {
+      for (const doc of corpus) {
+        for (const corpusSentence of splitSentences(doc.text)) {
+          const score = cosineSimilarity(sentence, corpusSentence);
+          if (score > bestScore) { bestScore = score; bestSource = doc.id; }
+        }
+      }
+    } else {
+      sentences.forEach((other, otherIndex) => {
+        if (otherIndex === index) return;
+        const score = cosineSimilarity(sentence, other);
+        if (score > bestScore) { bestScore = score; bestSource = "internal-duplicate"; }
+      });
+    }
+
+    if (bestScore >= sentenceThreshold) {
+      flagged.push({ sentence, score: bestScore, matchedSource: bestSource });
+    }
+  });
+
+  const totalWords = sentences.reduce((sum, s) => sum + tokenize(s).length, 0);
+  const flaggedWords = flagged.reduce((sum, f) => sum + tokenize(f.sentence).length, 0);
+  const plagiarismScore = totalWords === 0 ? 0 : Math.round((100 * flaggedWords) / totalWords);
+
+  return { plagiarismScore, flaggedSentences: flagged };
+}
+
+export async function checkOriginality(text, config = {}) {
+  const { tier, provider } = resolveProvider("plagiarism", config);
+
+  if (tier === "paid") {
+    await logProviderUsage("plagiarism", provider.name, { tier, unavailable: true });
+    return {
+      plagiarismScore: null, aiLikelihoodScore: null, flaggedSentences: [],
+      provider: provider.name, unavailable: true, reason: "adapter_not_implemented",
+    };
+  }
+
+  const sentences = splitSentences(text);
+  const sentenceThreshold = config.sentenceThreshold ?? DEFAULT_SENTENCE_THRESHOLD;
+  const { plagiarismScore, flaggedSentences } = scorePlagiarism(sentences, config.corpus, sentenceThreshold);
+
+  await logProviderUsage("plagiarism", provider.name, { tier, plagiarismScore });
+
+  return { plagiarismScore, aiLikelihoodScore: 0, flaggedSentences, provider: provider.name };
 }
