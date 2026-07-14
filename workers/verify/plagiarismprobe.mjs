@@ -102,3 +102,4 @@ console.log("\n══ workers/providers/plagiarism.js — logProviderUsage integ
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
+process.exit(fail ? 1 : 0);
