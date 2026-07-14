@@ -105,6 +105,9 @@ echo; echo "══ +  M22-auto DB: content_schedules + content_queue extension +
 echo; echo "══ +  M22-auto: real LLM adapter (unit, no network) ══"
 ( cd workers && node verify/llmprobe.mjs ) || fails=$((fails+1))
 
+echo; echo "══ +  Provider abstraction layer: PROVIDER_CONFIG + resolveProvider + logProviderUsage + RateLimiter (unit, no network) ══"
+( cd workers && node verify/providersprobe.mjs ) || fails=$((fails+1))
+
 echo; echo "══ +  M22-auto: Bulk Content Creation schema + RLS + RPCs (PGlite) ══"
 ( cd workers && node verify/m22bulkprobe.mjs ) || fails=$((fails+1))
 
