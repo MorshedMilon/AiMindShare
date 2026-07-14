@@ -191,6 +191,18 @@ console.log("\n══ workers/providers/imageGen.js — getBlogImage (fallback c
   assert(threw && /dalle/.test(threw.message) && /not implemented/i.test(threw.message),
     "BYOK paid tier (dalle) is registered but throws a clear 'not implemented yet' error");
 }
+{
+  const h = fakeHarness({ pexels: [PEXELS_OK] });
+  h.limiter.recordCall("pexels");
+  const result = await getBlogImage("mountain sunrise", { pexelsHourlyLimit: 1 }, h);
+  assert(result === PLACEHOLDER_IMAGE, "config.pexelsHourlyLimit overrides the harness default, tripping the limiter as configured");
+}
+{
+  const h = fakeHarness({ pexels: [PEXELS_EMPTY], unsplash: [UNSPLASH_OK] });
+  h.limiter.recordCall("unsplash");
+  const result = await getBlogImage("mountain sunrise", { unsplashHourlyLimit: 1 }, h);
+  assert(result === PLACEHOLDER_IMAGE, "config.unsplashHourlyLimit overrides the harness default, tripping the limiter as configured");
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -151,10 +151,12 @@ export async function getBlogImage(query, config = {}, harness = {}) {
     throw new Error(`getBlogImage: paid provider "${provider.name}" is registered but not implemented yet`);
   }
 
-  const stock = await getStockImage(query, harness);
+  const stock = await getStockImage(query, config.pexelsHourlyLimit != null
+    ? { ...harness, pexelsHourlyLimit: config.pexelsHourlyLimit } : harness);
   if (stock) return stock;
 
-  const unsplash = await getUnsplashImage(query, harness);
+  const unsplash = await getUnsplashImage(query, config.unsplashHourlyLimit != null
+    ? { ...harness, unsplashHourlyLimit: config.unsplashHourlyLimit } : harness);
   if (unsplash) return unsplash;
 
   if (config.highPriority) {
