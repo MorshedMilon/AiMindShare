@@ -95,3 +95,43 @@ export async function logProviderUsage(capability, providerName, meta = {}, logP
   await mkdir(path.dirname(logPath), { recursive: true });
   await writeFile(logPath, JSON.stringify(entries, null, 2));
 }
+
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+
+export class RateLimiter {
+  constructor({ now = () => Date.now() } = {}) {
+    this.counters = new Map();
+    this._now = now;
+  }
+
+  _windows(providerName) {
+    if (!this.counters.has(providerName)) {
+      const now = this._now();
+      this.counters.set(providerName, {
+        hourly: { count: 0, windowStart: now },
+        daily: { count: 0, windowStart: now },
+      });
+    }
+    return this.counters.get(providerName);
+  }
+
+  recordCall(providerName) {
+    const windows = this._windows(providerName);
+    const now = this._now();
+    if (now - windows.hourly.windowStart >= HOUR_MS) windows.hourly = { count: 0, windowStart: now };
+    if (now - windows.daily.windowStart >= DAY_MS) windows.daily = { count: 0, windowStart: now };
+    windows.hourly.count += 1;
+    windows.daily.count += 1;
+  }
+
+  isLimited(providerName, { hourly, daily } = {}) {
+    const windows = this._windows(providerName);
+    const now = this._now();
+    const hourlyCount = now - windows.hourly.windowStart >= HOUR_MS ? 0 : windows.hourly.count;
+    const dailyCount = now - windows.daily.windowStart >= DAY_MS ? 0 : windows.daily.count;
+    if (hourly != null && hourlyCount >= hourly) return true;
+    if (daily != null && dailyCount >= daily) return true;
+    return false;
+  }
+}

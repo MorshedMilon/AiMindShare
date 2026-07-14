@@ -1,7 +1,7 @@
 // providersprobe.mjs — pure unit tests for workers/config/providers.js. No
 // network: PROVIDER_CONFIG's "free" providers are just metadata (env var
 // names), never called here.
-import { PROVIDER_CONFIG, resolveProvider, logProviderUsage } from "../config/providers.js";
+import { PROVIDER_CONFIG, resolveProvider, logProviderUsage, RateLimiter } from "../config/providers.js";
 import { rmSync, existsSync as existsSyncForTest, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -83,6 +83,30 @@ await logProviderUsage("imageGen", "pollinations", {}, TEST_LOG_PATH);
 }
 
 rmSync(TEST_LOG_PATH);
+
+console.log("\n══ workers/config/providers.js — RateLimiter ══");
+
+{
+  let currentTime = 1_700_000_000_000;
+  const limiter = new RateLimiter({ now: () => currentTime });
+
+  assert(!limiter.isLimited("pagespeed", { hourly: 2 }), "isLimited is false before any calls");
+
+  limiter.recordCall("pagespeed");
+  assert(!limiter.isLimited("pagespeed", { hourly: 2 }), "isLimited is false after 1 of 2 allowed calls");
+
+  limiter.recordCall("pagespeed");
+  assert(limiter.isLimited("pagespeed", { hourly: 2 }), "isLimited is true after hitting the hourly cap");
+
+  assert(!limiter.isLimited("brave", { hourly: 2 }), "counters are per-provider — a different provider is unaffected");
+
+  currentTime += 60 * 60 * 1000; // advance exactly one hour
+  assert(!limiter.isLimited("pagespeed", { hourly: 2 }), "isLimited resets to false once the hourly window elapses");
+
+  limiter.recordCall("pagespeed");
+  limiter.recordCall("pagespeed");
+  assert(limiter.isLimited("pagespeed", { daily: 2 }), "the daily counter accumulates across hourly resets");
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
