@@ -113,6 +113,9 @@ export async function getUnsplashImage(query, harness = {}) {
   };
 }
 
+// No fetchWithBackoff/RateLimiter here, unlike getStockImage/getUnsplashImage:
+// this hits an operator-controlled self-hosted endpoint, not a public
+// rate-limited API.
 export async function generateAiHeroImage(prompt, harness = {}) {
   const fetchImpl = harness.fetchImpl ?? fetch;
   const logUsage = harness.logUsage ?? ((providerName) => logProviderUsage("imageGen", providerName));
