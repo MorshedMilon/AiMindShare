@@ -58,6 +58,27 @@ for (const capability of CAPABILITIES) {
   try { resolveProvider("seoAudit", { apiKey: "sk-test" }); } catch { threw = true; }
   assert(threw, "resolveProvider throws when apiKey is given but no paid provider is configured yet");
 }
+{
+  // Simulate a future capability with two paid providers configured, to
+  // exercise the ambiguous-selection branch (unreachable today since every
+  // real PROVIDER_CONFIG.*.paid starts empty).
+  PROVIDER_CONFIG.seoAudit.paid.push(
+    { name: "serpapi", envVar: "SERPAPI_API_KEY" },
+    { name: "dataforseo", envVar: "DATAFORSEO_API_KEY" },
+  );
+  try {
+    let ambiguousMessage = "";
+    try { resolveProvider("seoAudit", { apiKey: "sk-test" }); } catch (e) { ambiguousMessage = e.message; }
+    assert(/ambiguous/i.test(ambiguousMessage),
+      "resolveProvider throws an 'ambiguous' error when 2+ paid providers exist and none is named");
+
+    const result = resolveProvider("seoAudit", { apiKey: "sk-test", provider: "dataforseo" });
+    assert(result.tier === "paid" && result.provider.name === "dataforseo",
+      "resolveProvider picks the named paid provider when 2+ exist");
+  } finally {
+    PROVIDER_CONFIG.seoAudit.paid.length = 0; // restore for every other assertion in this file
+  }
+}
 
 console.log("\n══ workers/config/providers.js — logProviderUsage ══");
 

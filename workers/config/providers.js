@@ -64,17 +64,22 @@ export function resolveProvider(capability, userConfig = {}) {
     return { capability, tier: "free", provider: config.free };
   }
 
-  const paidProvider = userConfig.provider
-    ? config.paid.find((p) => p.name === userConfig.provider)
-    : config.paid.length === 1
-      ? config.paid[0]
-      : undefined;
-
-  if (!paidProvider) {
-    throw new Error(`resolveProvider: no paid provider configured for "${capability}" yet`);
+  if (userConfig.provider) {
+    const paidProvider = config.paid.find((p) => p.name === userConfig.provider);
+    if (!paidProvider) {
+      throw new Error(`resolveProvider: no paid provider named "${userConfig.provider}" configured for "${capability}"`);
+    }
+    return { capability, tier: "paid", provider: paidProvider };
   }
 
-  return { capability, tier: "paid", provider: paidProvider };
+  if (config.paid.length === 0) {
+    throw new Error(`resolveProvider: no paid provider configured for "${capability}" yet`);
+  }
+  if (config.paid.length > 1) {
+    throw new Error(`resolveProvider: ambiguous — "${capability}" has ${config.paid.length} paid providers configured; pass { provider: "<name>" } to pick one`);
+  }
+
+  return { capability, tier: "paid", provider: config.paid[0] };
 }
 
 export async function logProviderUsage(capability, providerName, meta = {}, logPath = DEFAULT_USAGE_LOG_PATH) {
