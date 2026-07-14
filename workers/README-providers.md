@@ -17,11 +17,11 @@ just a plain object the caller passes in.
 
 | Capability | Free default | Env var | Notes |
 |---|---|---|---|
-| `seoAudit` | Google PageSpeed Insights API | `PAGESPEED_API_KEY` | free tier, ~25,000 requests/day |
+| `seoAudit` | RankNibbler API | none (keyless) | primary — title/meta/links/redirects/structured-data/AI-readiness. Core Web Vitals come from a separate PageSpeed Insights call (`PAGESPEED_API_KEY`, self-provisioned, ~25,000 req/day). RapidAPI's Website SEO Audit API (`RAPIDAPI_KEY`) is an automatic fallback if RankNibbler is down or rate-limited. BYOK: `ahrefs`/`semrush`/`seranking` registered in `paid[]`, not yet implemented. See `providers/seoAudit.js`. |
 | `plagiarism` | none | — | no reliable free plagiarism API exists; resolves to an honest "unavailable" stub until a paid provider is added |
 | `embeddings` | HuggingFace Inference API | `HUGGINGFACE_API_KEY` | free tier, rate-limited |
 | `webSearch` | Brave Search API | `BRAVE_SEARCH_API_KEY` | free tier, 2,000 queries/month |
-| `imageGen` | Pollinations.ai | — | free, keyless, no signup |
+| `imageGen` | Pexels API | `PEXELS_API_KEY` | primary — commercial-safe stock photos, 200 req/hour / 20,000/month. Unsplash (`UNSPLASH_ACCESS_KEY`) is an automatic fallback if Pexels has no good match or is rate-limited. An optional self-hosted SDXL endpoint (`SDXL_ENDPOINT_URL`) generates unique AI hero images for high-priority posts only. BYOK: `dalle`/`midjourney`/`stability` registered in `paid[]`, not yet implemented. See `providers/imageGen.js`. |
 
 ## Usage
 
