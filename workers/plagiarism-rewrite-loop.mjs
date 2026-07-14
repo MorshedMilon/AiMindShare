@@ -96,7 +96,9 @@ export async function autoRewriteLoop(text, maxAttempts = 3, config = {}) {
     if (afterScore <= threshold) { passed = true; break; }
   }
 
-  const finalScore = attempts[attempts.length - 1].after ?? attempts[attempts.length - 1].before;
+  const lastAttempt = attempts[attempts.length - 1];
+  const lastCheck = lastAttempt.after ?? lastAttempt.before;
+  const finalScore = Math.max(lastCheck.plagiarismScore ?? 100, lastCheck.aiLikelihoodScore ?? 100);
 
   await appendReport(reportPath, {
     timestamp: new Date().toISOString(),
