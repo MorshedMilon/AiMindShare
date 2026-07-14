@@ -111,6 +111,12 @@ echo; echo "══ +  Provider abstraction layer: PROVIDER_CONFIG + resolveProvi
 echo; echo "══ +  imageGen provider: Pexels + Unsplash + SDXL hybrid fallback (unit, no network) ══"
 ( cd workers && node verify/imagegenprobe.mjs ) || fails=$((fails+1))
 
+echo; echo "══ +  Plagiarism/AI-detection adapter: local TF-IDF + burstiness heuristic (unit, no network) ══"
+( cd workers && node verify/plagiarismprobe.mjs ) || fails=$((fails+1))
+
+echo; echo "══ +  Auto-Rewrite Loop: checkOriginality + Claude rewrite orchestration (unit, no network) ══"
+( cd workers && node verify/rewriteloopprobe.mjs ) || fails=$((fails+1))
+
 echo; echo "══ +  M22-auto: Bulk Content Creation schema + RLS + RPCs (PGlite) ══"
 ( cd workers && node verify/m22bulkprobe.mjs ) || fails=$((fails+1))
 

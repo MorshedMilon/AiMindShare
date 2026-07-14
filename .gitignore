@@ -4,3 +4,4 @@ node_modules/
 .backup-pre-hero-portfolio/
 .superpowers/
 workers/config/provider-usage.json
+workers/config/plagiarism-rewrite-report.json

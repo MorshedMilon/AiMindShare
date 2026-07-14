@@ -18,7 +18,7 @@ just a plain object the caller passes in.
 | Capability | Free default | Env var | Notes |
 |---|---|---|---|
 | `seoAudit` | Google PageSpeed Insights API | `PAGESPEED_API_KEY` | free tier, ~25,000 requests/day |
-| `plagiarism` | none | — | no reliable free plagiarism API exists; resolves to an honest "unavailable" stub until a paid provider is added |
+| `plagiarism` | Local TF-IDF cosine-similarity + burstiness/vocabulary-richness heuristic | — | no external API, no key; compares against a caller-supplied `corpus` if given, otherwise falls back to detecting internal near-duplicate sentences. 4 BYOK slots pre-registered (Copyleaks, Originality.ai, GPTZero, Winston AI) — no adapters implemented yet. |
 | `embeddings` | HuggingFace Inference API | `HUGGINGFACE_API_KEY` | free tier, rate-limited |
 | `webSearch` | Brave Search API | `BRAVE_SEARCH_API_KEY` | free tier, 2,000 queries/month |
 | `imageGen` | Pexels API | `PEXELS_API_KEY` | primary — commercial-safe stock photos, 200 req/hour / 20,000/month. Unsplash (`UNSPLASH_ACCESS_KEY`) is an automatic fallback if Pexels has no good match or is rate-limited. An optional self-hosted SDXL endpoint (`SDXL_ENDPOINT_URL`) generates unique AI hero images for high-priority posts only. BYOK: `dalle`/`midjourney`/`stability` registered in `paid[]`, not yet implemented. See `providers/imageGen.js`. |
@@ -41,6 +41,24 @@ limiter.recordCall(provider.name);
 
 await logProviderUsage("seoAudit", provider.name, { tier });
 ```
+
+## Plagiarism check: what "local" means
+
+`providers/plagiarism.js`'s `checkOriginality(text, config)` free tier never
+calls out to the network. It can only compare `text` against:
+
+- `config.corpus` (an array of `{ id, text }` reference documents you supply
+  — e.g. previously-published articles), if given; or
+- itself, falling back to internal near-duplicate sentence detection when no
+  corpus is given.
+
+It cannot detect matches against arbitrary content on the web. For that,
+configure a paid BYOK provider (see below) once one is implemented.
+
+`autoRewriteLoop(text, maxAttempts, config)` in
+`plagiarism-rewrite-loop.mjs` wraps `checkOriginality` with a Claude-powered
+rewrite step (reusing `llm.mjs`'s existing Vault-backed Anthropic caller) and
+logs each run's before/after scores to `config/plagiarism-rewrite-report.json`.
 
 ## Adding a paid BYOK provider later
 

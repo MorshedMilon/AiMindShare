@@ -14,7 +14,7 @@ const assert = (c, l) => c
 console.log("══ workers/config/providers.js — PROVIDER_CONFIG + resolveProvider ══");
 
 const CAPABILITIES = ["seoAudit", "plagiarism", "embeddings", "webSearch", "imageGen"];
-const CAPABILITIES_WITH_REGISTERED_PAID = ["imageGen"]; // BYOK providers registered but not implemented — see providers/imageGen.js
+const CAPABILITIES_WITH_REGISTERED_PAID = ["plagiarism", "imageGen"]; // BYOK providers registered but not implemented — see providers/plagiarism.js, providers/imageGen.js
 for (const capability of CAPABILITIES) {
   assert(Object.prototype.hasOwnProperty.call(PROVIDER_CONFIG, capability),
     `PROVIDER_CONFIG has a "${capability}" entry`);
@@ -24,6 +24,8 @@ for (const capability of CAPABILITIES) {
   assert(typeof PROVIDER_CONFIG[capability].free.name === "string",
     `PROVIDER_CONFIG.${capability}.free has a name`);
 }
+assert(PROVIDER_CONFIG.plagiarism.paid.length === 4,
+  "PROVIDER_CONFIG.plagiarism.paid has its 4 registered BYOK slots");
 
 {
   const result = resolveProvider("seoAudit", {});
@@ -32,8 +34,18 @@ for (const capability of CAPABILITIES) {
 }
 {
   const result = resolveProvider("plagiarism", {});
-  assert(result.tier === "free" && result.provider.name === "none",
-    "resolveProvider('plagiarism', {}) resolves to the honest 'none' stub");
+  assert(result.tier === "free" && result.provider.name === "local-tfidf",
+    "resolveProvider('plagiarism', {}) resolves to the local-tfidf free default");
+}
+{
+  let ambiguousMessage = "";
+  try { resolveProvider("plagiarism", { apiKey: "sk-test" }); } catch (e) { ambiguousMessage = e.message; }
+  assert(/ambiguous/i.test(ambiguousMessage),
+    "resolveProvider('plagiarism', {apiKey}) is ambiguous across 4 registered BYOK slots without a provider name");
+
+  const result = resolveProvider("plagiarism", { apiKey: "sk-test", provider: "gptzero" });
+  assert(result.tier === "paid" && result.provider.name === "gptzero",
+    "resolveProvider('plagiarism', {apiKey, provider: 'gptzero'}) resolves to the named paid slot");
 }
 {
   const result = resolveProvider("embeddings", {});
