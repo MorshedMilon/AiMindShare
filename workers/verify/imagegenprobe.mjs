@@ -3,7 +3,7 @@
 // fakes, dispatched by URL so Pexels/Unsplash/SDXL can be scripted
 // independently within a single getBlogImage call.
 import { PROVIDER_CONFIG, resolveProvider, RateLimiter } from "../config/providers.js";
-import { getStockImage } from "../providers/imageGen.js";
+import { getStockImage, getUnsplashImage } from "../providers/imageGen.js";
 
 let pass = 0, fail = 0;
 const assert = (c, l) => c
@@ -59,6 +59,13 @@ const PEXELS_OK = jsonResponse(200, {
 });
 const PEXELS_EMPTY = jsonResponse(200, { photos: [] });
 const RATE_LIMITED = jsonResponse(429, { error: "rate limited" });
+const UNSPLASH_OK = jsonResponse(200, {
+  results: [{
+    urls: { regular: "https://images.unsplash.com/photo-2-regular.jpg" },
+    user: { name: "John Smith", links: { html: "https://unsplash.com/@john-smith" } },
+    links: { html: "https://unsplash.com/photos/2" },
+  }],
+});
 
 console.log("══ workers/config/providers.js — imageGen config reconciled with the new adapter ══");
 
@@ -111,6 +118,24 @@ console.log("\n══ workers/providers/imageGen.js — getStockImage (Pexels) �
   const h = fakeHarness({ pexels: [PEXELS_EMPTY] });
   const result = await getStockImage("an extremely obscure query", h);
   assert(result === null, "pexels returns zero results: returns null");
+}
+
+console.log("\n══ workers/providers/imageGen.js — getUnsplashImage ══");
+
+{
+  const h = fakeHarness({ unsplash: [UNSPLASH_OK] });
+  const result = await getUnsplashImage("mountain sunrise", h);
+  assert(result.source === "unsplash", "happy path: source is unsplash");
+  assert(result.url === "https://images.unsplash.com/photo-2-regular.jpg", "happy path: url from urls.regular");
+  assert(result.photographer === "John Smith", "happy path: photographer populated");
+  assert(result.attributionHtml.includes("John Smith") && result.attributionHtml.includes("Unsplash"),
+    "happy path: attributionHtml mentions photographer and Unsplash");
+  assert(h.usageLog.includes("unsplash"), "happy path: logUsage called with unsplash");
+}
+{
+  const h = fakeHarness({}, { unsplashAccessKey: "" });
+  const result = await getUnsplashImage("mountain sunrise", h);
+  assert(result === null, "missing UNSPLASH_ACCESS_KEY: returns null without attempting a fetch");
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

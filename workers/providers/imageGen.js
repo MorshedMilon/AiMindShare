@@ -13,6 +13,8 @@
 import { resolveProvider, logProviderUsage, RateLimiter } from "../config/providers.js";
 
 const PEXELS_API = "https://api.pexels.com/v1/search";
+const UNSPLASH_API = "https://api.unsplash.com/search/photos";
+const DEFAULT_UNSPLASH_HOURLY_LIMIT = 50; // Unsplash Demo tier; raise once Production is approved
 
 const DEFAULT_MAX_RETRIES = 2;
 const DEFAULT_BASE_DELAY_MS = 500;
@@ -69,5 +71,44 @@ export async function getStockImage(query, harness = {}) {
     photographer: photo.photographer ?? null,
     attributionHtml: `Photo by <a href="${photo.photographer_url ?? "#"}">${photo.photographer ?? "Unknown"}</a> on <a href="${photo.url ?? "https://www.pexels.com"}">Pexels</a>`,
     source: "pexels",
+  };
+}
+
+export async function getUnsplashImage(query, harness = {}) {
+  const fetchImpl = harness.fetchImpl ?? fetch;
+  const sleep = harness.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
+  const logUsage = harness.logUsage ?? ((providerName) => logProviderUsage("imageGen", providerName));
+  const limiter = harness.limiter ?? sharedLimiter;
+  const maxRetries = harness.maxRetries ?? DEFAULT_MAX_RETRIES;
+  const baseDelayMs = harness.baseDelayMs ?? DEFAULT_BASE_DELAY_MS;
+  const accessKey = harness.unsplashAccessKey ?? process.env.UNSPLASH_ACCESS_KEY;
+  const hourlyLimit = harness.unsplashHourlyLimit ?? DEFAULT_UNSPLASH_HOURLY_LIMIT;
+
+  if (!accessKey) return null;
+  if (limiter.isLimited("unsplash", { hourly: hourlyLimit })) return null;
+
+  let response;
+  try {
+    response = await fetchWithBackoff(fetchImpl, `${UNSPLASH_API}?query=${encodeURIComponent(query)}&per_page=1`, {
+      headers: { Authorization: `Client-ID ${accessKey}` },
+    }, { sleep, maxRetries, baseDelayMs });
+  } catch {
+    limiter.recordCall("unsplash");
+    await logUsage("unsplash");
+    return null;
+  }
+  limiter.recordCall("unsplash");
+  await logUsage("unsplash");
+  if (!response.ok) return null;
+
+  const body = await response.json().catch(() => null);
+  const photo = body?.results?.[0];
+  if (!photo) return null;
+
+  return {
+    url: photo.urls?.regular ?? photo.urls?.full ?? null,
+    photographer: photo.user?.name ?? null,
+    attributionHtml: `Photo by <a href="${photo.user?.links?.html ?? "#"}">${photo.user?.name ?? "Unknown"}</a> on <a href="${photo.links?.html ?? "https://unsplash.com"}">Unsplash</a>`,
+    source: "unsplash",
   };
 }
