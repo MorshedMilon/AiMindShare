@@ -112,3 +112,30 @@ export async function getUnsplashImage(query, harness = {}) {
     source: "unsplash",
   };
 }
+
+export async function generateAiHeroImage(prompt, harness = {}) {
+  const fetchImpl = harness.fetchImpl ?? fetch;
+  const logUsage = harness.logUsage ?? ((providerName) => logProviderUsage("imageGen", providerName));
+  const endpointUrl = harness.sdxlEndpointUrl ?? process.env.SDXL_ENDPOINT_URL;
+
+  if (!endpointUrl) return null;
+
+  let response;
+  try {
+    response = await fetchImpl(endpointUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
+  } catch {
+    await logUsage("sdxl");
+    return null;
+  }
+  await logUsage("sdxl");
+  if (!response.ok) return null;
+
+  const body = await response.json().catch(() => null);
+  if (!body?.url) return null;
+
+  return { url: body.url, photographer: null, attributionHtml: null, source: "sdxl" };
+}

@@ -3,7 +3,7 @@
 // fakes, dispatched by URL so Pexels/Unsplash/SDXL can be scripted
 // independently within a single getBlogImage call.
 import { PROVIDER_CONFIG, resolveProvider, RateLimiter } from "../config/providers.js";
-import { getStockImage, getUnsplashImage } from "../providers/imageGen.js";
+import { getStockImage, getUnsplashImage, generateAiHeroImage } from "../providers/imageGen.js";
 
 let pass = 0, fail = 0;
 const assert = (c, l) => c
@@ -66,6 +66,7 @@ const UNSPLASH_OK = jsonResponse(200, {
     links: { html: "https://unsplash.com/photos/2" },
   }],
 });
+const SDXL_OK = jsonResponse(200, { url: "https://sdxl.local/generated/3.png" });
 
 console.log("══ workers/config/providers.js — imageGen config reconciled with the new adapter ══");
 
@@ -136,6 +137,22 @@ console.log("\n══ workers/providers/imageGen.js — getUnsplashImage ══"
   const h = fakeHarness({}, { unsplashAccessKey: "" });
   const result = await getUnsplashImage("mountain sunrise", h);
   assert(result === null, "missing UNSPLASH_ACCESS_KEY: returns null without attempting a fetch");
+}
+
+console.log("\n══ workers/providers/imageGen.js — generateAiHeroImage (SDXL) ══");
+
+{
+  const h = fakeHarness({ sdxl: [SDXL_OK] });
+  const result = await generateAiHeroImage("a majestic mountain at sunrise, digital art", h);
+  assert(result.source === "sdxl", "happy path: source is sdxl");
+  assert(result.url === "https://sdxl.local/generated/3.png", "happy path: url from body.url");
+  assert(result.photographer === null && result.attributionHtml === null,
+    "happy path: no photographer/attribution for AI-generated images");
+}
+{
+  const h = fakeHarness({}, { sdxlEndpointUrl: "" });
+  const result = await generateAiHeroImage("a majestic mountain at sunrise, digital art", h);
+  assert(result === null, "no SDXL_ENDPOINT_URL configured: returns null without attempting a fetch");
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
