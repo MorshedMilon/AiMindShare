@@ -22,11 +22,16 @@ export const PROVIDER_CONFIG = {
   },
   plagiarism: {
     free: {
-      name: "none",
+      name: "local-tfidf",
       envVar: null,
-      description: "No reliable free plagiarism-detection API exists; reports unavailable until a paid provider is configured.",
+      description: "Local TF-IDF cosine-similarity + burstiness/vocabulary-richness heuristic — no external API, no key.",
     },
-    paid: [],
+    paid: [
+      { name: "copyleaks", envVar: "COPYLEAKS_API_KEY", description: "Copyleaks plagiarism/AI-detection API (BYOK, adapter not yet implemented)." },
+      { name: "originality", envVar: "ORIGINALITY_API_KEY", description: "Originality.ai plagiarism/AI-detection API (BYOK, adapter not yet implemented)." },
+      { name: "gptzero", envVar: "GPTZERO_API_KEY", description: "GPTZero AI-detection API (BYOK, adapter not yet implemented)." },
+      { name: "winston", envVar: "WINSTON_API_KEY", description: "Winston AI plagiarism/AI-detection API (BYOK, adapter not yet implemented)." },
+    ],
   },
   embeddings: {
     free: {

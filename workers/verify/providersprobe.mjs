@@ -17,8 +17,13 @@ const CAPABILITIES = ["seoAudit", "plagiarism", "embeddings", "webSearch", "imag
 for (const capability of CAPABILITIES) {
   assert(Object.prototype.hasOwnProperty.call(PROVIDER_CONFIG, capability),
     `PROVIDER_CONFIG has a "${capability}" entry`);
-  assert(Array.isArray(PROVIDER_CONFIG[capability].paid) && PROVIDER_CONFIG[capability].paid.length === 0,
-    `PROVIDER_CONFIG.${capability}.paid starts empty`);
+  if (capability === "plagiarism") {
+    assert(PROVIDER_CONFIG.plagiarism.paid.length === 4,
+      `PROVIDER_CONFIG.plagiarism.paid has its 4 registered BYOK slots`);
+  } else {
+    assert(Array.isArray(PROVIDER_CONFIG[capability].paid) && PROVIDER_CONFIG[capability].paid.length === 0,
+      `PROVIDER_CONFIG.${capability}.paid starts empty`);
+  }
   assert(typeof PROVIDER_CONFIG[capability].free.name === "string",
     `PROVIDER_CONFIG.${capability}.free has a name`);
 }
@@ -30,8 +35,18 @@ for (const capability of CAPABILITIES) {
 }
 {
   const result = resolveProvider("plagiarism", {});
-  assert(result.tier === "free" && result.provider.name === "none",
-    "resolveProvider('plagiarism', {}) resolves to the honest 'none' stub");
+  assert(result.tier === "free" && result.provider.name === "local-tfidf",
+    "resolveProvider('plagiarism', {}) resolves to the local-tfidf free default");
+}
+{
+  let ambiguousMessage = "";
+  try { resolveProvider("plagiarism", { apiKey: "sk-test" }); } catch (e) { ambiguousMessage = e.message; }
+  assert(/ambiguous/i.test(ambiguousMessage),
+    "resolveProvider('plagiarism', {apiKey}) is ambiguous across 4 registered BYOK slots without a provider name");
+
+  const result = resolveProvider("plagiarism", { apiKey: "sk-test", provider: "gptzero" });
+  assert(result.tier === "paid" && result.provider.name === "gptzero",
+    "resolveProvider('plagiarism', {apiKey, provider: 'gptzero'}) resolves to the named paid slot");
 }
 {
   const result = resolveProvider("embeddings", {});
