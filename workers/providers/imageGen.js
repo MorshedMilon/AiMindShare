@@ -143,7 +143,7 @@ export async function generateAiHeroImage(prompt, harness = {}) {
   return { url: body.url, photographer: null, attributionHtml: null, source: "sdxl" };
 }
 
-export const PLACEHOLDER_IMAGE = { url: null, photographer: null, attributionHtml: null, source: "placeholder" };
+export const PLACEHOLDER_IMAGE = Object.freeze({ url: null, photographer: null, attributionHtml: null, source: "placeholder" });
 
 export async function getBlogImage(query, config = {}, harness = {}) {
   const { tier, provider } = resolveProvider("imageGen", config.userConfig ?? {});
