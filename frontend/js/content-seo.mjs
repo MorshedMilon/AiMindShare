@@ -103,3 +103,64 @@ export function scoreArticle({ html = "", title = "", keyword = "", metaTitle = 
 
   return { score, wordCount, readability, density: Math.round(density * 10) / 10, checklist: checks };
 }
+
+// ── PieceBlockerRecommendation ──────────────────────────────────────────────
+// Turns a scoreArticle() result into actionable "blockers" — no recomputation,
+// just reading the checklist/readability/density it already produced. `type`
+// is a superset that includes "originality_flag" for future use; nothing here
+// computes originality today, so that type is never emitted.
+const BLOCKER_RULES = {
+  "Readability (Flesch)": "readability",
+  "Keyword density": "keyword_density",
+  "Keyword in a subheading": "structure",
+  "Meta title length": "meta",
+  "Meta description length": "meta",
+};
+
+function blockerMessage(type, check, { readability, density } = {}) {
+  switch (type) {
+    case "readability":
+      return `Readability is too low for most readers (Flesch ease ${readability}).`;
+    case "keyword_density":
+      return density > 2.5
+        ? `Keyword density is too high at ${density}% — reads as keyword stuffing.`
+        : `Keyword density is too low at ${density}% to register with search engines.`;
+    case "structure":
+      return "No H2/H3 subheading includes the target keyword.";
+    case "meta":
+      return `${check.label.replace(" length", "")} is missing or outside the recommended length.`;
+    default:
+      return check.label;
+  }
+}
+
+// weight mirrors the importance the score engine already assigned each check;
+// fail on a weight-2 check is "high", everything else scales down from there.
+function blockerSeverity(state, weight) {
+  if (state === "fail") return weight >= 2 ? "high" : "medium";
+  return weight >= 2 ? "medium" : "low";
+}
+
+export function getBlockerRecommendations(contentScoreResult) {
+  const { checklist = [], readability, density } = contentScoreResult || {};
+  const blockers = [];
+  for (const check of checklist) {
+    const type = BLOCKER_RULES[check.label];
+    if (!type || check.state === "pass") continue;
+    blockers.push({
+      type,
+      severity: blockerSeverity(check.state, check.weight),
+      message: blockerMessage(type, check, { readability, density }),
+      fixSuggestion: check.hint,
+    });
+  }
+  return blockers;
+}
+
+const SEVERITY_RANK = { high: 3, medium: 2, low: 1 };
+
+export function topPriorityFix(blockers) {
+  if (!Array.isArray(blockers) || !blockers.length) return null;
+  return blockers.reduce((top, b) =>
+    !top || SEVERITY_RANK[b.severity] > SEVERITY_RANK[top.severity] ? b : top, null);
+}

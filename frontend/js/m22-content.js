@@ -6,7 +6,7 @@
    Vanilla + Supabase (anon key only, Law 3); falls back to a rich mockup when no
    project is connected. The AI auto-blog pipeline is the SEPARATE Session-23 slice
    — its settings section is a labelled, disabled scaffold here. */
-import { scoreArticle, readingEase, plainText } from "./content-seo.mjs";
+import { scoreArticle, readingEase, plainText, getBlockerRecommendations, topPriorityFix } from "./content-seo.mjs";
 import { sanitizeHtml } from "./content-editor.mjs";
 (function () {
   "use strict";
@@ -434,6 +434,7 @@ import { sanitizeHtml } from "./content-editor.mjs";
   function renderSidebar(a) {
     const r = scoreOf(a); const read = r.readability;
     a.seo_score = r.score; a.readability_score = read; a.word_count = r.wordCount;
+    const topFix = topPriorityFix(getBlockerRecommendations(r));
     const mtLen = (a.meta_title || "").length, mdLen = (a.meta_desc || "").length;
     const lenClass = (n, lo, hi) => n === 0 ? "" : (n >= lo && n <= hi ? "good" : "warn");
     const lenBar = (n, max, lo, hi) => `<div class="mbar"><span class="${lenClass(n, lo, hi)}" style="width:${Math.min(100, (n / max) * 100)}%"></span></div>`;
@@ -444,6 +445,7 @@ import { sanitizeHtml } from "./content-editor.mjs";
           <div class="sr-meta"><div class="srm-big">${r.score >= 75 ? "Strong" : r.score >= 45 ? "Getting there" : "Needs work"}</div>
           <div class="srm-sub">${r.checklist.filter((c) => c.state === "pass").length}/${r.checklist.length} checks · ${r.wordCount} words</div>
           <div class="srm-sub" style="margin-top:4px">Readability <b class="mono" style="color:var(--ink-700)">${read}</b> · ${readLabel(read)}</div></div></div>
+        ${topFix ? `<div class="blocker-banner sev-${topFix.severity}"><span class="bb-ico">${svg(topFix.severity === "high" ? "x" : "clock", 13)}</span><div><div class="bb-msg">${esc(topFix.message)}</div>${topFix.fixSuggestion ? `<div class="bb-fix">${esc(topFix.fixSuggestion)}</div>` : ""}</div></div>` : ""}
         <div class="check-list">${r.checklist.map((c) => { const cls = c.state === "pass" ? "ok" : c.state === "warn" ? "warn" : "no"; const ic = c.state === "pass" ? "check" : c.state === "warn" ? "clock" : "x"; return `<div class="check-item ${cls}"><span class="ci-box">${svg(ic, 12)}</span><span>${c.label}${c.state === "pass" ? "" : `<div class="ci-hint">${esc(c.hint)}</div>`}</span></div>`; }).join("")}</div>
       </div>
       <div class="side-card">
@@ -745,7 +747,7 @@ import { sanitizeHtml } from "./content-editor.mjs";
       <td>${esc(b.name)}</td><td><span class="pill st-${esc(b.status)}">${esc(b.status)}</span></td>
       <td>${b.total_items}</td><td>${esc(b.model)}</td>
       <td>${dupCount ? `<span class="pill st-warn">${dupCount} dup</span>` : "—"}</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap">
+      <td class="bulk-row-actions">
         <button class="btn btn-sm" data-review-batch="${b.id}">Review items</button>
         <button class="btn btn-sm" data-schedule="${b.id}">Schedule spread</button>
         <button class="btn btn-sm" data-rollback="${b.id}">Rollback</button>
@@ -759,29 +761,30 @@ import { sanitizeHtml } from "./content-editor.mjs";
     const templateOpts = templates.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
 
     return pageHead("Bulk", "Bulk create", "Generate a batch of articles from a topic list, a CSV, or an AI-expanded seed keyword — preview a few before committing the rest.", "")
-      + `<div class="card panel" style="margin-bottom:16px">
-        <h3 style="margin-top:0">New batch</h3>
-        <div class="form-field"><label>Batch name</label><input id="bName" placeholder="e.g. Ramadan dua series"></div>
-        <div class="form-field"><label>Topic source</label>
-          <select id="bSource"><option value="manual">Manual list</option><option value="csv">CSV upload</option><option value="ai_seed">AI-generate from seed keyword</option></select>
-        </div>
-        <div id="bSourceInputs">
-          <div class="form-field"><label>Topics (one per line)</label><textarea id="bManualTopics" rows="4" placeholder="best dua for travel&#10;dua for anxiety"></textarea></div>
-        </div>
-        <div class="form-field"><label>Template (optional)</label><select id="bTemplate"><option value="">None</option>${templateOpts}</select></div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap">
+      + `<div class="card panel bulk-builder">
+        <h3>New batch</h3>
+        <div class="form-grid">
+          <div class="form-field"><label>Batch name</label><input id="bName" placeholder="e.g. Ramadan dua series"></div>
+          <div class="form-field"><label>Topic source</label>
+            <select id="bSource"><option value="manual">Manual list</option><option value="csv">CSV upload</option><option value="ai_seed">AI-generate from seed keyword</option></select>
+          </div>
+          <div id="bSourceInputs" class="form-field" style="grid-column:1/-1">
+            <label>Topics (one per line)</label><textarea id="bManualTopics" rows="4" placeholder="best dua for travel&#10;dua for anxiety"></textarea>
+          </div>
+          <div class="form-field"><label>Template (optional)</label><select id="bTemplate"><option value="">None</option>${templateOpts}</select></div>
           <div class="form-field"><label>Model</label><select id="bModel"><option value="claude-sonnet-5">Claude Sonnet 5 (quality)</option><option value="claude-3-5-haiku-20241022">Claude Haiku (cheap)</option></select></div>
           <div class="form-field"><label>Word count min</label><input id="bWordMin" type="number" value="800"></div>
           <div class="form-field"><label>Word count max</label><input id="bWordMax" type="number" value="1600"></div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <div class="bulk-actions">
           <button class="btn" id="bEstimate">Estimate cost</button>
           <button class="btn" id="bPreview">Generate 3 samples</button>
           <button class="btn btn-primary" id="bCommit">Commit batch</button>
         </div>
-        <div id="bEstimateOut" class="muted" style="margin-top:8px"></div>
+        <div id="bEstimateOut" class="muted bulk-estimate-out"></div>
       </div>
-      <h3>Batch status</h3>${dashboard}`;
+      <div class="section-h"><h2>Batch status</h2></div>
+      ${dashboard}`;
   }
 
   // batchItemsPanel — the Bulk Edit/Reject drill-down: one row per content_queue item
@@ -795,8 +798,8 @@ import { sanitizeHtml } from "./content-editor.mjs";
       <td>${esc(i.keyword)}</td><td><span class="pill st-${esc(i.status)}">${esc(i.status)}</span></td>
       <td>${i.duplicate ? `<span class="pill st-warn">possible duplicate</span>` : "—"}</td>
     </tr>`).join("");
-    return `<div class="card panel" style="margin:8px 0">
-      <div style="display:flex;gap:8px;margin-bottom:8px">
+    return `<div class="card panel bulk-items-panel">
+      <div class="bulk-items-toolbar">
         <button class="btn btn-sm" id="biApproveAll">Approve selected</button>
         <button class="btn btn-sm" id="biRejectAll">Reject selected</button>
       </div>
@@ -807,9 +810,21 @@ import { sanitizeHtml } from "./content-editor.mjs";
   function wireBulk() {
     const src = $("#bSource"); if (src) src.onchange = () => {
       const inputs = $("#bSourceInputs"); if (!inputs) return;
-      if (src.value === "csv") inputs.innerHTML = `<div class="form-field"><label>CSV file</label><input id="bCsvFile" type="file" accept=".csv"></div>`;
-      else if (src.value === "ai_seed") inputs.innerHTML = `<div class="form-field"><label>Seed keyword / category</label><input id="bSeed" placeholder="e.g. Ramadan content"></div><div class="form-field"><label>How many topics</label><input id="bSeedCount" type="number" value="20"></div>`;
-      else inputs.innerHTML = `<div class="form-field"><label>Topics (one per line)</label><textarea id="bManualTopics" rows="4" placeholder="best dua for travel&#10;dua for anxiety"></textarea></div>`;
+      // #bSourceInputs keeps its grid-column:1/-1 inline style (always full-width in the
+      // outer .form-grid) across swaps; only its own display mode toggles — a single
+      // stacked .form-field for one-input sources, a nested .form-grid (with its own
+      // 16px gap) when ai_seed needs two side-by-side fields, so neither case regresses
+      // to touching, ungapped siblings.
+      if (src.value === "csv") {
+        inputs.className = "form-field";
+        inputs.innerHTML = `<label>CSV file</label><input id="bCsvFile" type="file" accept=".csv">`;
+      } else if (src.value === "ai_seed") {
+        inputs.className = "form-grid";
+        inputs.innerHTML = `<div class="form-field"><label>Seed keyword / category</label><input id="bSeed" placeholder="e.g. Ramadan content"></div><div class="form-field"><label>How many topics</label><input id="bSeedCount" type="number" value="20"></div>`;
+      } else {
+        inputs.className = "form-field";
+        inputs.innerHTML = `<label>Topics (one per line)</label><textarea id="bManualTopics" rows="4" placeholder="best dua for travel&#10;dua for anxiety"></textarea>`;
+      }
     };
 
     // collectTopics — only ever called for the manual/ai_seed paths; the CSV path is

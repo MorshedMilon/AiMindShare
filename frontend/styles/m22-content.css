@@ -115,6 +115,18 @@
 .check-item.no .ci-box{background:rgba(196,97,78,.14);color:var(--status-danger)}
 .check-item .ci-hint{font-size:11.5px;color:var(--ink-400);margin-top:2px}
 
+/* Publish blocker banner — top-priority fix, above the checklist */
+.blocker-banner{display:flex;gap:9px;align-items:flex-start;padding:10px 11px;border-radius:var(--r-sm);border:.5px solid var(--line);margin-bottom:12px}
+.blocker-banner .bb-ico{width:18px;height:18px;flex:none;border-radius:6px;display:grid;place-items:center;margin-top:1px}
+.blocker-banner .bb-msg{font-size:12.5px;color:var(--ink-700);font-weight:600}
+.blocker-banner .bb-fix{font-size:11.5px;color:var(--ink-400);margin-top:2px}
+.blocker-banner.sev-high{background:rgba(196,97,78,.08);border-color:rgba(196,97,78,.3)}
+.blocker-banner.sev-high .bb-ico{background:rgba(196,97,78,.16);color:var(--status-danger)}
+.blocker-banner.sev-medium{background:rgba(199,154,58,.08);border-color:rgba(199,154,58,.3)}
+.blocker-banner.sev-medium .bb-ico{background:rgba(199,154,58,.16);color:var(--status-warning)}
+.blocker-banner.sev-low{background:rgba(44,164,171,.08);border-color:rgba(44,164,171,.3)}
+.blocker-banner.sev-low .bb-ico{background:rgba(44,164,171,.16);color:var(--status-info)}
+
 /* Meta length meters */
 .meter-field{margin-bottom:14px}
 .meter-field label{display:flex;justify-content:space-between;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-400);margin-bottom:6px}
@@ -231,3 +243,14 @@ fieldset.locked{border:none;padding:0;margin:0;opacity:.55;pointer-events:none}
 .stage-pill.st-running{border-color:var(--status-info)}
 .stage-error{font-size:.85em;color:var(--status-danger);margin-top:6px}
 .stage-hint{font-size:.85em;color:var(--ink-400);margin-top:4px}
+
+/* ── Bulk Content Creation (Job Builder + status dashboard) ─────────────────
+   Reuses .panel/.form-grid/.form-field/.btn/.section-h as-is (already carry
+   the module's radius/shadow/spacing tokens) — only the bulk-specific
+   containers below add the missing gaps between them. */
+.bulk-builder h3{margin:0 0 20px}
+.bulk-actions{display:flex;gap:16px;flex-wrap:wrap;margin-top:24px}
+.bulk-estimate-out{margin-top:12px}
+.bulk-items-panel{margin-top:16px}
+.bulk-items-toolbar{display:flex;gap:12px;margin-bottom:16px}
+.bulk-row-actions{display:flex;gap:12px;flex-wrap:wrap}
