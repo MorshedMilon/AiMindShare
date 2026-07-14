@@ -14,11 +14,15 @@ const DEFAULT_USAGE_LOG_PATH = path.join(__dirname, "provider-usage.json");
 export const PROVIDER_CONFIG = {
   seoAudit: {
     free: {
-      name: "pagespeed",
-      envVar: "PAGESPEED_API_KEY",
-      description: "Google PageSpeed Insights API — free tier (~25,000 requests/day).",
+      name: "ranknibbler",
+      envVar: null,
+      description: "RankNibbler API — free, keyless on-page SEO audit (title, meta, links, redirects, structured data, AI-readiness). Core Web Vitals come from a separate PageSpeed Insights call (PAGESPEED_API_KEY); RapidAPI's Website SEO Audit API (RAPIDAPI_KEY) is an automatic fallback if RankNibbler is down or rate-limited. See providers/seoAudit.js.",
     },
-    paid: [],
+    paid: [
+      { name: "ahrefs", envVar: "AHREFS_API_KEY", description: "Ahrefs API — BYOK, not implemented yet." },
+      { name: "semrush", envVar: "SEMRUSH_API_KEY", description: "SEMrush API — BYOK, not implemented yet." },
+      { name: "seranking", envVar: "SERANKING_API_KEY", description: "SE Ranking API — BYOK, not implemented yet." },
+    ],
   },
   plagiarism: {
     free: {
@@ -46,11 +50,15 @@ export const PROVIDER_CONFIG = {
   },
   imageGen: {
     free: {
-      name: "pollinations",
-      envVar: null,
-      description: "Pollinations.ai — free, keyless image generation.",
+      name: "pexels",
+      envVar: "PEXELS_API_KEY",
+      description: "Pexels API — free tier (200 req/hour, 20,000/month), commercial-safe stock photos. Unsplash (UNSPLASH_ACCESS_KEY) is an automatic fallback if Pexels has no good match or is rate-limited; an optional self-hosted SDXL endpoint (SDXL_ENDPOINT_URL) generates unique AI hero images for high-priority posts. See providers/imageGen.js.",
     },
-    paid: [],
+    paid: [
+      { name: "dalle", envVar: "DALLE_API_KEY", description: "OpenAI DALL-E API — BYOK, not implemented yet." },
+      { name: "midjourney", envVar: "MIDJOURNEY_API_KEY", description: "Midjourney API — BYOK, not implemented yet." },
+      { name: "stability", envVar: "STABILITY_API_KEY", description: "Stability AI API — BYOK, not implemented yet." },
+    ],
   },
 };
 

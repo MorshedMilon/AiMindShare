@@ -14,19 +14,21 @@ const assert = (c, l) => c
 console.log("══ workers/config/providers.js — PROVIDER_CONFIG + resolveProvider ══");
 
 const CAPABILITIES = ["seoAudit", "plagiarism", "embeddings", "webSearch", "imageGen"];
+const CAPABILITIES_WITH_REGISTERED_PAID = ["seoAudit", "imageGen"]; // BYOK providers registered but not implemented — see providers/seoAudit.js, providers/imageGen.js
 for (const capability of CAPABILITIES) {
   assert(Object.prototype.hasOwnProperty.call(PROVIDER_CONFIG, capability),
     `PROVIDER_CONFIG has a "${capability}" entry`);
-  assert(Array.isArray(PROVIDER_CONFIG[capability].paid) && PROVIDER_CONFIG[capability].paid.length === 0,
-    `PROVIDER_CONFIG.${capability}.paid starts empty`);
+  assert(Array.isArray(PROVIDER_CONFIG[capability].paid) &&
+    (CAPABILITIES_WITH_REGISTERED_PAID.includes(capability) ? PROVIDER_CONFIG[capability].paid.length > 0 : PROVIDER_CONFIG[capability].paid.length === 0),
+    `PROVIDER_CONFIG.${capability}.paid ${CAPABILITIES_WITH_REGISTERED_PAID.includes(capability) ? "has registered BYOK entries" : "starts empty"}`);
   assert(typeof PROVIDER_CONFIG[capability].free.name === "string",
     `PROVIDER_CONFIG.${capability}.free has a name`);
 }
 
 {
   const result = resolveProvider("seoAudit", {});
-  assert(result.tier === "free" && result.provider.name === "pagespeed",
-    "resolveProvider('seoAudit', {}) resolves to the pagespeed free default");
+  assert(result.tier === "free" && result.provider.name === "ranknibbler",
+    "resolveProvider('seoAudit', {}) resolves to the ranknibbler free default");
 }
 {
   const result = resolveProvider("plagiarism", {});
@@ -45,8 +47,13 @@ for (const capability of CAPABILITIES) {
 }
 {
   const result = resolveProvider("imageGen", {});
-  assert(result.tier === "free" && result.provider.name === "pollinations",
-    "resolveProvider('imageGen', {}) resolves to the pollinations free default");
+  assert(result.tier === "free" && result.provider.name === "pexels",
+    "resolveProvider('imageGen', {}) resolves to the pexels free default");
+}
+{
+  const paidNames = PROVIDER_CONFIG.imageGen.paid.map((p) => p.name);
+  assert(paidNames.includes("dalle") && paidNames.includes("midjourney") && paidNames.includes("stability"),
+    "PROVIDER_CONFIG.imageGen.paid registers dalle, midjourney, stability (not implemented, registration only)");
 }
 {
   let threw = false;
@@ -55,29 +62,20 @@ for (const capability of CAPABILITIES) {
 }
 {
   let threw = false;
-  try { resolveProvider("seoAudit", { apiKey: "sk-test" }); } catch { threw = true; }
-  assert(threw, "resolveProvider throws when apiKey is given but no paid provider is configured yet");
+  try { resolveProvider("plagiarism", { apiKey: "sk-test" }); } catch { threw = true; }
+  assert(threw, "resolveProvider throws when apiKey is given but no paid provider is configured yet (plagiarism)");
 }
 {
-  // Simulate a future capability with two paid providers configured, to
-  // exercise the ambiguous-selection branch (unreachable today since every
-  // real PROVIDER_CONFIG.*.paid starts empty).
-  PROVIDER_CONFIG.seoAudit.paid.push(
-    { name: "serpapi", envVar: "SERPAPI_API_KEY" },
-    { name: "dataforseo", envVar: "DATAFORSEO_API_KEY" },
-  );
-  try {
-    let ambiguousMessage = "";
-    try { resolveProvider("seoAudit", { apiKey: "sk-test" }); } catch (e) { ambiguousMessage = e.message; }
-    assert(/ambiguous/i.test(ambiguousMessage),
-      "resolveProvider throws an 'ambiguous' error when 2+ paid providers exist and none is named");
+  // seoAudit has 3 real (registered-but-not-yet-implemented) paid providers —
+  // exercises the ambiguous-selection branch for real, no simulation needed.
+  let ambiguousMessage = "";
+  try { resolveProvider("seoAudit", { apiKey: "sk-test" }); } catch (e) { ambiguousMessage = e.message; }
+  assert(/ambiguous/i.test(ambiguousMessage),
+    "resolveProvider throws an 'ambiguous' error when 2+ paid providers exist and none is named (seoAudit: ahrefs/semrush/seranking)");
 
-    const result = resolveProvider("seoAudit", { apiKey: "sk-test", provider: "dataforseo" });
-    assert(result.tier === "paid" && result.provider.name === "dataforseo",
-      "resolveProvider picks the named paid provider when 2+ exist");
-  } finally {
-    PROVIDER_CONFIG.seoAudit.paid.length = 0; // restore for every other assertion in this file
-  }
+  const result = resolveProvider("seoAudit", { apiKey: "sk-test", provider: "semrush" });
+  assert(result.tier === "paid" && result.provider.name === "semrush",
+    "resolveProvider picks the named paid provider when 2+ exist");
 }
 
 console.log("\n══ workers/config/providers.js — logProviderUsage ══");
