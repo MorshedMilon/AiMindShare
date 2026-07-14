@@ -62,4 +62,20 @@ console.log("\n══ workers/providers/plagiarism.js — checkOriginality: plag
     "the unavailable result names the selected provider and reports null scores rather than fake numbers");
 }
 
+console.log("\n══ workers/providers/plagiarism.js — checkOriginality: aiLikelihoodScore ══");
+
+{
+  const uniform = "This is text. This is text. This is text. This is text. This is text.";
+  const varied = "Why did the fox run? Because dogs, cats, and thunderstorms all terrify it equally, especially past midnight when the neighborhood goes eerily silent except for one distant, half-broken wind chime.";
+  const uniformResult = await checkOriginality(uniform);
+  const variedResult = await checkOriginality(varied);
+  assert(uniformResult.aiLikelihoodScore > variedResult.aiLikelihoodScore,
+    "uniform sentence length + narrow vocabulary scores a higher aiLikelihoodScore than varied human-like text");
+}
+{
+  const result = await checkOriginality("Just one sentence.");
+  assert(result.aiLikelihoodScore >= 0 && result.aiLikelihoodScore <= 100,
+    "aiLikelihoodScore stays within 0-100 even for a single-sentence input");
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);

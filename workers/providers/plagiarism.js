@@ -81,6 +81,24 @@ function scorePlagiarism(sentences, corpus, sentenceThreshold) {
   return { plagiarismScore, flaggedSentences: flagged };
 }
 
+function scoreAiLikelihood(sentences) {
+  if (sentences.length === 0) return 0;
+
+  const lengths = sentences.map((s) => tokenize(s).length);
+  const mean = lengths.reduce((a, b) => a + b, 0) / lengths.length;
+  const variance = lengths.reduce((sum, l) => sum + (l - mean) ** 2, 0) / lengths.length;
+  const stdDev = Math.sqrt(variance);
+  const coefficientOfVariation = mean === 0 ? 0 : stdDev / mean;
+  const burstinessSignal = 1 - Math.min(Math.max(coefficientOfVariation, 0), 1);
+
+  const allTokens = sentences.flatMap((s) => tokenize(s));
+  const uniqueTokens = new Set(allTokens);
+  const typeTokenRatio = allTokens.length === 0 ? 0 : uniqueTokens.size / allTokens.length;
+  const vocabSignal = 1 - Math.min(Math.max(typeTokenRatio, 0), 1);
+
+  return Math.round(100 * (0.5 * burstinessSignal + 0.5 * vocabSignal));
+}
+
 export async function checkOriginality(text, config = {}) {
   const { tier, provider } = resolveProvider("plagiarism", config);
 
@@ -95,8 +113,9 @@ export async function checkOriginality(text, config = {}) {
   const sentences = splitSentences(text);
   const sentenceThreshold = config.sentenceThreshold ?? DEFAULT_SENTENCE_THRESHOLD;
   const { plagiarismScore, flaggedSentences } = scorePlagiarism(sentences, config.corpus, sentenceThreshold);
+  const aiLikelihoodScore = scoreAiLikelihood(sentences);
 
-  await logProviderUsage("plagiarism", provider.name, { tier, plagiarismScore });
+  await logProviderUsage("plagiarism", provider.name, { tier, plagiarismScore, aiLikelihoodScore });
 
-  return { plagiarismScore, aiLikelihoodScore: 0, flaggedSentences, provider: provider.name };
+  return { plagiarismScore, aiLikelihoodScore, flaggedSentences, provider: provider.name };
 }
