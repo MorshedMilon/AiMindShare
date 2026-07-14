@@ -1547,6 +1547,26 @@ partial unique index against duplicate concurrent retries. Content Score Engine 
 extensions, Auto-Rewrite Loop, Sitemap-Aware Internal Linking, Deep Research/Citations, and
 Media Auto-Attach are explicitly out of scope — separate future specs (see the design doc).
 
+## D-194 · Plagiarism/AI-detection check + Auto-Rewrite Loop — local-first, BYOK deferred · **LOCKED 2026-07-13**
+
+Builds the first real `plagiarism` capability adapter on the already-merged provider
+abstraction layer (`workers/config/providers.js`, D-193's out-of-scope note). The free
+default (`local-tfidf`) is a dependency-free local TF-IDF cosine-similarity check —
+compared against a caller-supplied `corpus` when given, otherwise falling back to
+internal near-duplicate sentence detection — plus a burstiness/vocabulary-richness
+heuristic for `aiLikelihoodScore`. Neither signal calls an external API or requires a
+key; both are honest heuristics, not validated detectors, and this is documented in
+`workers/README-providers.md`. `PROVIDER_CONFIG.plagiarism.paid` gains 4 registered-but-
+unimplemented BYOK slots (Copyleaks, Originality.ai, GPTZero, Winston AI) — selecting one
+today returns `{ unavailable: true, reason: 'adapter_not_implemented' }`, never a throw,
+matching this repo's "unavailable, not broken" posture (D-063). `autoRewriteLoop`
+(`workers/plagiarism-rewrite-loop.mjs`) orchestrates `checkOriginality` with a single
+batched Claude rewrite call per iteration, reusing `callAnthropicForArticle`
+(`workers/llm.mjs`, D-190) unchanged; it never throws on an unavailable Claude call or a
+malformed rewrite, and it logs one before/after record per run to
+`workers/config/plagiarism-rewrite-report.json` (gitignored, same read-modify-write
+convention as `provider-usage.json`).
+
 ---
 
 *AiMindShare.com · Decisions Log v1.0 · D-001…D-085 recorded (D-008 superseded by D-014; M09 added
@@ -1570,6 +1590,8 @@ D-182…D-185 (M29 Affiliate Hub Phase 1a + the Funnels↔Affiliate-Hub bridge, 
 then D-186 (M20 AI Funnel Studio Phase 1: real Anthropic provider layer, migration `0038_m20_funnels_v3d.sql`)
 then D-187 (M20 AI Funnel Studio Phase 2: prompt-first hero redesign, frontend-only, no migration) then
 D-188 (site-wide: "mockup mode" banner/pill hidden from view in every module, frontend-only, no migration)
-then D-193 (M22 Generation Studio core pipeline, migration 0040_m22_generation_studio.sql),
+then D-193 (M22 Generation Studio core pipeline, migration 0040_m22_generation_studio.sql)
+then D-194 (Plagiarism/AI-detection check + Auto-Rewrite Loop, no migration — local-first,
+BYOK deferred),
 5 OPEN. Append-only.
 LOCKED entries bind Claude Code; OPEN entries are human calls to be flagged, not resolved, in build sessions.*
