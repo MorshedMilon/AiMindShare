@@ -49,16 +49,17 @@ const DEFAULT_SENTENCE_THRESHOLD = 0.5;
 
 function scorePlagiarism(sentences, corpus, sentenceThreshold) {
   const flagged = [];
+  const corpusSentences = corpus?.flatMap((doc) =>
+    splitSentences(doc.text).map((sentence) => ({ id: doc.id, sentence })));
+
   sentences.forEach((sentence, index) => {
     let bestScore = 0;
     let bestSource = null;
 
     if (corpus && corpus.length > 0) {
-      for (const doc of corpus) {
-        for (const corpusSentence of splitSentences(doc.text)) {
-          const score = cosineSimilarity(sentence, corpusSentence);
-          if (score > bestScore) { bestScore = score; bestSource = doc.id; }
-        }
+      for (const { id, sentence: corpusSentence } of corpusSentences) {
+        const score = cosineSimilarity(sentence, corpusSentence);
+        if (score > bestScore) { bestScore = score; bestSource = id; }
       }
     } else {
       sentences.forEach((other, otherIndex) => {
