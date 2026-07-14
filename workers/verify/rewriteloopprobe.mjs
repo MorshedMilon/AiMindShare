@@ -60,11 +60,13 @@ console.log("══ workers/plagiarism-rewrite-loop.mjs — autoRewriteLoop happ
   assert(result.finalText.includes("swift auburn animal"), "autoRewriteLoop's finalText includes the rewritten sentence");
   assert(!result.finalText.includes("The quick brown fox jumps over the lazy dog"),
     "autoRewriteLoop's finalText no longer contains the original flagged sentence");
+  assert(typeof result.finalScore === "number", "autoRewriteLoop's finalScore is a number, not a raw checkOriginality result");
 
   const report = JSON.parse(readFileSync(TEST_REPORT_PATH, "utf8"));
   assert(report.length === 1, "autoRewriteLoop appends exactly one run record to the report file");
   assert(report[0].passed === true && Array.isArray(report[0].attempts),
     "the report record has passed + attempts");
+  assert(typeof report[0].finalScore === "number", "the persisted report record's finalScore is also a number");
 
   rmSync(TEST_REPORT_PATH);
 }
