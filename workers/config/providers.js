@@ -14,15 +14,11 @@ const DEFAULT_USAGE_LOG_PATH = path.join(__dirname, "provider-usage.json");
 export const PROVIDER_CONFIG = {
   seoAudit: {
     free: {
-      name: "ranknibbler",
-      envVar: null,
-      description: "RankNibbler API — free, keyless on-page SEO audit (title, meta, links, redirects, structured data, AI-readiness). Core Web Vitals come from a separate PageSpeed Insights call (PAGESPEED_API_KEY); RapidAPI's Website SEO Audit API (RAPIDAPI_KEY) is an automatic fallback if RankNibbler is down or rate-limited. See providers/seoAudit.js.",
+      name: "pagespeed",
+      envVar: "PAGESPEED_API_KEY",
+      description: "Google PageSpeed Insights API — free tier (~25,000 requests/day).",
     },
-    paid: [
-      { name: "ahrefs", envVar: "AHREFS_API_KEY", description: "Ahrefs API — BYOK, not implemented yet." },
-      { name: "semrush", envVar: "SEMRUSH_API_KEY", description: "SEMrush API — BYOK, not implemented yet." },
-      { name: "seranking", envVar: "SERANKING_API_KEY", description: "SE Ranking API — BYOK, not implemented yet." },
-    ],
+    paid: [],
   },
   plagiarism: {
     free: {

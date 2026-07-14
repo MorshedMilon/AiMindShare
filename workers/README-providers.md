@@ -17,7 +17,7 @@ just a plain object the caller passes in.
 
 | Capability | Free default | Env var | Notes |
 |---|---|---|---|
-| `seoAudit` | RankNibbler API | none (keyless) | primary — title/meta/links/redirects/structured-data/AI-readiness. Core Web Vitals come from a separate PageSpeed Insights call (`PAGESPEED_API_KEY`, self-provisioned, ~25,000 req/day). RapidAPI's Website SEO Audit API (`RAPIDAPI_KEY`) is an automatic fallback if RankNibbler is down or rate-limited. BYOK: `ahrefs`/`semrush`/`seranking` registered in `paid[]`, not yet implemented. See `providers/seoAudit.js`. |
+| `seoAudit` | Google PageSpeed Insights API | `PAGESPEED_API_KEY` | free tier, ~25,000 requests/day |
 | `plagiarism` | none | — | no reliable free plagiarism API exists; resolves to an honest "unavailable" stub until a paid provider is added |
 | `embeddings` | HuggingFace Inference API | `HUGGINGFACE_API_KEY` | free tier, rate-limited |
 | `webSearch` | Brave Search API | `BRAVE_SEARCH_API_KEY` | free tier, 2,000 queries/month |

@@ -108,9 +108,6 @@ echo; echo "══ +  M22-auto: real LLM adapter (unit, no network) ══"
 echo; echo "══ +  Provider abstraction layer: PROVIDER_CONFIG + resolveProvider + logProviderUsage + RateLimiter (unit, no network) ══"
 ( cd workers && node verify/providersprobe.mjs ) || fails=$((fails+1))
 
-echo; echo "══ +  seoAudit provider: RankNibbler + PageSpeed CWV + RapidAPI fallback (unit, no network) ══"
-( cd workers && node verify/seoauditprobe.mjs ) || fails=$((fails+1))
-
 echo; echo "══ +  imageGen provider: Pexels + Unsplash + SDXL hybrid fallback (unit, no network) ══"
 ( cd workers && node verify/imagegenprobe.mjs ) || fails=$((fails+1))
 

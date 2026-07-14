@@ -14,7 +14,7 @@ const assert = (c, l) => c
 console.log("══ workers/config/providers.js — PROVIDER_CONFIG + resolveProvider ══");
 
 const CAPABILITIES = ["seoAudit", "plagiarism", "embeddings", "webSearch", "imageGen"];
-const CAPABILITIES_WITH_REGISTERED_PAID = ["seoAudit", "imageGen"]; // BYOK providers registered but not implemented — see providers/seoAudit.js, providers/imageGen.js
+const CAPABILITIES_WITH_REGISTERED_PAID = ["imageGen"]; // BYOK providers registered but not implemented — see providers/imageGen.js
 for (const capability of CAPABILITIES) {
   assert(Object.prototype.hasOwnProperty.call(PROVIDER_CONFIG, capability),
     `PROVIDER_CONFIG has a "${capability}" entry`);
@@ -27,8 +27,8 @@ for (const capability of CAPABILITIES) {
 
 {
   const result = resolveProvider("seoAudit", {});
-  assert(result.tier === "free" && result.provider.name === "ranknibbler",
-    "resolveProvider('seoAudit', {}) resolves to the ranknibbler free default");
+  assert(result.tier === "free" && result.provider.name === "pagespeed",
+    "resolveProvider('seoAudit', {}) resolves to the pagespeed free default");
 }
 {
   const result = resolveProvider("plagiarism", {});
@@ -66,15 +66,15 @@ for (const capability of CAPABILITIES) {
   assert(threw, "resolveProvider throws when apiKey is given but no paid provider is configured yet (plagiarism)");
 }
 {
-  // seoAudit has 3 real (registered-but-not-yet-implemented) paid providers —
+  // imageGen has 3 real (registered-but-not-yet-implemented) paid providers —
   // exercises the ambiguous-selection branch for real, no simulation needed.
   let ambiguousMessage = "";
-  try { resolveProvider("seoAudit", { apiKey: "sk-test" }); } catch (e) { ambiguousMessage = e.message; }
+  try { resolveProvider("imageGen", { apiKey: "sk-test" }); } catch (e) { ambiguousMessage = e.message; }
   assert(/ambiguous/i.test(ambiguousMessage),
-    "resolveProvider throws an 'ambiguous' error when 2+ paid providers exist and none is named (seoAudit: ahrefs/semrush/seranking)");
+    "resolveProvider throws an 'ambiguous' error when 2+ paid providers exist and none is named (imageGen: dalle/midjourney/stability)");
 
-  const result = resolveProvider("seoAudit", { apiKey: "sk-test", provider: "semrush" });
-  assert(result.tier === "paid" && result.provider.name === "semrush",
+  const result = resolveProvider("imageGen", { apiKey: "sk-test", provider: "midjourney" });
+  assert(result.tier === "paid" && result.provider.name === "midjourney",
     "resolveProvider picks the named paid provider when 2+ exist");
 }
 
