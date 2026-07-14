@@ -78,4 +78,27 @@ console.log("\n══ workers/providers/plagiarism.js — checkOriginality: aiLi
     "aiLikelihoodScore stays within 0-100 even for a single-sentence input");
 }
 
+console.log("\n══ workers/providers/plagiarism.js — logProviderUsage integration ══");
+
+{
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const TEST_LOG_PATH = path.join(__dirname, "plagiarism-usage-test.json");
+  if (existsSync(TEST_LOG_PATH)) rmSync(TEST_LOG_PATH);
+
+  // checkOriginality doesn't take a logPath override today, so this test
+  // instead confirms the *default* usage log (workers/config/provider-usage.json)
+  // gains one new "plagiarism" entry per call — the same convention every other
+  // provider follows.
+  const usageLogPath = path.join(__dirname, "..", "config", "provider-usage.json");
+  const before = existsSync(usageLogPath) ? JSON.parse(readFileSync(usageLogPath, "utf8")).length : 0;
+  await checkOriginality("One plain sentence for logging purposes.");
+  const after = JSON.parse(readFileSync(usageLogPath, "utf8")).length;
+  assert(after === before + 1, "checkOriginality appends exactly one entry to the default provider-usage.json log");
+
+  const entries = JSON.parse(readFileSync(usageLogPath, "utf8"));
+  const last = entries[entries.length - 1];
+  assert(last.capability === "plagiarism" && last.provider === "local-tfidf" && last.tier === "free",
+    "the logged entry has capability/provider/tier set correctly");
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
