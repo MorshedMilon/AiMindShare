@@ -108,6 +108,9 @@ echo; echo "══ +  M22-auto: real LLM adapter (unit, no network) ══"
 echo; echo "══ +  Provider abstraction layer: PROVIDER_CONFIG + resolveProvider + logProviderUsage + RateLimiter (unit, no network) ══"
 ( cd workers && node verify/providersprobe.mjs ) || fails=$((fails+1))
 
+echo; echo "══ +  Sitemap-Aware Internal Linking: crawlSitemap + embeddings adapter + buildIndex + findLinkCandidates + suggestInternalLinks (unit, no network, no model download) ══"
+( cd workers && node verify/internallinkingprobe.mjs ) || fails=$((fails+1))
+
 echo; echo "══ +  imageGen provider: Pexels + Unsplash + SDXL hybrid fallback (unit, no network) ══"
 ( cd workers && node verify/imagegenprobe.mjs ) || fails=$((fails+1))
 

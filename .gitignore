@@ -5,3 +5,4 @@ node_modules/
 .superpowers/
 workers/config/provider-usage.json
 workers/config/plagiarism-rewrite-report.json
+workers/seo/sitemap-index.json
