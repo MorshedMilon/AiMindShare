@@ -35,11 +35,14 @@ export const PROVIDER_CONFIG = {
   },
   embeddings: {
     free: {
-      name: "huggingface",
-      envVar: "HUGGINGFACE_API_KEY",
-      description: "HuggingFace Inference API — free tier, rate-limited.",
+      name: "xenova-transformers",
+      envVar: null,
+      description: "Local @xenova/transformers embedding model (Xenova/all-MiniLM-L6-v2) — runs in-process, no API key, no cost.",
     },
-    paid: [],
+    paid: [
+      { name: "openai", envVar: "OPENAI_API_KEY", description: "OpenAI Embeddings API — not yet implemented, config only." },
+      { name: "cohere", envVar: "COHERE_API_KEY", description: "Cohere Embed API — not yet implemented, config only." },
+    ],
   },
   webSearch: {
     free: {

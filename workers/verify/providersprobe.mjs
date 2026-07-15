@@ -14,18 +14,22 @@ const assert = (c, l) => c
 console.log("══ workers/config/providers.js — PROVIDER_CONFIG + resolveProvider ══");
 
 const CAPABILITIES = ["seoAudit", "plagiarism", "embeddings", "webSearch", "imageGen"];
-const CAPABILITIES_WITH_REGISTERED_PAID = ["plagiarism", "imageGen"]; // BYOK providers registered but not implemented — see providers/plagiarism.js, providers/imageGen.js
 for (const capability of CAPABILITIES) {
   assert(Object.prototype.hasOwnProperty.call(PROVIDER_CONFIG, capability),
     `PROVIDER_CONFIG has a "${capability}" entry`);
-  assert(Array.isArray(PROVIDER_CONFIG[capability].paid) &&
-    (CAPABILITIES_WITH_REGISTERED_PAID.includes(capability) ? PROVIDER_CONFIG[capability].paid.length > 0 : PROVIDER_CONFIG[capability].paid.length === 0),
-    `PROVIDER_CONFIG.${capability}.paid ${CAPABILITIES_WITH_REGISTERED_PAID.includes(capability) ? "has registered BYOK entries" : "starts empty"}`);
   assert(typeof PROVIDER_CONFIG[capability].free.name === "string",
     `PROVIDER_CONFIG.${capability}.free has a name`);
 }
+for (const capability of ["seoAudit", "webSearch"]) {
+  assert(Array.isArray(PROVIDER_CONFIG[capability].paid) && PROVIDER_CONFIG[capability].paid.length === 0,
+    `PROVIDER_CONFIG.${capability}.paid starts empty`);
+}
 assert(PROVIDER_CONFIG.plagiarism.paid.length === 4,
   "PROVIDER_CONFIG.plagiarism.paid has its 4 registered BYOK slots");
+assert(PROVIDER_CONFIG.embeddings.paid.length === 2,
+  "PROVIDER_CONFIG.embeddings.paid registers openai + cohere (not yet implemented)");
+assert(PROVIDER_CONFIG.embeddings.paid.every((p) => typeof p.name === "string" && typeof p.envVar === "string"),
+  "PROVIDER_CONFIG.embeddings.paid entries have name + envVar");
 
 {
   const result = resolveProvider("seoAudit", {});
@@ -49,8 +53,8 @@ assert(PROVIDER_CONFIG.plagiarism.paid.length === 4,
 }
 {
   const result = resolveProvider("embeddings", {});
-  assert(result.tier === "free" && result.provider.name === "huggingface",
-    "resolveProvider('embeddings', {}) resolves to the huggingface free default");
+  assert(result.tier === "free" && result.provider.name === "xenova-transformers",
+    "resolveProvider('embeddings', {}) resolves to the local xenova-transformers free default");
 }
 {
   const result = resolveProvider("webSearch", {});
