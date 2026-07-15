@@ -1567,6 +1567,28 @@ malformed rewrite, and it logs one before/after record per run to
 `workers/config/plagiarism-rewrite-report.json` (gitignored, same read-modify-write
 convention as `provider-usage.json`).
 
+## D-195 · Sitemap-Aware Internal Linking — local @xenova/transformers embeddings, standalone library only · **LOCKED 2026-07-14**
+
+Fulfills the "Sitemap-Aware Internal Linking" work D-193 named as out of scope and deferred to
+a separate future spec. `PROVIDER_CONFIG.embeddings.free` (added this session's earlier
+provider-abstraction-layer merge) is changed from `huggingface` (API-key-based) to
+`xenova-transformers` — a locally-run, keyless, zero-cost embedding model
+(`Xenova/all-MiniLM-L6-v2`, 384-dim) is a strictly better free default for a capability that's
+called once per crawled page and potentially once per generated article. `openai` and `cohere`
+are registered in `PROVIDER_CONFIG.embeddings.paid` but have no adapter code — calling either
+throws `"<name> embeddings not implemented yet"`, matching this codebase's honest-scaffold
+posture (D-147). New: `workers/providers/embeddings.js` (the adapter), `workers/seo/internal-
+linking.mjs` (`crawlSitemap`/`buildIndex`/`findLinkCandidates`/`suggestInternalLinks`, storage
+in gitignored `workers/seo/sitemap-index.json`, no DB/migration), `workers/rebuild-sitemap-
+index.js` (CLI). NOT wired into `workers/worker.mjs`'s `auto_link` pipeline stage — that stage
+stays a stub; wiring this library into live Generation Studio runs is separate, un-scoped
+follow-up work. **Known supply-chain risk:** `@xenova/transformers@^2.17.2` transitively pulls
+a critically-vulnerable `protobufjs` (<7.5.5, arbitrary code execution — GHSA-xq3m-2v4x-88gg) via
+`onnxruntime-web`/`onnx-proto`; `npm audit fix --force` would downgrade to a breaking `2.0.1`.
+Assessed as low practical risk for this codebase's usage (one hardcoded local model file, text-only
+input, no untrusted protobuf/ONNX parsing) but tracked here as an accepted, unresolved dependency
+risk to revisit on the package's next major upgrade.
+
 ---
 
 *AiMindShare.com · Decisions Log v1.0 · D-001…D-085 recorded (D-008 superseded by D-014; M09 added
@@ -1592,6 +1614,6 @@ then D-187 (M20 AI Funnel Studio Phase 2: prompt-first hero redesign, frontend-o
 D-188 (site-wide: "mockup mode" banner/pill hidden from view in every module, frontend-only, no migration)
 then D-193 (M22 Generation Studio core pipeline, migration 0040_m22_generation_studio.sql)
 then D-194 (Plagiarism/AI-detection check + Auto-Rewrite Loop, no migration — local-first,
-BYOK deferred),
+BYOK deferred) then D-195 (Sitemap-Aware Internal Linking, frontend/workers-only, no migration),
 5 OPEN. Append-only.
 LOCKED entries bind Claude Code; OPEN entries are human calls to be flagged, not resolved, in build sessions.*
