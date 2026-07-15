@@ -65,3 +65,58 @@ export async function crawlSitemap(sitemapUrl, { fetchFn = fetch } = {}) {
   }
   return { pages, skippedUrls };
 }
+
+async function loadIndex(indexPath) {
+  if (!existsSync(indexPath)) return {};
+  try {
+    return JSON.parse(await readFile(indexPath, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+async function saveIndex(entries, indexPath) {
+  await writeFile(indexPath, JSON.stringify(entries, null, 2));
+}
+
+export async function buildIndex(sitemapUrl, config = {}, opts = {}) {
+  const { fetchFn, embedFn = embed, indexPath = DEFAULT_INDEX_PATH } = opts;
+  const { pages, skippedUrls } = await crawlSitemap(sitemapUrl, fetchFn ? { fetchFn } : {});
+  const entries = await loadIndex(indexPath);
+
+  for (const page of pages) {
+    const embedding = await embedFn(`${page.title}\n${page.snippet}`, config);
+    entries[page.url] = { ...page, embedding, crawledAt: new Date().toISOString() };
+  }
+
+  await saveIndex(entries, indexPath);
+  return { indexed: pages.length, skipped: skippedUrls.length };
+}
+
+function cosineSimilarity(a, b) {
+  let dot = 0, normA = 0, normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  if (normA === 0 || normB === 0) return 0;
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+export async function findLinkCandidates(currentPageText, topN = 5, config = {}, opts = {}) {
+  const { embedFn = embed, indexPath = DEFAULT_INDEX_PATH } = opts;
+  const queryEmbedding = await embedFn(currentPageText, config);
+  const entries = await loadIndex(indexPath);
+
+  return Object.values(entries)
+    .filter((entry) => entry.url !== config.currentUrl)
+    .map((entry) => ({
+      url: entry.url,
+      title: entry.title,
+      snippet: entry.snippet,
+      score: cosineSimilarity(queryEmbedding, entry.embedding),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topN);
+}
