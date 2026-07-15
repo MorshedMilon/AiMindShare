@@ -5,6 +5,7 @@ import { rmSync, existsSync as existsSyncForTest, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { embed } from "../providers/embeddings.js";
+import { crawlSitemap } from "../seo/internal-linking.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -52,6 +53,55 @@ if (existsSyncForTest(EMBED_TEST_LOG_PATH)) rmSync(EMBED_TEST_LOG_PATH);
   assert(entries.length === 3, "embed() logs usage even for the paid not-implemented throws");
 }
 rmSync(EMBED_TEST_LOG_PATH);
+
+console.log("\n══ workers/seo/internal-linking.mjs — crawlSitemap() ══");
+
+function fakeFetch(responses) {
+  return async (url) => {
+    const entry = responses[url];
+    if (!entry) return { ok: false, status: 404, text: async () => "" };
+    return { ok: entry.status < 400, status: entry.status, text: async () => entry.body };
+  };
+}
+
+const kayakHtml = `<html><head><title>Best Kayak Trip Planning</title></head><body><nav>NAVMARKER</nav><h1>Kayak Trips</h1><p>${"paddle ".repeat(210)}</p><footer>FOOTERMARKER</footer></body></html>`;
+const hikeHtml = `<html><head><title>Trail Hiking Guide</title></head><body><p>${"trail ".repeat(50)}</p></body></html>`;
+
+const flatSitemapXml = `<?xml version="1.0"?><urlset><url><loc>https://example.com/kayaking</loc></url><url><loc>https://example.com/hiking</loc></url><url><loc>https://example.com/dead</loc></url></urlset>`;
+
+const flatResponses = {
+  "https://example.com/sitemap.xml": { status: 200, body: flatSitemapXml },
+  "https://example.com/kayaking": { status: 200, body: kayakHtml },
+  "https://example.com/hiking": { status: 200, body: hikeHtml },
+  "https://example.com/dead": { status: 404, body: "" },
+};
+
+{
+  const { pages, skippedUrls } = await crawlSitemap("https://example.com/sitemap.xml", { fetchFn: fakeFetch(flatResponses) });
+  assert(pages.length === 2, `crawlSitemap indexes the 2 live pages (got ${pages.length})`);
+  assert(skippedUrls.length === 1 && skippedUrls[0] === "https://example.com/dead",
+    "crawlSitemap skips the dead page instead of throwing");
+  const kayak = pages.find((p) => p.url === "https://example.com/kayaking");
+  assert(kayak.title === "Best Kayak Trip Planning", "crawlSitemap extracts the page <title>");
+  assert(kayak.snippet.split(" ").length === 200, `crawlSitemap's snippet is capped at 200 words (got ${kayak.snippet.split(" ").length})`);
+  assert(!kayak.snippet.includes("NAVMARKER") && !kayak.snippet.includes("FOOTERMARKER"),
+    "crawlSitemap's snippet excludes nav/footer text");
+}
+
+const indexXml = `<?xml version="1.0"?><sitemapindex><sitemap><loc>https://example.com/sitemap-a.xml</loc></sitemap><sitemap><loc>https://example.com/sitemap-b.xml</loc></sitemap></sitemapindex>`;
+const sitemapAXml = `<urlset><url><loc>https://example.com/kayaking</loc></url></urlset>`;
+const sitemapBXml = `<urlset><url><loc>https://example.com/hiking</loc></url></urlset>`;
+const indexResponses = {
+  "https://example.com/sitemap-index.xml": { status: 200, body: indexXml },
+  "https://example.com/sitemap-a.xml": { status: 200, body: sitemapAXml },
+  "https://example.com/sitemap-b.xml": { status: 200, body: sitemapBXml },
+  "https://example.com/kayaking": { status: 200, body: kayakHtml },
+  "https://example.com/hiking": { status: 200, body: hikeHtml },
+};
+{
+  const { pages } = await crawlSitemap("https://example.com/sitemap-index.xml", { fetchFn: fakeFetch(indexResponses) });
+  assert(pages.length === 2, "crawlSitemap follows one level of <sitemapindex> nesting and merges child pages");
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -11,7 +11,8 @@
     "jobprobe": "node verify/jobprobe.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.0"
+    "@supabase/supabase-js": "^2.45.0",
+    "cheerio": "^1.2.0"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.2.12"
