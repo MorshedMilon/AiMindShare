@@ -120,3 +120,58 @@ export async function findLinkCandidates(currentPageText, topN = 5, config = {},
     .sort((a, b) => b.score - a.score)
     .slice(0, topN);
 }
+
+const STOPWORDS = new Set([
+  "a", "an", "the", "of", "for", "to", "in", "on", "and", "or", "best",
+  "guide", "how", "why", "your",
+]);
+
+function deriveKeywordPhrase(title) {
+  const words = title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .split(/\s+/)
+    .filter((w) => w && !STOPWORDS.has(w));
+  return words.slice(0, 4).join(" ");
+}
+
+export async function suggestInternalLinks(articleHtml, config = {}, opts = {}) {
+  const $ = cheerio.load(articleHtml);
+  const plainText = $.text().replace(/\s+/g, " ").trim();
+
+  const candidates = await findLinkCandidates(plainText, config.topN ?? 5, config, opts);
+
+  const $noLinks = cheerio.load(articleHtml);
+  $noLinks("a").remove();
+  const searchableText = $noLinks.text().replace(/\s+/g, " ").trim();
+  const searchableLower = searchableText.toLowerCase();
+
+  const suggestions = [];
+  for (const candidate of candidates) {
+    const phrase = deriveKeywordPhrase(candidate.title);
+    if (!phrase) continue;
+    const matchIndex = searchableLower.indexOf(phrase);
+    if (matchIndex === -1) continue;
+
+    const matchEnd = matchIndex + phrase.length;
+    const anchorText = searchableText.slice(matchIndex, matchEnd);
+
+    // Widen up to 40 chars on each side, but don't cross a sentence boundary
+    // (a removed <a> can otherwise splice an adjacent sentence's text right
+    // up against the match, leaking an already-linked mention into context).
+    const windowStart = Math.max(0, matchIndex - 40);
+    const windowEnd = Math.min(searchableText.length, matchEnd + 40);
+    const prevPeriod = searchableText.lastIndexOf(".", matchIndex - 1);
+    const nextPeriod = searchableText.indexOf(".", matchEnd);
+    const contextStart = prevPeriod !== -1 && prevPeriod + 1 > windowStart ? prevPeriod + 1 : windowStart;
+    const contextEnd = nextPeriod !== -1 && nextPeriod + 1 < windowEnd ? nextPeriod + 1 : windowEnd;
+
+    suggestions.push({
+      url: candidate.url,
+      anchorText,
+      context: searchableText.slice(contextStart, contextEnd).trim(),
+      candidateTitle: candidate.title,
+    });
+  }
+  return suggestions;
+}

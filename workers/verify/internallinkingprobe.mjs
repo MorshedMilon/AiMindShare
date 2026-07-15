@@ -5,7 +5,7 @@ import { rmSync, existsSync as existsSyncForTest, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { embed } from "../providers/embeddings.js";
-import { crawlSitemap, buildIndex, findLinkCandidates } from "../seo/internal-linking.mjs";
+import { crawlSitemap, buildIndex, findLinkCandidates, suggestInternalLinks } from "../seo/internal-linking.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -154,6 +154,38 @@ assert(buildResult.indexed === 2 && buildResult.skipped === 1,
   assert(!candidates.some((c) => c.url === "https://example.com/kayaking"),
     "findLinkCandidates excludes config.currentUrl from results");
 }
+
+console.log("\n══ workers/seo/internal-linking.mjs — suggestInternalLinks() ══");
+
+const article = `<article><p>This guide covers everything you need for a great kayak trip planning session.</p><p>We already linked <a href="/other">kayak trip planning</a> once here.</p><p>For something different, try trail hiking guide activities too.</p></article>`;
+
+{
+  const suggestions = await suggestInternalLinks(article, {}, {
+    embedFn: async (text) => fakeEmbed(text),
+    indexPath: INDEX_TEST_PATH,
+  });
+  const kayakSuggestion = suggestions.find((s) => s.url === "https://example.com/kayaking");
+  assert(!!kayakSuggestion, "suggestInternalLinks finds an unlinked mention of the kayak candidate's title phrase");
+  assert(kayakSuggestion.anchorText.toLowerCase() === "kayak trip planning",
+    `suggestInternalLinks' anchorText matches the phrase found in the article (got "${kayakSuggestion?.anchorText}")`);
+  assert(!kayakSuggestion.context.includes("We already linked"),
+    "suggestInternalLinks surfaces the plain-text occurrence's context, not the linked one");
+
+  const trailSuggestion = suggestions.find((s) => s.url === "https://example.com/hiking");
+  assert(!!trailSuggestion, "suggestInternalLinks finds the trail hiking candidate's phrase too");
+}
+
+const linkedOnlyArticle = `<article><p>Nothing special here.</p><p>We already linked <a href="/other">kayak trip planning</a> as our only mention.</p></article>`;
+{
+  const suggestions = await suggestInternalLinks(linkedOnlyArticle, {}, {
+    embedFn: async (text) => fakeEmbed(text),
+    indexPath: INDEX_TEST_PATH,
+  });
+  assert(!suggestions.some((s) => s.url === "https://example.com/kayaking"),
+    "suggestInternalLinks omits a candidate whose only textual match is already inside an <a>");
+}
+
+rmSync(INDEX_TEST_PATH);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
