@@ -1991,6 +1991,24 @@ code/doc reference (migration, `media-autotag`, `config.toml`, `js`, spec, plan)
 unique (M15/M16 = `0020` collision — not M06 · M19 = `0022` · M20 = `0023`). The still-open `0012` M05 renumber
 (Session 5's flag) remains for the human. If a later merge re-contends D-113…D-119, renumber on merge (house pattern).
 
+## Sitemap-Aware Internal Linking *(2026-07-14, D-195, no migration)*
+
+Built the standalone library D-193 deferred: `workers/providers/embeddings.js` (single adapter
+for the `embeddings` capability — local `@xenova/transformers` free tier, `openai`/`cohere`
+registered as paid but not implemented) and `workers/seo/internal-linking.mjs`
+(`crawlSitemap`/`buildIndex`/`findLinkCandidates`/`suggestInternalLinks`). Storage is a local
+gitignored JSON file (`workers/seo/sitemap-index.json`), no DB/migration. CLI:
+`npm run rebuild-sitemap-index -- <sitemapUrl>`. Changed `PROVIDER_CONFIG.embeddings.free` from
+`huggingface` (the provider-abstraction-layer session's original default, merged to `main` this
+same session) to `xenova-transformers` — see D-195 for rationale (renumbered from the plan's
+draft D-194, which a parallel session claimed for the plagiarism/auto-rewrite work). Probe:
+`workers/verify/internallinkingprobe.mjs`, pure/no-network/no model download (injected
+`pipelineFactory`/`embedFn`/`fetchFn` throughout) — 24/24 passing, registered in `scripts/verify.sh`.
+Not wired into `workers/worker.mjs`'s `auto_link` stage — deliberately out of scope, stage remains
+a stub. Known supply-chain risk tracked in D-195: `@xenova/transformers` transitively pulls a
+critical `protobufjs` CVE via its ONNX runtime; assessed low practical risk for this codebase's
+usage, unresolved pending the package's next major version.
+
 ## DECISIONS added this cycle
 
 - D-001…D-008 LOCKED, D-009…D-013 OPEN *(day-one entries, 2026-07-02)*
